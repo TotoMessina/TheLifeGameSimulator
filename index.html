@@ -7,6 +7,8 @@
     <title>Simulador de Vida: Pobre a Rico</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1a1a1a">
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
     <!-- Import Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -38,6 +40,8 @@
             height: 100vh;
             overflow: hidden;
         }
+
+
 
         /* --- Header --- */
         header {
@@ -597,6 +601,95 @@
             color: #888;
         }
 
+        /* --- TROPHY SYSTEM --- */
+        .trophy-popup {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #000;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transform: translateX(200%);
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            z-index: 10000;
+            pointer-events: none;
+        }
+
+        .trophy-popup.active {
+            transform: translateX(0);
+        }
+
+        .trophy-icon {
+            font-size: 2rem;
+            animation: bounce 1s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(-5px);
+            }
+        }
+
+        .trophy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 15px;
+            padding: 10px;
+        }
+
+        .trophy-card {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid #444;
+            opacity: 0.5;
+            transition: transform 0.2s;
+        }
+
+        .trophy-card.unlocked {
+            opacity: 1;
+            border-color: #FFD700;
+            background: linear-gradient(to bottom, #2a2a2a, #332a00);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+            cursor: pointer;
+        }
+
+        .trophy-card.unlocked:hover {
+            transform: scale(1.05);
+        }
+
+        .trophy-card .t-icon {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .trophy-card .t-name {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .trophy-card .t-desc {
+            font-size: 0.7rem;
+            color: #aaa;
+            display: none;
+            margin-top: 5px;
+        }
+
+        .trophy-card:hover .t-desc {
+            display: block;
+        }
+
         input[type="email"],
         input[type="password"] {
             width: 100%;
@@ -770,250 +863,263 @@
             cursor: pointer;
         }
 
-            .dev-input-row label {
-                flex: 1;
-                font-size: 0.85rem;
+        .dev-input-row label {
+            flex: 1;
+            font-size: 0.85rem;
+        }
+
+        .dev-input-row input {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .dev-input-row button {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        .dev-input-row button:hover {
+            background: #00ff00;
+            color: #0a0a0a;
+        }
+
+        #dev-state-viewer {
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.7rem;
+            color: #00ff00;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            margin: 10px 0;
+        }
+
+        #dev-auth {
+            text-align: center;
+            padding: 20px;
+        }
+
+        #dev-auth input {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px;
+            width: 80%;
+            margin-bottom: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        #dev-auth button {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 30px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.2s;
+        }
+
+        #dev-auth button:hover {
+            background: #00ff00;
+            color: #0a0a0a;
+        }
+
+        .dev-panel .close-btn {
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-size: 1.5rem;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .dev-panel .close-btn:hover {
+            background: #00ff00;
+            color: #0a0a0a;
+        }
+
+        /* === LIFESTYLE SHOP MODAL === */
+        .lifestyle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .lifestyle-card {
+            background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+            border: 2px solid #444;
+            border-radius: 12px;
+            padding: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .lifestyle-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .lifestyle-card.current {
+            border-color: #4CAF50;
+            background: linear-gradient(135deg, #1e3a1e 0%, #2a4a2a 100%);
+        }
+
+        .lifestyle-card.current::before {
+            content: "✓ ACTUAL";
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #4CAF50;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .lifestyle-card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #fff;
+        }
+
+        .lifestyle-card-desc {
+            font-size: 0.85rem;
+            color: #aaa;
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        .lifestyle-card-stats {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+        }
+
+        .lifestyle-card-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+
+        .lifestyle-card-stat-label {
+            color: #999;
+        }
+
+        .lifestyle-card-stat-value {
+            color: #fff;
+            font-weight: bold;
+        }
+
+        .lifestyle-card-stat-value.positive {
+            color: #4CAF50;
+        }
+
+        .lifestyle-card-stat-value.negative {
+            color: #f44336;
+        }
+
+        .lifestyle-card-btn {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lifestyle-card-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+        }
+
+        .lifestyle-card-btn:disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        .shop-tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: #2a2a3e;
+            border: 2px solid #444;
+            border-radius: 8px;
+            color: #aaa;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .shop-tab:hover {
+            border-color: #667eea;
+            color: #fff;
+        }
+
+        .shop-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: #667eea;
+            color: white;
+        }
+
+        .lifestyle-tab-content {
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
             }
 
-            .dev-input-row input {
-                flex: 1;
-                background: #1a1a1a;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                padding: 5px 8px;
-                font-family: 'Courier New', monospace;
+            to {
+                opacity: 1;
             }
+        }
 
-            .dev-input-row button {
-                background: #1a1a1a;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                padding: 5px 15px;
-                cursor: pointer;
-                font-family: 'Courier New', monospace;
-                transition: all 0.2s;
-            }
 
-            .dev-input-row button:hover {
-                background: #00ff00;
-                color: #0a0a0a;
-            }
+        /* --- MY HOME UI --- */
+        .family-card {
+            background: #252525;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid var(--accent-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
 
-            #dev-state-viewer {
-                background: #000;
-                border: 1px solid #00ff00;
-                padding: 10px;
-                max-height: 200px;
-                overflow-y: auto;
-                font-size: 0.7rem;
-                color: #00ff00;
-                white-space: pre-wrap;
-                word-wrap: break-word;
-                margin: 10px 0;
-            }
-
-            #dev-auth {
-                text-align: center;
-                padding: 20px;
-            }
-
-            #dev-auth input {
-                background: #1a1a1a;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                padding: 10px;
-                width: 80%;
-                margin-bottom: 10px;
-                font-family: 'Courier New', monospace;
-            }
-
-            #dev-auth button {
-                background: #1a1a1a;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                padding: 10px 30px;
-                cursor: pointer;
-                font-family: 'Courier New', monospace;
-                transition: all 0.2s;
-            }
-
-            #dev-auth button:hover {
-                background: #00ff00;
-                color: #0a0a0a;
-            }
-
-            .dev-panel .close-btn {
-                background: transparent;
-                border: 1px solid #00ff00;
-                color: #00ff00;
-                font-size: 1.5rem;
-                width: 30px;
-                height: 30px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                cursor: pointer;
-            }
-
-            .dev-panel .close-btn:hover {
-                background: #00ff00;
-                color: #0a0a0a;
-            }
-
-            /* === LIFESTYLE SHOP MODAL === */
+        @media (max-width: 768px) {
             .lifestyle-grid {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-                gap: 15px;
-                max-height: 500px;
-                overflow-y: auto;
-                padding: 5px;
+                grid-template-columns: 1fr;
             }
-
-            .lifestyle-card {
-                background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
-                border: 2px solid #444;
-                border-radius: 12px;
-                padding: 15px;
-                transition: all 0.3s;
-                cursor: pointer;
-                position: relative;
-            }
-
-            .lifestyle-card:hover {
-                border-color: #667eea;
-                transform: translateY(-5px);
-                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
-            }
-
-            .lifestyle-card.current {
-                border-color: #4CAF50;
-                background: linear-gradient(135deg, #1e3a1e 0%, #2a4a2a 100%);
-            }
-
-            .lifestyle-card.current::before {
-                content: "✓ ACTUAL";
-                position: absolute;
-                top: 10px;
-                right: 10px;
-                background: #4CAF50;
-                color: white;
-                padding: 3px 8px;
-                border-radius: 5px;
-                font-size: 0.7rem;
-                font-weight: bold;
-            }
-
-            .lifestyle-card-title {
-                font-size: 1.2rem;
-                font-weight: bold;
-                margin-bottom: 8px;
-                color: #fff;
-            }
-
-            .lifestyle-card-desc {
-                font-size: 0.85rem;
-                color: #aaa;
-                margin-bottom: 12px;
-                font-style: italic;
-            }
-
-            .lifestyle-card-stats {
-                display: flex;
-                flex-direction: column;
-                gap: 5px;
-                margin-bottom: 12px;
-                font-size: 0.85rem;
-            }
-
-            .lifestyle-card-stat {
-                display: flex;
-                justify-content: space-between;
-                padding: 3px 0;
-            }
-
-            .lifestyle-card-stat-label {
-                color: #999;
-            }
-
-            .lifestyle-card-stat-value {
-                color: #fff;
-                font-weight: bold;
-            }
-
-            .lifestyle-card-stat-value.positive {
-                color: #4CAF50;
-            }
-
-            .lifestyle-card-stat-value.negative {
-                color: #f44336;
-            }
-
-            .lifestyle-card-btn {
-                width: 100%;
-                padding: 10px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border: none;
-                border-radius: 8px;
-                color: white;
-                font-weight: bold;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-
-            .lifestyle-card-btn:hover {
-                transform: scale(1.05);
-                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
-            }
-
-            .lifestyle-card-btn:disabled {
-                background: #555;
-                cursor: not-allowed;
-                opacity: 0.5;
-            }
-
-            .shop-tab {
-                flex: 1;
-                padding: 12px 20px;
-                background: #2a2a3e;
-                border: 2px solid #444;
-                border-radius: 8px;
-                color: #aaa;
-                font-weight: bold;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
-
-            .shop-tab:hover {
-                border-color: #667eea;
-                color: #fff;
-            }
-
-            .shop-tab.active {
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                border-color: #667eea;
-                color: white;
-            }
-
-            .lifestyle-tab-content {
-                animation: fadeIn 0.3s;
-            }
-
-            @keyframes fadeIn {
-                from {
-                    opacity: 0;
-                }
-
-                to {
-                    opacity: 1;
-                }
-            }
-
-            @media (max-width: 768px) {
-                .lifestyle-grid {
-                    grid-template-columns: 1fr;
-                }
-            }
+        }
     </style>
 </head>
 
@@ -1024,6 +1130,8 @@
             <div class="date-display" id="date-display">Año 18 - Mes 1</div>
             <div>
                 <button class="settings-btn" id="shop-trigger" style="margin-right:10px;">🛒</button>
+                <button class="settings-btn" id="home-trigger" style="margin-right:10px;">🏠</button>
+                <button class="settings-btn" id="trophy-trigger" style="margin-right:10px;">🏆</button>
                 <button class="settings-btn" id="settings-trigger">⚙️</button>
             </div>
         </div>
@@ -1129,6 +1237,30 @@
         </div>
     </div>
 
+    <!-- Trophy Notification -->
+    <div id="trophy-notification" class="trophy-popup">
+        <div class="trophy-icon">🏆</div>
+        <div>
+            <div style="font-size:0.8rem; font-weight:bold; letter-spacing:1px;">LOGRO DESBLOQUEADO</div>
+            <div id="trophy-msg-name" style="font-size:1.1rem; font-weight:900;">Nombre del Trofeo</div>
+        </div>
+    </div>
+
+    <!-- Trophy Modal -->
+    <div class="modal-overlay" id="trophy-modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>🏆 Galería de Trofeos</h2>
+                <button class="close-btn" id="close-trophy-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="trophy-grid" id="trophy-list">
+                    <!-- Trophies injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Job Modal -->
     <div class="modal-overlay" id="job-modal">
         <div class="modal-content">
@@ -1191,8 +1323,10 @@
                 <button class="close-btn" id="close-act-modal">&times;</button>
             </div>
 
-            <div class="tabs">
+            <div class="act-tabs" style="display:flex; justify-content:space-between; padding:10px; gap:5px;">
                 <button class="tab-btn active" onclick="GameUI.switchActTab('courses')">Educación</button>
+                <button class="tab-btn" onclick="GameUI.switchActTab('projects')">Proyectos</button>
+                <button class="tab-btn" onclick="GameUI.switchActTab('crime')">Crimen</button>
                 <button class="tab-btn" onclick="GameUI.switchActTab('social')">Social</button>
             </div>
 
@@ -1238,6 +1372,40 @@
                     <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Educación
                         Superior</h4>
                     <div id="courses-list"></div>
+
+                </div>
+
+                <div id="act-tab-projects" class="hidden">
+                    <div id="projects-container"></div>
+                </div>
+
+                <div id="act-tab-crime" class="hidden">
+                    <div
+                        style="background:#330000; padding:10px; border-radius:5px; margin-bottom:15px; border:1px solid #ff0000;">
+                        <h4 style="margin:0; color:#ff5555;">⚠️ ZONA ILEGAL</h4>
+                        <p style="font-size:0.8rem; color:#aaa;">Alto riesgo. La policía vigila.</p>
+                    </div>
+                    <button class="act-btn" onclick="Game.commitCrime('scam')">
+                        <div class="act-info">
+                            <h4>Estafa Piramidal</h4>
+                            <p>Engaña a incautos.</p>
+                        </div>
+                        <div class="act-cost">Risk: +5%<br>Karma: -5</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.commitCrime('embezzle')">
+                        <div class="act-info">
+                            <h4>Malversar Fondos</h4>
+                            <p>Robo corporativo silencioso.</p>
+                        </div>
+                        <div class="act-cost">Risk: +15%<br>Karma: -10</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.commitCrime('deal')">
+                        <div class="act-info">
+                            <h4>Negocio Ilegal</h4>
+                            <p>Tráfico y contrabando.</p>
+                        </div>
+                        <div class="act-cost">Risk: +30%<br>Karma: -25</div>
+                    </button>
                 </div>
 
                 <div id="act-tab-social" class="hidden">
@@ -1307,6 +1475,9 @@
                     <button class="shop-tab" onclick="UI.switchLifestyleTab('vehicles')" id="tab-vehicles">
                         🚗 Vehículos
                     </button>
+                    <button class="shop-tab" onclick="UI.switchLifestyleTab('pets')" id="tab-pets">
+                        🐾 Mascotas
+                    </button>
                 </div>
 
                 <!-- Housing Tab -->
@@ -1317,6 +1488,33 @@
                 <!-- Vehicles Tab -->
                 <div id="lifestyle-tab-vehicles" class="lifestyle-tab-content hidden">
                     <div class="lifestyle-grid" id="vehicles-grid"></div>
+                </div>
+
+                <!-- Pets Tab -->
+                <div id="lifestyle-tab-pets" class="lifestyle-tab-content hidden">
+                    <div class="lifestyle-grid" id="pets-grid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Home Modal -->
+    <div class="modal-overlay" id="home-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏠 Mi Hogar</h2>
+                <button class="close-btn" id="close-home-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="my-home-summary"
+                    style="background:#2a2a3e; padding:15px; border-radius:10px; margin-bottom:20px; text-align:center;">
+                    <div style="font-size:0.9rem; color:#aaa;">Gastos Familiares</div>
+                    <div style="font-size:1.5rem; color:#ff3939; font-weight:bold;" id="home-total-expenses">$0/mes
+                    </div>
+                </div>
+
+                <div id="family-list">
+                    <!-- Family Members Injected Here -->
                 </div>
             </div>
         </div>
@@ -1554,6 +1752,28 @@
             baseWage: 0 // Base added to job salary if relevant
         };
 
+        const CHILD_COST = 400; // Monthly cost per child
+
+        const PETS = [
+            { id: 'dog', name: 'Perro 🐶', cost: 200, maint: 50, desc: 'Fiel amigo. Evita tristeza extrema.' },
+            { id: 'cat', name: 'Gato 🐱', cost: 150, maint: 40, desc: 'Independiente. Compañía tranquila.' },
+            { id: 'hamster', name: 'Hamster 🐹', cost: 50, maint: 10, desc: 'Pequeño y fácil de cuidar.' }
+        ];
+
+        const TROPHIES = [
+            { id: 'first_million', name: 'Primer Millón', desc: 'Acumula $1,000,000 en efectivo.', icon: '💰', condition: (s) => s.money >= 1000000 },
+            { id: 'marathon', name: 'Maratonista', desc: 'Completa una maratón.', icon: '🏃', condition: (s) => false }, // Manually triggers
+            { id: 'ceo', name: 'CEO', desc: 'Alcanza el puesto de CEO.', icon: '📈', condition: (s) => s.currJobId === 'tech_cto' || s.currJobId === 'corp_ceo' },
+            { id: 'famous_spouse', name: 'Amor Estelar', desc: 'Cásate con un famoso.', icon: '💍', condition: (s) => s.partner && (s.partner.jobTitle.includes('Estrella') || s.partner.jobTitle.includes('Famoso')) && s.partner.status === 'married' },
+            { id: 'polymath', name: 'Polímata', desc: 'Maximea inteligencia y completa 3 cursos.', icon: '🧠', condition: (s) => s.intelligence >= 100 && s.education.length >= 3 },
+            { id: 'centenarian', name: 'Centenario', desc: 'Vive hasta los 100 años.', icon: '🎂', condition: (s) => s.totalMonths >= 1200 }
+        ];
+
+        const RARE_ITEMS = [
+            { id: 'classic_car', name: 'Ferrari 250 GTO', price: 5000000, desc: 'Una joya clásica única. (+50 Estatus)', icon: '🏎️', maint: 5000, effect: { type: 'status', val: 50 } },
+            { id: 'limited_watch', name: 'Patek Philippe', price: 250000, desc: 'Edición limitada. (+20 Estatus)', icon: '⌚', maint: 100, effect: { type: 'status', val: 20 } }
+        ];
+
         const JOBS = [
             // None
             { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {} },
@@ -1627,6 +1847,21 @@
             { id: 'jet', name: '✈️ Jet Privado', cost: 5000000, maint: 50000, energyReduction: 15, status: 150, desc: 'El cielo es el límite' }
         ];
 
+        const TRAITS = [
+            { id: 'genius', name: '🧠 Genio', desc: '+50% Int gain, -10% Happiness max', effect: { stat: 'intelligence', mult: 1.5 } },
+            { id: 'athlete', name: '🏃 Atleta', desc: '+Salud gain, +Energy cost', effect: { stat: 'health', mult: 1.2 } },
+            { id: 'charismatic', name: '🗣️ Carismático', desc: 'Networking más fácil', effect: { stat: 'social', mult: 1.3 } },
+            { id: 'sickly', name: '🤒 Enfermizo', desc: '-Salud max, -Salud gain', effect: { stat: 'health', mult: 0.8 } },
+            { id: 'lucky', name: '🍀 Afortunado', desc: 'Más eventos buenos', effect: { stat: 'luck', mult: 1.2 } },
+            { id: 'bookworm', name: '📚 Ratón de Biblioteca', desc: 'Estudiar cuesta menos energía', effect: { stat: 'studyCost', mult: 0.8 } }
+        ];
+
+        const PROJECT_TYPES = [
+            { id: 'youtube', name: 'Canal de YouTube', cost: 100, duration: 6, penalty: 10, req: { intelligence: 10 }, desc: 'Diversión y vlog. Bajo costo.' },
+            { id: 'book', name: 'Escribir Libro', cost: 50, duration: 12, penalty: 20, req: { intelligence: 40 }, desc: 'Novela o ensayo. Requiere dedicación.' },
+            { id: 'app', name: 'Desarrollar App', cost: 500, duration: 18, penalty: 30, req: { intelligence: 70 }, desc: 'Alta tecnología. Alto potencial.' }
+        ];
+
         // --- ELITE EVENTS ---
         const ELITE_EVENTS = [
             {
@@ -1672,8 +1907,8 @@
             // Instant Events
             { id: 1, type: 'instant', text: "Encontraste $50 en el suelo.", effect: (s) => ({ money: 50, msg: "¡Suerte! +$50", type: 'good' }) },
             { id: 2, type: 'instant', text: "Perdiste tu billetera.", effect: (s) => ({ money: -100, happiness: -5, msg: "Qué mala suerte. -$100", type: 'bad' }) },
-            { id: 3, type: 'instant', text: "Te enfermaste de gripe.", effect: (s) => ({ health: -10, energy: -20, msg: "Gripe fuerte. -Salud, -Energía", type: 'bad' }) },
-            { id: 4, type: 'instant', text: "Un amigo te invita a cenar.", effect: (s) => ({ happiness: 10, msg: "Cena gratis. +Felicidad", type: 'good' }) },
+            { id: 3, type: 'instant', text: "Te enfermaste de gripe.", effect: (s) => ({ mentalHealth: -5, physicalHealth: -10, energy: -20, msg: "Gripe fuerte. -Salud, -Energía", type: 'bad' }) },
+            { id: 4, type: 'instant', text: "Un amigo te invita a cenar.", condition: s => s.friends.length > 0, effect: (s) => ({ happiness: 10, msg: "Cena gratis. +Felicidad", type: 'good' }) },
             { id: 5, type: 'instant', text: "Tu ropa se rompió.", effect: (s) => ({ money: -50, msg: "Gastos de ropa. -$50", type: 'bad' }) },
 
             // Choice Events
@@ -1692,6 +1927,7 @@
             },
             {
                 id: 7, type: 'choice', text: "Tu jefe te pide trabajar horas extra no pagadas.",
+                condition: s => s.currJobId !== 'unemployed',
                 choices: [
                     { text: "Hacerlo", sub: "Ganas experiencia, pierdes energía", action: (s) => ({ experience: 2, energy: -30, happiness: -5, msg: "Tu jefe lo valora. +Exp", type: 'info' }) },
                     { text: "Negarse", sub: "Mantienes dignidad", action: (s) => ({ happiness: 5, msg: "Te respetaste a ti mismo. +Felicidad", type: 'good' }) }
@@ -1723,10 +1959,93 @@
             },
             {
                 id: 10, type: 'choice', text: "Encuentras un gatito abandonado.",
+                condition: s => !s.pets.some(p => p.id === 'cat_stray'),
                 choices: [
-                    { text: "Adoptarlo ($50/mes)", sub: "+Felicidad constante, -Dinero", action: (s) => ({ money: -100, happiness: 15, msg: "Tienes mascota nueva (Gastos veterinario -$100).", type: 'good' }) },
+                    {
+                        text: "Adoptarlo ($50/mes)", sub: "+Felicidad constante, -Dinero", action: (s) => {
+                            state.pets.push({ id: 'cat_stray', name: 'Gato Callejero' });
+                            return { money: -100, happiness: 15, msg: "Tienes nueva mascota (Gastos vet -$100).", type: 'good' };
+                        }
+                    },
                     { text: "Llevarlo a refugio", sub: "Haces lo correcto", action: (s) => ({ happiness: 2, msg: "El gatito está a salvo.", type: 'info' }) }
                 ]
+            },
+
+            // --- SOCIAL EVENTS EXPANSION ---
+            // 1. Emergency: Friend Loan
+            {
+                id: 11, type: 'choice', text: "¡Emergencia! Un amigo necesita dinero urgente.",
+                condition: (s) => s.friends.length > 0 && s.money > 200,
+                choices: [
+                    {
+                        text: "Prestar $200", sub: "Es riesgoso pero amable", action: (s) => {
+                            const friend = s.friends[Math.floor(Math.random() * s.friends.length)];
+                            friend.relation = Math.min(100, friend.relation + 20);
+                            return { money: -200, happiness: 5, msg: `Le prestaste a ${friend.name}. Te lo agradece mucho.`, type: 'good' };
+                        }
+                    },
+                    {
+                        text: "Negarte", sub: "Cuidar tu dinero", action: (s) => {
+                            const friend = s.friends[Math.floor(Math.random() * s.friends.length)];
+                            friend.relation -= 15;
+                            return { happiness: -5, msg: `${friend.name} se decepcionó de ti.`, type: 'bad' };
+                        }
+                    }
+                ]
+            },
+            // 2. Wedding Invitation
+            {
+                id: 12, type: 'choice', text: "Boda de tu mejor amigo. ¿Asistir?",
+                condition: (s) => s.friends.length > 0 && s.money > 500,
+                choices: [
+                    {
+                        text: "¡Sí! (Regalo $500)", sub: "Fiesta y alegría", action: (s) => {
+                            const friend = s.friends[0]; // Best friend usually first or random
+                            friend.relation = Math.min(100, friend.relation + 15);
+                            return { money: -500, happiness: 20, msg: "¡Qué gran boda! Bailaste toda la noche.", type: 'good' };
+                        }
+                    },
+                    {
+                        text: "No ir", sub: "Ahorrar ($500)", action: (s) => {
+                            const friend = s.friends[0];
+                            friend.relation -= 25;
+                            return { happiness: -10, msg: "Tu amigo no te lo perdonará pronto.", type: 'bad' };
+                        }
+                    }
+                ]
+            },
+            // 3. Family Drama
+            {
+                id: 13, type: 'choice', text: "Tus padres tienen una emergencia médica.",
+                condition: (s) => s.money > 1000,
+                choices: [
+                    { text: "Ayudar ($1000)", sub: "Es tu familia", action: (s) => ({ money: -1000, happiness: 10, msg: "Hiciste lo correcto. Se están recuperando.", type: 'good' }) },
+                    { text: "No puedo", sub: "La economía está mal", action: (s) => ({ happiness: -20, mentalHealth: -10, msg: "La culpa te carcome.", type: 'bad' }) }
+                ]
+            },
+            // 4. Child Milestone
+            {
+                id: 14, type: 'instant', text: "¡Tu hijo trajo buenas notas!",
+                condition: (s) => s.children.length > 0,
+                effect: (s) => {
+                    const child = s.children[Math.floor(Math.random() * s.children.length)];
+                    return { happiness: 15, msg: `¡Orgullo de padre/madre! ${child.name} es brillante.`, type: 'good' };
+                }
+            },
+            {
+                id: 15, type: 'instant', text: "Tu hijo hizo un dibujo de la familia.",
+                condition: (s) => s.children.length > 0,
+                effect: (s) => ({ happiness: 10, msg: "Lo pegaste en la nevera. Qué tierno.", type: 'good' })
+            },
+            // 5. Old Friend Reconnect
+            {
+                id: 16, type: 'instant', text: "Un viejo amigo te escribió.",
+                condition: (s) => s.friends.length > 0,
+                effect: (s) => {
+                    const f = s.friends[Math.floor(Math.random() * s.friends.length)];
+                    f.relation += 10;
+                    return { happiness: 5, msg: `Chat con ${f.name} reavivó la amistad.`, type: 'good' };
+                }
             }
         ];
 
@@ -1746,6 +2065,8 @@
             currJobId: 'unemployed', // Current job ID
             education: [],
             activeCourse: null,
+            activeProject: null, // { id, name, typeId, progress, duration, penalty }
+            creations: [], // { name, type, royalty, quality }
             inventory: [],
             consecutiveWork: 0,
             sickDuration: 0,
@@ -1757,6 +2078,8 @@
             financialFreedom: false,
             friends: [], // {id, name, jobTitle, relation, bonusJobId}
             partner: null, // {name, salary, relation, status: 'dating'|'living'|'married', jobTitle}
+            children: [], // { name, ageMonths, gender }
+            pets: [], // { id, name }
             housing: 'couch', // Current housing ID
             vehicle: 'none', // Current vehicle ID
             status: 0 // Social status (0-250+)
@@ -1777,8 +2100,89 @@
             localStorage.removeItem('lifeSim_legacy');
         }
 
-        // --- 3. UI CONTROLLER ---
-        const UI = {
+/*      // --- 4. GAME CONTROLLER ---
+        const Game = {
+            init() {
+                const charGen = document.getElementById('char-gen-screen');
+                const mainUI = document.getElementById('main-ui');
+
+                // If new game (no months) and no attributes selected, show CharGen
+                // We check state.traits length to see if already generated.
+                if (state.totalMonths === 0 && (!state.traits || state.traits.length === 0)) {
+                    charGen.classList.remove('hidden');
+                    mainUI.classList.add('hidden');
+                    charGen.style.display = 'flex';
+                    this.generateCharacter();
+                } else {
+                    // Loaded game or already generated
+                    charGen.classList.add('hidden');
+                    charGen.style.display = 'none';
+                    mainUI.classList.remove('hidden');
+                    // this.startInterval(); // Optional auto-play
+                }
+
+                UI.render();
+            },
+
+            generateCharacter() {
+                // 1. Pick 2 unique traits
+                let available = [...TRAITS];
+                let picks = [];
+                for (let i = 0; i < 2; i++) {
+                    const idx = Math.floor(Math.random() * available.length);
+                    picks.push(available[idx]);
+                    available.splice(idx, 1);
+                }
+
+                // 2. Pick Background
+                const rand = Math.random();
+                let bg = 'normal';
+                let bgText = "Normal: Ahorros modestos ($1,000)";
+
+                if (rand < 0.3) {
+                    bg = 'debt'; // -$5000
+                    bgText = "Deuda Estudiantil: Comienzas debiendo $5,000";
+                } else if (rand > 0.8) {
+                    bg = 'rich'; // $5000
+                    bgText = "Pequeña Herencia: Recibes $5,000";
+                }
+
+                // Temporary storage
+                this._tempChar = { traits: picks.map(t => t.id), bg: bg };
+
+                // Render
+                const tContainer = document.getElementById('char-traits');
+                tContainer.innerHTML = picks.map(t => `
+                    <div style="background:#333; padding:10px; border-radius:5px;">
+                        <div style="color:#fff; font-weight:bold;">${t.name}</div>
+                        <div style="font-size:0.8rem; color:#ccc;">${t.desc}</div>
+                    </div>
+                `).join('');
+
+                const bgContainer = document.getElementById('char-bg');
+                bgContainer.innerHTML = bgText;
+                bgContainer.style.color = bg === 'debt' ? '#ff5555' : (bg === 'rich' ? '#4dffea' : '#fff');
+            },
+
+            confirmStart() {
+                if (!this._tempChar) return;
+
+                state.traits = this._tempChar.traits;
+                state.background = this._tempChar.bg;
+
+                // Apply Money
+                if (state.background === 'debt') state.money = -5000;
+                else if (state.background === 'rich') state.money = 5000;
+                else state.money = 1000;
+
+                // UI Transition
+                document.getElementById('char-gen-screen').style.display = 'none';
+                document.getElementById('main-ui').classList.remove('hidden');
+
+                UI.log("¡Nueva vida comenzada!", "good");
+                UI.render();
+            },
+            */ const UI = {
             els: {
                 date: document.getElementById('date-display'),
                 money: document.getElementById('money-display'),
@@ -1956,6 +2360,11 @@
 
                 card.innerHTML = `<span class="event-date">Año ${yrs}/${mos}</span>${msg}`;
                 this.els.log.appendChild(card);
+
+                if (type === 'bad') {
+                    AudioSys.playBad();
+                    Haptics.error();
+                }
             },
 
             floatText(text, color) {
@@ -2088,15 +2497,22 @@
                 } else if (tab === 'vehicles') {
                     vehiclesTab.classList.remove('hidden');
                     vehiclesBtn.classList.add('active');
+                } else if (tab === 'pets') {
+                    document.getElementById('lifestyle-tab-pets').classList.remove('hidden');
+                    document.getElementById('tab-pets').classList.add('active');
                 }
             },
 
             switchActTab(tab) {
                 const courses = document.getElementById('act-tab-courses');
+                const projects = document.getElementById('act-tab-projects');
+                const crime = document.getElementById('act-tab-crime');
                 const social = document.getElementById('act-tab-social');
                 const actBtns = document.getElementById('activity-modal').querySelectorAll('.tab-btn');
 
                 courses.classList.add('hidden');
+                projects.classList.add('hidden');
+                crime.classList.add('hidden');
                 social.classList.add('hidden');
                 actBtns.forEach(b => b.classList.remove('active'));
 
@@ -2104,10 +2520,89 @@
                     courses.classList.remove('hidden');
                     actBtns[0].classList.add('active');
                     Game.renderCourses(); // Helper to re-render courses
+                } else if (tab === 'projects') {
+                    projects.classList.remove('hidden');
+                    actBtns[1].classList.add('active');
+                    this.renderProjects();
+                } else if (tab === 'crime') {
+                    crime.classList.remove('hidden');
+                    actBtns[2].classList.add('active');
+                    // No dynamic render needed for now, static buttons
                 } else {
                     social.classList.remove('hidden');
-                    actBtns[1].classList.add('active');
+                    actBtns[3].classList.add('active');
                     this.renderSocialTab();
+                }
+            },
+
+            renderProjects() {
+                const container = document.getElementById('projects-container');
+                container.innerHTML = '';
+
+                // 1. Active Project
+                if (state.activeProject) {
+                    const p = state.activeProject;
+                    const el = document.createElement('div');
+                    el.className = 'project-card active';
+                    el.style.cssText = "background:#222; padding:15px; border-radius:8px; border:1px solid #FFD700; margin-bottom:20px;";
+
+                    const progressPct = (p.progress / p.duration) * 100;
+
+                    el.innerHTML = `
+                        <div style="font-weight:bold; color:#FFD700; margin-bottom:5px;">Proyecto Activo: ${p.name}</div>
+                        <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">Progreso: ${p.progress}/${p.duration} meses</div>
+                        <div style="background:#444; height:10px; border-radius:5px; overflow:hidden;">
+                            <div style="background:#FFD700; height:100%; width:${progressPct}%"></div>
+                        </div>
+                        <div style="font-size:0.8rem; color:#888; margin-top:5px;">Penalización Energía: -${p.penalty}</div>
+                     `;
+                    container.appendChild(el);
+                } else {
+                    // Start New Project List
+                    const header = document.createElement('h4');
+                    header.innerText = "Iniciar Nuevo Proyecto";
+                    header.style.cssText = "color:#aaa; border-bottom:1px solid #333; padding-bottom:5px; margin-top:0;";
+                    container.appendChild(header);
+
+                    PROJECT_TYPES.forEach(type => {
+                        const btn = document.createElement('button');
+                        btn.className = 'act-btn';
+                        btn.onclick = () => Game.startProject(type.id);
+                        btn.innerHTML = `
+                            <div class="act-info">
+                                <h4>${type.name}</h4>
+                                <p>${type.desc}</p>
+                                <p style="font-size:0.8rem; color:#aaa;">Req: ${type.req.intelligence || 0} Int</p>
+                            </div>
+                            <div class="act-cost">
+                                -$${type.cost}<br>
+                                -${type.penalty} E/m
+                            </div>
+                        `;
+                        container.appendChild(btn);
+                    });
+                }
+
+                // 2. Creations List
+                if (state.creations.length > 0) {
+                    const header = document.createElement('h4');
+                    header.innerText = "Tus Creaciones 🎨";
+                    header.style.cssText = "margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;";
+                    container.appendChild(header);
+
+                    state.creations.forEach(c => {
+                        const el = document.createElement('div');
+                        el.className = 'creation-item';
+                        el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; margin-bottom:5px; border-radius:5px;";
+                        el.innerHTML = `
+                            <div>
+                                <div style="color:#fff; font-weight:bold;">${c.name}</div>
+                                <div style="font-size:0.8rem; color:#888;">${c.quality} | ${c.type}</div>
+                            </div>
+                            <div style="color:#4dffea; font-family:monospace;">+$${c.royalty}/mes</div>
+                         `;
+                        container.appendChild(el);
+                    });
                 }
             },
 
@@ -2160,6 +2655,28 @@
                     `;
                 }
                 list.appendChild(pSection);
+
+                // --- CHARITY ---
+                const charity = document.createElement('div');
+                charity.style.marginTop = "20px";
+                charity.innerHTML = `
+                    <h4 style="color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Filantropía</h4>
+                     <button class="act-btn" onclick="Game.donateCharity(100)">
+                        <div class="act-info">
+                            <h4>Donar $100</h4>
+                            <p>Ayuda a los necesitados.</p>
+                        </div>
+                        <div class="act-cost">+1 Karma</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.donateCharity(1000)">
+                        <div class="act-info">
+                            <h4>Donar $1,000</h4>
+                            <p>Haz una gran diferencia.</p>
+                        </div>
+                        <div class="act-cost">+10 Karma</div>
+                    </button>
+                `;
+                list.appendChild(charity);
 
                 // --- FRIENDS SECTION ---
                 const fHeader = document.createElement('h4');
@@ -2270,6 +2787,32 @@
                     return;
                 }
 
+                // Render Rare Items
+                if (state.shopRare && state.shopRare.length > 0) {
+                    const rareHeader = document.createElement('h4');
+                    rareHeader.innerText = "🌟 Objetos Raros";
+                    rareHeader.style.cssText = "color:#FFD700; border-bottom:1px solid #FFD700; margin-bottom:10px;";
+                    list.appendChild(rareHeader);
+
+                    state.shopRare.forEach(item => {
+                        const owned = state.inventory.includes(item.id);
+                        const el = document.createElement('div');
+                        el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:linear-gradient(45deg, #332a00, #1a1a1a); padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #FFD700;";
+
+                        el.innerHTML = `
+                            <div>
+                                <div style="font-weight:bold; color:#FFD700;">${item.icon} ${item.name}</div>
+                                <div style="font-size:0.8rem; color:#aaa;">${item.desc}</div>
+                                <div style="font-size:0.8rem; color:#aaa;">Mant: $${item.maint}/mes</div>
+                            </div>
+                            <button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ${owned ? 'disabled' : ''} onclick="Game.buyRareItem('${item.id}')">
+                                ${owned ? 'Comprado' : '$' + item.price.toLocaleString()}
+                            </button>
+                        `;
+                        list.appendChild(el);
+                    });
+                }
+
                 // Render Goods
                 SHOP_ITEMS.forEach(item => {
                     const owned = state.inventory.includes(item.id);
@@ -2289,12 +2832,311 @@
                     `;
                     list.appendChild(el);
                 });
+            },
+
+            renderMyHome() {
+                const list = document.getElementById('family-list');
+                list.innerHTML = '';
+
+                // Summary of expenses
+                const fins = Game.calculateFinancials();
+                const totalFam = (fins.breakdown.pets || 0) + (fins.breakdown.children || 0);
+                document.getElementById('home-total-expenses').innerText = `-$${totalFam}/mes`;
+
+                // Partner
+                if (state.partner && (state.partner.status === 'living' || state.partner.status === 'married')) {
+                    const p = state.partner;
+                    const el = document.createElement('div');
+                    el.className = 'family-card';
+                    el.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:#ff69b4;">${p.name} (Pareja)</div>
+                            <div style="font-size:0.8rem; color:#aaa;">Ingreso: +$${p.salary}</div>
+                        </div>
+                        <div style="font-size:1.2rem;">❤️</div>
+                    `;
+                    list.appendChild(el);
+                }
+
+                // Children
+                state.children.forEach(child => {
+                    const isIndep = child.ageMonths >= 216;
+                    const el = document.createElement('div');
+                    el.className = 'family-card';
+                    el.style.borderLeftColor = isIndep ? '#aaa' : '#39FF14';
+                    el.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:#fff;">${child.name} (${Math.floor(child.ageMonths / 12)} años)</div>
+                            <div style="font-size:0.8rem; color:#aaa;">${isIndep ? 'Independiente' : `Costo: -$${CHILD_COST}/mes`}</div>
+                        </div>
+                        <div style="font-size:1.2rem;">${isIndep ? '🎓' : '👶'}</div>
+                    `;
+                    list.appendChild(el);
+                });
+
+                // Pets
+                state.pets.forEach(pet => {
+                    const el = document.createElement('div');
+                    el.className = 'family-card';
+                    el.style.borderLeftColor = '#FFA500';
+                    el.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:#fff;">${pet.name}</div>
+                            <div style="font-size:0.8rem; color:#aaa;">${PETS.find(p => p.id === pet.id)?.desc || ''}</div>
+                        </div>
+                        <div style="font-size:1.2rem;">🐾</div>
+                    `;
+                    list.appendChild(el);
+                });
+
+                if (state.children.length === 0 && state.pets.length === 0 && (!state.partner || (state.partner.status !== 'living' && state.partner.status !== 'married'))) {
+                    list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Vives solo. ¡Consigue pareja o adopta una mascota!</div>';
+                }
             }
         };
         window.GameUI = UI;
 
+        // --- AUDIO SYSTEM ---
+        const AudioSys = {
+            ctx: null,
+            init() {
+                if (this.ctx) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (AudioContext) {
+                    this.ctx = new AudioContext();
+                }
+            },
+            playTone(freq, type, duration) {
+                if (!this.ctx) this.init();
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            },
+            playClick() { this.playTone(400, 'sine', 0.1); },
+            playMoney() { this.playTone(800, 'triangle', 0.2); },
+            playSuccess() {
+                this.playTone(600, 'sine', 0.1);
+                setTimeout(() => this.playTone(800, 'sine', 0.2), 100);
+            },
+            playBad() {
+                this.playTone(150, 'sawtooth', 0.4);
+            },
+            playNotification() {
+                this.playTone(500, 'sine', 0.1);
+                setTimeout(() => this.playTone(1000, 'sine', 0.1), 100);
+            }
+        };
+
+        const Haptics = {
+            pulse() {
+                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
+            },
+            success() {
+                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
+            },
+            error() {
+                if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([50, 50, 50]);
+            }
+        };
+
         // --- 4. GAME LOGIC ---
         const Game = {
+            init() {
+                const charGen = document.getElementById('char-gen-screen');
+                const mainUI = document.getElementById('main-ui');
+
+                // Ensure Arrays Exist (Fix for legacy saves)
+                if (!state.pets) state.pets = [];
+                if (!state.children) state.children = [];
+                if (!state.inventory) state.inventory = [];
+                if (!state.unlockedTrophies) state.unlockedTrophies = []; // Trophy Init
+
+                if (state.totalMonths === 0 && (!state.traits || state.traits.length === 0)) {
+                    charGen.classList.remove('hidden');
+                    mainUI.classList.add('hidden');
+                    charGen.style.display = 'flex';
+                    this.generateCharacter();
+                } else {
+                    charGen.classList.add('hidden');
+                    charGen.style.display = 'none';
+                    mainUI.classList.remove('hidden');
+                }
+                UI.render();
+            },
+
+            // --- TROPHY SYSTEM ---
+            checkAchievements() {
+                if (!state.unlockedTrophies) state.unlockedTrophies = [];
+                TROPHIES.forEach(t => {
+                    if (!state.unlockedTrophies.includes(t.id)) {
+                        if (t.condition(state)) {
+                            this.awardTrophy(t.id);
+                        }
+                    }
+                });
+            },
+
+            awardTrophy(id) {
+                if (state.unlockedTrophies.includes(id)) return;
+                const trophy = TROPHIES.find(t => t.id === id);
+                if (!trophy) return;
+
+                state.unlockedTrophies.push(id);
+                this.showTrophyNotification(trophy);
+                AudioSys.playSuccess();
+                Haptics.success();
+                DB.saveGame(); // Auto-save on achievement
+            },
+
+            showTrophyNotification(t) {
+                const notif = document.getElementById('trophy-notification');
+                const title = document.getElementById('trophy-title');
+                const desc = document.getElementById('trophy-desc');
+
+                title.innerText = `LOGRO DESBLOQUEADO: ${t.name}`;
+                desc.innerText = t.desc;
+
+                notif.classList.add('active');
+                setTimeout(() => notif.classList.remove('active'), 5000);
+            },
+
+            openTrophyGallery() {
+                const modal = document.getElementById('trophy-modal');
+                const list = document.getElementById('trophy-list');
+                list.innerHTML = '';
+
+                TROPHIES.forEach(t => {
+                    const unlocked = state.unlockedTrophies.includes(t.id);
+                    const el = document.createElement('div');
+                    el.className = `trophy-card ${unlocked ? 'unlocked' : 'locked'}`;
+                    // Inline styles for simplicity 
+                    el.style.cssText = `
+                        background: ${unlocked ? 'linear-gradient(45deg, #ffd700, #ffecb3)' : '#333'};
+                        color: ${unlocked ? '#000' : '#888'};
+                        padding: 15px;
+                        border-radius: 8px;
+                        text-align: center;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: ${unlocked ? '0 0 10px #ffd700' : 'none'};
+                        opacity: ${unlocked ? '1' : '0.7'};
+                    `;
+
+                    el.innerHTML = `
+                        <div style="font-size: 2rem; margin-bottom: 5px;">${unlocked ? t.icon : '🔒'}</div>
+                        <div style="font-weight: bold; font-size: 0.9rem;">${t.name}</div>
+                        <div style="font-size: 0.75rem; display: ${unlocked ? 'block' : 'none'}; margin-top:5px;">${t.desc}</div>
+                    `;
+                    list.appendChild(el);
+                });
+
+                modal.classList.add('active');
+            },
+
+
+
+            awardTrophy(id) {
+                if (state.unlockedTrophies.includes(id)) return;
+                state.unlockedTrophies.push(id);
+
+                const trophy = TROPHIES.find(t => t.id === id);
+                if (trophy) {
+                    this.showTrophyNotification(trophy);
+                    UI.log(`🏆 Logro Desbloqueado: ${trophy.name}`, 'good');
+                    AudioSys.playClick(); // Use generic sound for now
+                }
+
+                // Save immediately
+                DB.saveGame();
+            },
+
+            showTrophyNotification(t) {
+                const el = document.getElementById('trophy-notification');
+                if (!el) return;
+                document.getElementById('trophy-msg-name').innerText = t.name;
+                el.classList.add('active');
+                setTimeout(() => {
+                    el.classList.remove('active');
+                }, 4000);
+            },
+
+            openTrophyGallery() {
+                const container = document.getElementById('trophy-list');
+                container.innerHTML = '';
+
+                TROPHIES.forEach(t => {
+                    const unlocked = state.unlockedTrophies && state.unlockedTrophies.includes(t.id);
+                    const card = document.createElement('div');
+                    card.className = `trophy-card ${unlocked ? 'unlocked' : ''}`;
+                    card.innerHTML = `
+                        <div class="t-icon">${unlocked ? t.icon : '🔒'}</div>
+                        <div class="t-name">${t.name}</div>
+                        <div class="t-desc">${t.desc}</div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                document.getElementById('trophy-modal').classList.add('active');
+            },
+
+            generateCharacter() {
+                let available = [...TRAITS];
+                let picks = [];
+                for (let i = 0; i < 2; i++) {
+                    const idx = Math.floor(Math.random() * available.length);
+                    picks.push(available[idx]);
+                    available.splice(idx, 1);
+                }
+
+                const rand = Math.random();
+                let bg = 'normal';
+                let bgText = "Normal: Ahorros modestos ($1,000)";
+
+                if (rand < 0.3) {
+                    bg = 'debt'; // -$5000
+                    bgText = "Deuda Estudiantil: Comienzas debiendo $5,000";
+                } else if (rand > 0.8) {
+                    bg = 'rich'; // $5000
+                    bgText = "Pequeña Herencia: Recibes $5,000";
+                }
+
+                this._tempChar = { traits: picks.map(t => t.id), bg: bg };
+
+                document.getElementById('char-traits').innerHTML = picks.map(t => `
+                        <div style="background:#333; padding:10px; border-radius:5px;">
+                            <div style="color:#fff; font-weight:bold;">${t.name}</div>
+                            <div style="font-size:0.8rem; color:#ccc;">${t.desc}</div>
+                        </div>
+                    `).join('');
+
+                const bgContainer = document.getElementById('char-bg');
+                bgContainer.innerHTML = bgText;
+                bgContainer.style.color = bg === 'debt' ? '#ff5555' : (bg === 'rich' ? '#4dffea' : '#fff');
+            },
+
+            confirmStart() {
+                if (!this._tempChar) return;
+                state.traits = this._tempChar.traits;
+                state.background = this._tempChar.bg;
+                if (state.background === 'debt') state.money = -5000;
+                else if (state.background === 'rich') state.money = 5000;
+                else state.money = 1000;
+                document.getElementById('char-gen-screen').style.display = 'none';
+                document.getElementById('main-ui').classList.remove('hidden');
+                UI.log("¡Nueva vida comenzada!", "good");
+                UI.render();
+            },
+
             checkGameOver() {
                 if (state.health <= 0) {
                     UI.showAlert("GAME OVER", "Has muerto debido a tu mala salud. ☠️", () => location.reload()); // Simple reload for death
@@ -2314,6 +3156,10 @@
                 score += state.happiness * 50;
                 score += state.intelligence * 20;
                 score += state.education.length * 1000;
+
+                // Children Legacy Bonus
+                const childBonus = state.children.length * 0.10; // +10% per child
+                score = score * (1 + childBonus);
 
                 const job = JOBS.find(j => j.id === state.currJobId);
                 if (job) score += job.salary * 0.5;
@@ -2352,12 +3198,147 @@
             },
 
             updateStat(key, amount) {
+                // Trait Modifiers
+                if (state.traits) {
+                    // Genius: +50% Int gain
+                    if (state.traits.includes('genius') && key === 'intelligence' && amount > 0) {
+                        amount *= 1.5;
+                        // Side effect: -Happiness max logic handled separately or on limit check
+                    }
+                    // Athlete: +Health gain
+                    if (state.traits.includes('athlete') && key === 'physicalHealth' && amount > 0) {
+                        amount *= 1.2;
+                    }
+                    // Sickly: -Health gain
+                    if (state.traits.includes('sickly') && key === 'physicalHealth' && amount > 0) {
+                        amount *= 0.5;
+                    }
+                    // Charismatic: +Social (Status/Friends) - maybe check key 'status' or 'happiness' from social?
+                    // Simplified: if key is happiness from social event, maybe boost?
+                }
+
                 state[key] += amount;
-                if (['happiness', 'physicalHealth', 'mentalHealth', 'energy', 'intelligence', 'experience'].includes(key)) {
+
+                // Clamping & Trait Limits
+                let maxHealth = 100;
+                let maxHappy = 100;
+
+                if (state.traits) {
+                    if (state.traits.includes('sickly')) maxHealth = 80;
+                    if (state.traits.includes('genius')) maxHappy = 90;
+                }
+
+                if (key === 'physicalHealth') {
+                    if (state[key] > maxHealth) state[key] = maxHealth;
+                    if (state[key] < 0) state[key] = 0;
+                } else if (key === 'happiness') {
+                    if (state[key] > maxHappy) state[key] = maxHappy;
+                    if (state[key] < 0) state[key] = 0;
+                } else if (['mentalHealth', 'energy', 'intelligence', 'experience'].includes(key)) {
                     if (state[key] > 100) state[key] = 100;
                     if (state[key] < 0) state[key] = 0;
                 }
-                if (key === 'money') UI.flashMoney(amount);
+                if (key === 'karma') {
+                    if (state[key] > 100) state[key] = 100;
+                    if (state[key] < -100) state[key] = -100;
+                }
+                if (key === 'policeRisk') {
+                    if (state[key] > 100) state[key] = 100;
+                    if (state[key] < 0) state[key] = 0;
+                }
+                if (key === 'money') {
+                    UI.flashMoney(amount);
+                    if (amount > 0) {
+                        AudioSys.playMoney();
+                        Haptics.success();
+                    }
+                }
+                this.checkAchievements(); // Check for trophies after any stat change
+            },
+
+            commitCrime(type) {
+                if (state.prisonMonths > 0) return UI.showAlert("En Prisión", "No puedes cometer crímenes desde la cárcel.");
+
+                let money = 0;
+                let risk = 0;
+                let karmaLoss = 0;
+                let msg = "";
+
+                // Difficlty vs Int check?
+                // For now, raw risk/reward
+
+                if (type === 'embezzle') {
+                    money = 1000 + (Math.random() * 2000);
+                    risk = 15;
+                    karmaLoss = 10;
+                    msg = "Malversaste fondos de la empresa.";
+                } else if (type === 'deal') {
+                    money = 5000 + (Math.random() * 5000);
+                    risk = 30;
+                    karmaLoss = 25;
+                    msg = "Hiciste un trato ilegal muy lucrativo.";
+                } else if (type === 'scam') {
+                    money = 500;
+                    risk = 5;
+                    karmaLoss = 5;
+                    msg = "Estafa piramidal menor.";
+                }
+
+                this.updateStat('money', Math.floor(money));
+                this.updateStat('policeRisk', risk);
+                this.updateStat('karma', -karmaLoss);
+
+                UI.log(`CRIMEN: ${msg} (+$${Math.floor(money)}, +${risk}% Riesgo)`, "bad");
+
+                // Immediate Bust Check (Low chance)
+                if (Math.random() * 100 < state.policeRisk / 2) {
+                    this.goToPrison();
+                } else {
+                    UI.render();
+                }
+            },
+
+            donateCharity(amount) {
+                if (state.money < amount) return UI.showAlert("Sin Fondos", "No tienes suficiente dinero.");
+
+                this.updateStat('money', -amount);
+                const karmaGain = Math.floor(amount / 100); // $100 = 1 Karma
+                this.updateStat('karma', karmaGain);
+                this.updateStat('happiness', 5);
+
+                UI.log(`Donaste $${amount} a la caridad. Te sientes mejor.`, "good");
+                UI.render();
+            },
+
+            goToPrison() {
+                const duration = 12; // 1 year fixed for now
+                const legalFees = Math.floor(state.money * 0.3) + 2000;
+
+                this.updateStat('money', -legalFees);
+                state.prisonMonths = duration;
+                state.policeRisk = 0; // Reset risk
+                state.consecutiveWork = 0;
+                state.currJobId = 'unemployed'; // Fired
+
+                UI.showAlert("¡ARRESTADO! 👮‍♂️", `La policía te atrapó. 
+                 \n- Pasas ${duration} meses en prisión.
+                 \n- Pierdes tu trabajo.
+                 \n- Gastos legales: $${legalFees}.
+                 \n- Salud y felicidad decaen.`, () => {
+                    // Fast forward logic or locked mode?
+                    // Let's do Fast Forward instant for UX smoothness
+                    for (let i = 0; i < duration; i++) {
+                        state.totalMonths++;
+                        state.physicalHealth -= 1;
+                        state.mentalHealth -= 2;
+                        state.happiness -= 2;
+                        // No income, but maybe age happens
+                    }
+                    // Reset
+                    state.prisonMonths = 0;
+                    UI.log(`Saliste de prisión después de ${duration} meses. Eres libre, pero a qué costo.`, "normal");
+                    UI.render();
+                });
             },
 
             work() {
@@ -2477,10 +3458,14 @@
             doActivity(type) {
                 if (state.energy < 20) return;
 
+                // --- TRAIT: Bookworm ---
+                let studyEnergyCost = 25;
+                if (state.traits && state.traits.includes('bookworm')) studyEnergyCost = 15;
+
                 if (type === 'study') {
                     if (state.money < CONFIG.studyCost) return UI.log("Dinero insuficiente.", "bad");
                     this.updateStat('money', -CONFIG.studyCost);
-                    this.updateStat('energy', -25);
+                    this.updateStat('energy', -studyEnergyCost);
 
                     let gain = 2 + Math.floor(state.intelligence * 0.05);
                     // Item Effect
@@ -2524,6 +3509,87 @@
             },
 
 
+            startProject(typeId) {
+                if (state.activeProject) {
+                    UI.showAlert("Ya tienes un proyecto activo", "Termina el actual antes de empezar otro.");
+                    return;
+                }
+                const type = PROJECT_TYPES.find(p => p.id === typeId);
+
+                // Requirements Check
+                if (type.req.intelligence && state.intelligence < type.req.intelligence) {
+                    UI.showAlert("Falta Inteligencia", `Necesitas ${type.req.intelligence} de inteligencia.`);
+                    return;
+                }
+                if (state.money < type.cost) {
+                    UI.showAlert("Fondos Insuficientes", `Iniciar cuesta $${type.cost}.`);
+                    return;
+                }
+
+                this.updateStat('money', -type.cost);
+                state.activeProject = {
+                    id: Date.now(), // Unique ID
+                    typeId: typeId,
+                    name: type.name, // Default name for now
+                    progress: 0,
+                    duration: type.duration,
+                    penalty: type.penalty
+                };
+
+                UI.showAlert("Proyecto Iniciado", `Has comenzado: ${type.name}. Duración: ${type.duration} meses. Consumirá energía.`);
+                UI.els.modals.act.classList.remove('active');
+                UI.render();
+            },
+
+            processProjects() {
+                if (!state.activeProject) return;
+
+                state.activeProject.progress++;
+
+                // Max Energy Penalty handled in nextMonth alongside courses
+
+                if (state.activeProject.progress >= state.activeProject.duration) {
+                    this.completeProject();
+                }
+            },
+
+            completeProject() {
+                const p = state.activeProject;
+                const type = PROJECT_TYPES.find(t => t.id === p.typeId);
+
+                // Calculate Success/Quality
+                // Base chance + Int bonus + Random
+                const intFactor = state.intelligence / 200; // 0 to 0.5
+                const rand = Math.random();
+                let quality = 'Normal';
+                let multiplier = 1;
+
+                if (rand + intFactor > 0.9) {
+                    quality = 'Viral/BestSeller 🌟';
+                    multiplier = 5;
+                } else if (rand + intFactor > 0.6) {
+                    quality = 'Éxito ✅';
+                    multiplier = 2;
+                } else if (rand + intFactor < 0.2) {
+                    quality = 'Flop 📉';
+                    multiplier = 0.2;
+                }
+
+                // Base Revenue calculation
+                let baseRev = type.cost * 0.1; // e.g., $100 cost -> $10/mo base
+                let royalty = Math.floor(baseRev * multiplier);
+                if (royalty < 1) royalty = 1;
+
+                state.creations.push({
+                    name: `${type.name} #${state.creations.length + 1}`,
+                    type: type.name,
+                    royalty: royalty,
+                    quality: quality
+                });
+
+                UI.showAlert("¡Proyecto Completado!", `Terminaste tu ${type.name}.\nCalidad: ${quality}\nRegalías: $${royalty}/mes`);
+                state.activeProject = null;
+            },
 
             startCourse(courseId) {
                 if (state.activeCourse) {
@@ -2637,6 +3703,22 @@
                     }
                 }
 
+                // Rare Item Drops (2% chance)
+                if (Math.random() < 0.02) {
+                    const rare = RARE_ITEMS[Math.floor(Math.random() * RARE_ITEMS.length)];
+                    if (!state.shopRare) state.shopRare = [];
+                    if (!state.shopRare.some(r => r.id === rare.id) && !state.inventory.includes(rare.id)) {
+                        state.shopRare.push(rare);
+                        UI.log(`¡ATENCIÓN! Un ${rare.name} está disponible en la tienda.`, 'good');
+                        // AudioSys.playNotification(); 
+                    }
+                }
+
+                // Expiry of rare items (10% chance)
+                if (state.shopRare) {
+                    state.shopRare = state.shopRare.filter(r => Math.random() > 0.1);
+                }
+
                 // Education Progress
                 let maxEnergy = 100;
                 if (state.activeCourse) {
@@ -2654,6 +3736,11 @@
                     }
                 }
 
+                if (state.activeProject) {
+                    maxEnergy -= state.activeProject.penalty;
+                    msg += ` | Proyecto: ${state.activeProject.name} (-${state.activeProject.penalty} E Max)`;
+                }
+
                 state.energy = maxEnergy;
 
                 // Market Fluctuation
@@ -2665,6 +3752,32 @@
 
                 // Social Decay
                 this.socialDecay();
+
+                // Process Children
+                this.processChildren();
+
+                // Process Projects
+                this.processProjects();
+
+                // Pet Happiness Safety Net
+                if (state.pets.length > 0 && state.happiness < 20) {
+                    state.happiness = 20;
+                    UI.log("Tu mascota te consoló. Felicidad mín 20%.", "good");
+                }
+
+                // Crime & Risk Logic
+                if (state.policeRisk > 0) {
+                    // Decay
+                    state.policeRisk -= 5;
+                    if (state.policeRisk < 0) state.policeRisk = 0;
+
+                    // Monthly Arrest Check (Low chance)
+                    if (state.policeRisk > 0 && Math.random() * 100 < state.policeRisk / 3) {
+                        this.goToPrison();
+                        return; // Stop processing other events if arrested?
+                        // Actually goToPrison does fast forward, so we just let it run.
+                    }
+                }
 
                 // Partner Logic
                 if (state.partner) {
@@ -2803,10 +3916,14 @@
             },
 
             randomEvent() {
-                // 20% Chance
-                if (Math.random() > 0.2) return;
+                // 30% Chance
+                if (Math.random() > 0.3) return;
 
-                const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+                // Filter valid events based on conditions
+                const validEvents = EVENTS.filter(e => !e.condition || e.condition(state));
+                if (validEvents.length === 0) return;
+
+                const event = validEvents[Math.floor(Math.random() * validEvents.length)];
 
                 if (event.type === 'instant') {
                     const res = event.effect(state);
@@ -2946,6 +4063,27 @@
                 UI.render();
             },
 
+            buyRareItem(itemId) {
+                if (state.inventory.includes(itemId)) return;
+                const item = state.shopRare.find(i => i.id === itemId);
+                if (!item) return;
+
+                if (state.money < item.price) return UI.showAlert("Sin Fondos", "No tienes suficiente dinero para esta joya.");
+
+                this.updateStat('money', -item.price);
+                state.inventory.push(itemId);
+
+                // Remove from shop
+                state.shopRare = state.shopRare.filter(i => i.id !== itemId);
+
+                UI.log(`¡ADQUIRISTE UNA RELIQUIA! ${item.name}`, "good");
+
+                // Trigger achievements check
+                this.checkAchievements();
+
+                UI.render();
+            },
+
             calculateItemEffects() {
                 let maint = 0;
                 let happy = 0;
@@ -2978,6 +4116,39 @@
                     UI.log("Saliste de fiesta. Te divertiste, pero no conociste a nadie clave.", "normal");
                 }
 
+                UI.render();
+            },
+
+            haveChild() {
+                if (!state.partner || (state.partner.status !== 'living' && state.partner.status !== 'married')) {
+                    return UI.showAlert("No puedes", "Necesitas vivir con tu pareja o estar casado.");
+                }
+                const hospitalCost = 1000;
+                if (state.money < hospitalCost) return UI.showAlert("Fondos Insuficientes", `El parto cuesta $${hospitalCost}.`);
+
+                this.updateStat('money', -hospitalCost);
+
+                const gender = Math.random() > 0.5 ? 'Niño' : 'Niña';
+                const names = gender === 'Niño' ? ['Hugo', 'Mateo', 'Lucas', 'Leo', 'Daniel'] : ['Sofía', 'Lucía', 'Martina', 'Julia', 'Paula'];
+                const name = names[Math.floor(Math.random() * names.length)];
+
+                state.children.push({ name, ageMonths: 0, gender });
+
+                this.updateStat('happiness', 20);
+                UI.showAlert(`¡Ha nacido un bebé! 👶`, `Es un ${gender} llamado ${name}. ¡Felicidades! (-$${hospitalCost})`);
+                if (document.getElementById('home-modal').classList.contains('active')) UI.renderMyHome();
+                UI.renderSocialTab();
+            },
+
+            adoptPet(petId) {
+                const petDef = PETS.find(p => p.id === petId);
+                if (state.money < petDef.cost) return UI.showAlert("Sin dinero", "No puedes adoptar esta mascota.");
+
+                this.updateStat('money', -petDef.cost);
+                state.pets.push({ id: petId, name: petDef.name });
+                this.updateStat('happiness', 10);
+                UI.showAlert("¡Nueva Mascota! 🐾", `Has adoptado a un ${petDef.name}.`);
+                if (document.getElementById('home-modal').classList.contains('active')) UI.renderMyHome();
                 UI.render();
             },
 
@@ -3103,6 +4274,15 @@
                 if (msg) UI.log(msg, "info");
             },
 
+            processChildren() {
+                state.children.forEach(child => {
+                    child.ageMonths++;
+                    if (child.ageMonths === 216) { // 18 Years
+                        UI.showAlert("Hijo Independiente 🎓", `${child.name} ha cumplido 18 años y se va de casa. Ya no genera gastos.`);
+                    }
+                });
+            },
+
             // --- HOUSING & VEHICLE SYSTEM ---
 
             buyHousing(housingId) {
@@ -3153,8 +4333,14 @@
                 // Populate housing cards
                 this.populateHousingCards();
 
+                // Populate housing cards
+                this.populateHousingCards();
+
                 // Populate vehicle cards
                 this.populateVehicleCards();
+
+                // Populate pets
+                this.populatePetCards();
             },
 
             updateLifestyleModalStatus() {
@@ -3165,7 +4351,44 @@
                 document.getElementById('lifestyle-status').textContent = state.status;
                 document.getElementById('lifestyle-current-housing').textContent = currentHousing.name;
                 document.getElementById('lifestyle-current-vehicle').textContent = currentVehicle.name;
+                document.getElementById('lifestyle-money').textContent = `$${state.money.toLocaleString()}`;
+                document.getElementById('lifestyle-status').textContent = state.status;
+                document.getElementById('lifestyle-current-housing').textContent = currentHousing.name;
+                document.getElementById('lifestyle-current-vehicle').textContent = currentVehicle.name;
                 document.getElementById('status-display-btn').textContent = state.status;
+            },
+
+            populatePetCards() {
+                const grid = document.getElementById('pets-grid');
+                if (!grid) return;
+                grid.innerHTML = '';
+
+                PETS.forEach(pet => {
+                    const isOwned = state.pets.some(p => p.id === pet.id);
+                    const canAfford = state.money >= pet.cost;
+
+                    const card = document.createElement('div');
+                    card.className = `lifestyle-card ${isOwned ? 'current' : ''}`;
+
+                    card.innerHTML = `
+                        <div class="lifestyle-card-title">${pet.name}</div>
+                        <div class="lifestyle-card-desc">${pet.desc}</div>
+                        <div class="lifestyle-card-stats">
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">💰 Costo:</span>
+                                <span class="lifestyle-card-stat-value">$${pet.cost}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">🔧 Mant/Mes:</span>
+                                <span class="lifestyle-card-stat-value">$${pet.maint}</span>
+                            </div>
+                        </div>
+                        <button class="lifestyle-card-btn" onclick="Game.adoptPet('${pet.id}')">
+                            ${isOwned ? 'Adoptar Otro' : (canAfford ? 'Adoptar' : 'Sin Fondos')}
+                        </button>
+                    `;
+                    grid.appendChild(card);
+                });
             },
 
             populateHousingCards() {
@@ -3320,6 +4543,31 @@
 
                 const expenses = baseLiving + totalMaint + dietCost;
 
+                // FAMILY EXPENSES
+                // Pets
+                let petCost = 0;
+                state.pets.forEach(p => {
+                    const def = PETS.find(x => x.id === p.id);
+                    if (def) petCost += def.maint;
+                });
+
+                // Children
+                let childCost = 0;
+                state.children.forEach(c => {
+                    if (c.ageMonths < 216) { // Under 18
+                        childCost += CHILD_COST;
+                    }
+                });
+
+                const totalExpenses = expenses + petCost + childCost;
+
+                // Royalties
+                let royalties = 0;
+                if (state.creations) {
+                    state.creations.forEach(c => royalties += c.royalty);
+                }
+                passiveIncome += royalties;
+
                 // 3. Active
                 const job = JOBS.find(j => j.id === state.currJobId);
                 let activeIncome = job ? job.salary : 0;
@@ -3336,7 +4584,8 @@
                     netWorth: cash + investments + realEstate,
                     passiveIncome, // Net
                     activeIncome,
-                    expenses
+                    expenses: totalExpenses,
+                    breakdown: { base: expenses, pets: petCost, children: childCost }
                 };
             }
         };
@@ -3579,6 +4828,15 @@
             document.getElementById('lifestyle-modal').classList.remove('active');
         };
 
+        // Home Modal
+        document.getElementById('home-trigger').onclick = () => {
+            document.getElementById('home-modal').classList.add('active');
+            UI.renderMyHome();
+        };
+        document.getElementById('close-home-modal').onclick = () => {
+            document.getElementById('home-modal').classList.remove('active');
+        };
+
         // Init
         setTimeout(() => DB.init(), 500); // Small delay to ensure Supabase loads
         UI.render();
@@ -3606,6 +4864,7 @@
                     moneyEl.addEventListener('touchstart', (e) => this.startLongPress(e));
                     moneyEl.addEventListener('touchend', () => this.cancelLongPress());
                     moneyEl.addEventListener('touchcancel', () => this.cancelLongPress());
+                    moneyEl.addEventListener('touchmove', () => this.cancelLongPress()); // Cancel on scroll
 
                     // Mouse events (desktop)
                     moneyEl.addEventListener('mousedown', (e) => this.startLongPress(e));
@@ -3652,10 +4911,10 @@
             },
 
             startLongPress(e) {
-                e.preventDefault();
+                // e.preventDefault(); // Removed to allow scrolling interaction
                 this.longPressTimer = setTimeout(() => {
                     this.activate();
-                }, 3000);
+                }, 1500); // Reduced from 3000ms
             },
 
             cancelLongPress() {
@@ -3887,9 +5146,36 @@
             }
         };
 
+        // Trophy Listeners
+        document.getElementById('trophy-trigger').onclick = () => Game.openTrophyGallery();
+        document.getElementById('close-trophy-modal').onclick = () => document.getElementById('trophy-modal').classList.remove('active');
+
         // Initialize Dev Mode
         DevMode.init();
         console.log('🔧 Dev Mode initialized. Press "d+e+v" or long-press money to activate.');
+
+        // ============================================
+        // PWA GLOBAL LISTENERS (Re-added)
+        // ============================================
+
+        // Global Click Sound
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                AudioSys.playClick();
+                if (window.navigator && window.navigator.vibrate) Haptics.pulse();
+            }
+            // Init Audio Context on first interaction
+            AudioSys.init();
+        });
+
+        // Offline Mode Detection
+        window.addEventListener('offline', () => {
+            GameUI.showAlert("🔌 Modo Offline", "Has perdido la conexión. Jugando en modo local.");
+            GameUI.floatText("Offline", "#aaa");
+        });
+        window.addEventListener('online', () => {
+            GameUI.floatText("Online 🌐", "#4dffea");
+        });
 
     </script>
 </body>
