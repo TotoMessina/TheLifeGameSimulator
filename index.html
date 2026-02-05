@@ -102,13 +102,36 @@
             color: #ddd;
             margin-bottom: 8px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            /* Stack title and bar */
             background: #252525;
             padding: 4px 8px;
             border-radius: 4px;
             cursor: pointer;
             border: 1px solid #444;
+            gap: 2px;
+        }
+
+        .job-xp-bg {
+            height: 4px;
+            background: #111;
+            border-radius: 2px;
+            width: 100%;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+
+        .job-xp-fill {
+            height: 100%;
+            background: var(--info-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        .job-row-top {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
         }
 
         .stat-grid {
@@ -618,8 +641,14 @@
         </div>
 
         <div class="job-display" id="job-trigger">
-            <span id="job-title-display">Mendigo ($0/mes)</span>
-            <span>ℹ️ Cambiar</span>
+            <div class="job-row-top">
+                <span id="job-title-display">Mendigo ($0/mes)</span>
+                <span>ℹ️ Cambiar</span>
+            </div>
+            <div class="job-xp-bg">
+                <div class="job-xp-fill" id="job-xp-bar"></div>
+            </div>
+            <div id="diploma-display" style="font-size: 0.7rem; color: var(--accent-color); margin-top: 2px;"></div>
         </div>
 
         <div class="stat-grid">
@@ -703,6 +732,36 @@
     </div>
 
     <!-- Generic Alert Modal -->
+    <div class="modal-overlay" id="end-game-modal" style="z-index: 200;">
+        <div class="modal-content">
+            <h2>¡Jubilación! 👴</h2>
+            <div id="end-game-summary" style="margin: 20px 0; text-align: left;"></div>
+            <h3 id="end-game-score" style="color: var(--gold-color); text-align: center; font-size: 1.5rem;"></h3>
+
+            <h4 style="margin-top:20px; border-bottom:1px solid #333;">Legado (Herencia)</h4>
+            <p style="font-size:0.9rem; color:#aaa;">Elige qué dejarle a tu próxima vida:</p>
+            <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="act-btn" onclick="Game.claimLegacy('money')">
+                    <div class="act-info">
+                        <h4>Fortuna</h4>
+                        <p>Hereda el 10% de tu dinero.</p>
+                    </div>
+                </button>
+                <button class="act-btn" onclick="Game.claimLegacy('genetics')">
+                    <div class="act-info">
+                        <h4>Genética</h4>
+                        <p>Hereda el 20% de tu Inteligencia.</p>
+                    </div>
+                </button>
+            </div>
+
+            <div style="margin-top:20px;">
+                <button class="btn-select-job" style="width:100%" onclick="Game.restartGame()">Nueva Vida (Sin
+                    Herencia)</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="alert-modal" style="z-index: 100;">
         <div class="modal-content" style="max-width:300px; text-align: center;">
             <div class="modal-body">
@@ -721,6 +780,8 @@
                 <button class="close-btn" id="close-act-modal">&times;</button>
             </div>
             <div class="modal-body">
+                <h4 style="margin-top:0; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Acciones Rápidas
+                </h4>
                 <button class="act-btn" onclick="Game.doActivity('study')">
                     <div class="act-info">
                         <h4>Estudiar</h4>
@@ -742,6 +803,12 @@
                     </div>
                     <div class="act-cost">-$100<br>-50 E</div>
                 </button>
+
+                <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Educación
+                    Superior</h4>
+                <div id="courses-list">
+                    <!-- Courses injected by JS -->
+                </div>
             </div>
         </div>
     </div>
@@ -825,20 +892,26 @@
             // Tech Path (Inteligence Focus)
             { id: 'tech_trainee', title: 'Trainee IT', salary: 800, career: 'tech', req: { int: 20 } },
             { id: 'tech_jr', title: 'Junior Dev', salary: 1500, career: 'tech', req: { int: 40, exp: 5 } },
-            { id: 'tech_sr', title: 'Senior Dev', salary: 3500, career: 'tech', req: { int: 70, exp: 20 } },
-            { id: 'tech_cto', title: 'CTO', salary: 8000, career: 'tech', req: { int: 90, exp: 50 } },
+            { id: 'tech_sr', title: 'Senior Dev', salary: 3500, career: 'tech', req: { int: 70, exp: 20, deg: 'dev_bootcamp' } },
+            { id: 'tech_cto', title: 'CTO', salary: 8000, career: 'tech', req: { int: 90, exp: 50, deg: 'dev_bootcamp' } },
 
             // Corporate Path (Balanced)
             { id: 'corp_assist', title: 'Asistente', salary: 1000, career: 'corp', req: { int: 15, happy: 50 } },
             { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 } },
             { id: 'corp_manager', title: 'Gerente', salary: 4000, career: 'corp', req: { int: 60, exp: 30 } },
-            { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70 } },
+            { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70, deg: 'mba_biz' } },
 
             // Sports Path (Health/Energy Focus)
             { id: 'sport_amateur', title: 'Amateur Deport.', salary: 500, career: 'sport', req: { health: 60, energy: 50 } },
             { id: 'sport_pro', title: 'Deportista Pro', salary: 3000, career: 'sport', req: { health: 80, exp: 10 } },
-            { id: 'sport_star', title: 'Estrella Mundial', salary: 15000, career: 'sport', req: { health: 95, exp: 40, happy: 70 } },
-            { id: 'sport_legend', title: 'Leyenda', salary: 25000, career: 'sport', req: { health: 100, exp: 80 } }
+            { id: 'sport_star', title: 'Estrella Mundial', salary: 15000, career: 'sport', req: { health: 95, exp: 40, happy: 70, deg: 'sport_cert' } },
+            { id: 'sport_legend', title: 'Leyenda', salary: 25000, career: 'sport', req: { health: 100, exp: 80, deg: 'sport_cert' } }
+        ];
+
+        const COURSES = [
+            { id: 'dev_bootcamp', title: 'Bootcamp Full Stack', cost: 5000, duration: 6, penalty: 30, degree: 'Dev Certified' },
+            { id: 'mba_biz', title: 'MBA Ejecutivo', cost: 15000, duration: 12, penalty: 40, degree: 'Master Business' },
+            { id: 'sport_cert', title: 'Certificación Entrenador', cost: 3000, duration: 4, penalty: 20, degree: 'Coach Lic.' }
         ];
 
         const SHOP_ITEMS = [
@@ -925,10 +998,24 @@
             experience: 0,
             experience: 0,
             currJobId: 'unemployed',
+            jobXP: 0,
+            promotions: 0,
+            education: [],
+            activeCourse: null,
             inventory: [],
             consecutiveWork: 0,
             sickDuration: 0
         };
+
+        // Load Legacy
+        const legacyData = JSON.parse(localStorage.getItem('lifeSim_legacy'));
+        if (legacyData) {
+            if (legacyData.type === 'money') state.money += legacyData.val;
+            if (legacyData.type === 'genetics') state.intelligence += legacyData.val;
+            console.log("Legacy loaded:", legacyData);
+            // Clear legacy after loading so it's one-time use
+            localStorage.removeItem('lifeSim_legacy');
+        }
 
         // --- 3. UI CONTROLLER ---
         const UI = {
@@ -972,6 +1059,10 @@
                     shopBtn: document.getElementById('shop-trigger'),
                     act: document.getElementById('activity-modal'),
                     closeAct: document.getElementById('close-act-modal'),
+                    closeAct: document.getElementById('close-act-modal'),
+                    endGame: document.getElementById('end-game-modal'),
+                    endSummary: document.getElementById('end-game-summary'),
+                    endScore: document.getElementById('end-game-score'),
                     alert: document.getElementById('alert-modal'),
                     alertTitle: document.getElementById('alert-title'),
                     alertMsg: document.getElementById('alert-msg'),
@@ -1008,6 +1099,24 @@
                 // Job
                 const job = JOBS.find(j => j.id === state.currJobId) || JOBS[0];
                 this.els.jobTitle.innerText = `${job.title} ($${job.salary}/mes)`;
+                // XP Bar
+                document.getElementById('job-xp-bar').style.width = `${state.jobXP}%`;
+
+                // Calculate Energy Cost for display (optional, but good for UX)
+                let energyCost = Math.max(10, 30 - (state.promotions * 2));
+                const workBtnIcon = this.els.btns.work.querySelector('.btn-icon');
+
+                // Diploma Display
+                const diploContainer = document.getElementById('diploma-display');
+                if (state.education && state.education.length > 0) {
+                    diploContainer.innerHTML = '🎓 ' + state.education.map(d => COURSES.find(c => c.id === d)?.degree || d).join(', ');
+                } else {
+                    diploContainer.innerHTML = '';
+                }
+
+                // Active Course Status (in log or header? header is full. maybe just toast logic on nextMonth)
+
+                // Bars
 
                 // Bars
                 const setBar = (type, val, max = 100) => {
@@ -1133,6 +1242,62 @@
 
         // --- 4. GAME LOGIC ---
         const Game = {
+            checkGameOver() {
+                if (state.health <= 0) {
+                    UI.showAlert("GAME OVER", "Has muerto debido a tu mala salud. ☠️", () => location.reload()); // Simple reload for death
+                    return true;
+                }
+                // Retirement Check (Age 65 = 47 years * 12 months = 564 months)
+                if (state.totalMonths >= 564) {
+                    this.showEndGame();
+                    return true;
+                }
+                return false;
+            },
+
+            calculateScore() {
+                let score = 0;
+                score += state.money * 0.01;
+                score += state.happiness * 50;
+                score += state.intelligence * 20;
+                score += state.education.length * 1000;
+
+                const job = JOBS.find(j => j.id === state.currJobId);
+                if (job) score += job.salary * 0.5;
+
+                return Math.floor(score);
+            },
+
+            showEndGame() {
+                const score = this.calculateScore();
+
+                // Submit Score (Fire & Forget)
+                DB.submitScore(score);
+
+                UI.els.modals.endSummary.innerHTML = `
+                    <p><strong>Edad Final:</strong> 65 años</p>
+                    <p><strong>Dinero:</strong> $${state.money.toLocaleString()}</p>
+                    <p><strong>Felicidad:</strong> ${Math.floor(state.happiness)}%</p>
+                    <p><strong>Títulos:</strong> ${state.education.length}</p>
+                    <p><strong>Último Trabajo:</strong> ${JOBS.find(j => j.id === state.currJobId)?.title || 'N/A'}</p>
+                `;
+                UI.els.modals.endScore.innerText = `Puntuación Final: ${score}`;
+                UI.els.modals.endGame.classList.add('active');
+            },
+
+            claimLegacy(type) {
+                let val = 0;
+                if (type === 'money') val = Math.floor(state.money * 0.1);
+                if (type === 'genetics') val = Math.floor(state.intelligence * 0.2);
+
+                localStorage.setItem('lifeSim_legacy', JSON.stringify({ type, val }));
+                location.reload();
+            },
+
+            restartGame() {
+                location.reload();
+            },
+
             updateStat(key, amount) {
                 state[key] += amount;
                 if (key !== 'money' && key !== 'intelligence' && key !== 'experience') {
@@ -1163,19 +1328,83 @@
                     return;
                 }
 
+                // Check for Promotion triggers
+                if (state.jobXP >= 100) {
+                    this.triggerPerformanceReview(job);
+                    return;
+                }
+
                 let earned = job.salary;
 
                 // Item Effects: Wage Multiplier
                 if (state.inventory.includes('suit')) earned *= 1.1;
                 if (state.inventory.includes('laptop') && (job.career === 'tech')) earned *= 1.2;
 
+                // Energy Cost with Efficiency Bonus
+                let energyCost = Math.max(10, 30 - (state.promotions * 2));
+
                 this.updateStat('money', Math.floor(earned));
-                this.updateStat('energy', -30);
+                this.updateStat('energy', -energyCost);
                 this.updateStat('health', -2);
                 this.updateStat('experience', 1);
 
+                // XP Gain
+                if (job.career !== 'none') {
+                    state.jobXP = Math.min(100, state.jobXP + 10);
+                }
+
                 UI.log(`Trabajaste como ${job.title}. Ganaste $${Math.floor(earned)}.`, "normal");
                 UI.render();
+            },
+
+            triggerPerformanceReview(currentJob) {
+                this.showEventModal({
+                    text: "EVALUACIÓN DE DESEMPEÑO: Has alcanzado el máximo de experiencia en tu puesto actual. ¿Qué harás?",
+                    choices: [
+                        {
+                            text: "Exigir Ascenso",
+                            sub: "Riesgo alto. Si fallas, pierdes felicidad. Si ganas, asciendes.",
+                            action: () => {
+                                // 70% chance success
+                                if (Math.random() < 0.7) {
+                                    this.promote(currentJob);
+                                    return { msg: "¡Ascenso concedido! Tu audacia dio frutos.", type: 'good' };
+                                } else {
+                                    state.jobXP = 50; // Setback
+                                    state.happiness -= 20;
+                                    return { msg: "Tu jefe se rió en tu cara. Inténtalo más tarde.", type: 'bad' };
+                                }
+                            }
+                        },
+                        {
+                            text: "Esperar turno",
+                            sub: "Seguro. Tarde o temprano te ascenderán.",
+                            action: () => {
+                                this.promote(currentJob);
+                                return { msg: "Tu paciencia fue recompensada (eventualmente). Ascendido.", type: 'good' };
+                            }
+                        }
+                    ]
+                });
+            },
+
+            promote(currentJob) {
+                // Find next job in same career
+                const careerJobs = JOBS.filter(j => j.career === currentJob.career);
+                const currentIndex = careerJobs.findIndex(j => j.id === currentJob.id);
+
+                if (currentIndex >= 0 && currentIndex < careerJobs.length - 1) {
+                    const nextJob = careerJobs[currentIndex + 1];
+                    state.currJobId = nextJob.id;
+                    state.jobXP = 0;
+                    state.promotions++;
+                } else {
+                    // Top of ladder
+                    state.jobXP = 100; // Keep at max
+                    // Maybe give a bonus?
+                    this.updateStat('money', 5000);
+                    UI.log("¡Eres una leyenda en tu campo! Bono de $5000.", "good");
+                }
             },
 
             doActivity(type) {
@@ -1214,6 +1443,31 @@
                 UI.render();
             },
 
+
+
+            startCourse(courseId) {
+                if (state.activeCourse) {
+                    UI.showAlert("Ya estás estudiando", "Termina tu curso actual antes de empezar otro.");
+                    return;
+                }
+                const course = COURSES.find(c => c.id === courseId);
+                if (state.money < course.cost) {
+                    UI.showAlert("Fondos Insuficientes", `El curso cuesta $${course.cost}.`);
+                    return;
+                }
+                if (state.education.includes(courseId)) {
+                    UI.showAlert("Ya tienes este título", "No puedes cursarlo de nuevo.");
+                    return;
+                }
+
+                this.updateStat('money', -course.cost);
+                state.activeCourse = { id: courseId, monthsLeft: course.duration };
+
+                UI.showAlert("Matriculado", `Has comenzado el ${course.title}. Duración: ${course.duration} meses. Prepárate para perder energía.`);
+                UI.els.modals.act.classList.remove('active');
+                UI.render();
+            },
+
             rest() {
                 state.consecutiveWork = 0; // Reset burnout
                 this.updateStat('energy', 40);
@@ -1225,6 +1479,7 @@
 
             nextMonth() {
                 if (this.checkGameOver()) return;
+                state.totalMonths++;
 
                 state.consecutiveWork = 0; // Reset burnout monthly
 
@@ -1258,7 +1513,25 @@
                     this.updateStat('health', -2);
                     type = 'bad';
                 }
-                state.energy = 100;
+
+                // Education Progress
+                let maxEnergy = 100;
+                if (state.activeCourse) {
+                    state.activeCourse.monthsLeft--;
+                    const course = COURSES.find(c => c.id === state.activeCourse.id);
+                    maxEnergy -= course.penalty; // Apply penalty to max energy logic
+
+                    if (state.activeCourse.monthsLeft <= 0) {
+                        state.education.push(state.activeCourse.id);
+                        UI.showAlert("¡Felicidades!", `Has completado el curso: ${course.title}. Obtuviste el título: ${course.degree}.`);
+                        state.activeCourse = null;
+                        maxEnergy = 100; // Reset penalty
+                    } else {
+                        msg += ` | Estudiando: ${course.title} (-${course.penalty} E Max)`;
+                    }
+                }
+
+                state.energy = maxEnergy;
                 UI.log(msg, type);
                 this.randomEvent();
                 UI.render();
@@ -1291,8 +1564,8 @@
             },
 
             showEventModal(event) {
-                UI.els.eventText.innerText = event.text;
-                UI.els.eventChoices.innerHTML = '';
+                UI.els.modals.eventText.innerText = event.text;
+                UI.els.modals.eventChoices.innerHTML = '';
 
                 event.choices.forEach(choice => {
                     const btn = document.createElement('div');
@@ -1303,7 +1576,7 @@
                         this.applyEffect(res);
                         UI.els.modals.event.classList.remove('active');
                     };
-                    UI.els.eventChoices.appendChild(btn);
+                    UI.els.modals.eventChoices.appendChild(btn);
                 });
 
                 UI.els.modals.event.classList.add('active');
@@ -1321,6 +1594,10 @@
                 if (reqs.exp && state.experience < reqs.exp) missing.push(`Experiencia ${reqs.exp}`);
                 if (reqs.health && state.health < reqs.health) missing.push(`Salud ${reqs.health}`);
                 if (reqs.happy && state.happiness < reqs.happy) missing.push(`Felicidad ${reqs.happy}`);
+                if (reqs.deg && !state.education.includes(reqs.deg)) {
+                    const c = COURSES.find(x => x.id === reqs.deg);
+                    missing.push(`Título: ${c ? c.degree : reqs.deg}`);
+                }
 
                 if (missing.length > 0) {
                     UI.showAlert("Requisitos Insuficientes", `Te falta: ${missing.join(', ')}`);
@@ -1328,6 +1605,8 @@
                 }
 
                 state.currJobId = jobId;
+                state.jobXP = 0; // Reset XP on new job
+                // Do not reset promotions count, as it reflects career efficiency
                 UI.showAlert("¡Contratado!", `Has sido contratado como ${job.title}.`);
                 UI.log(`Nueva carrera: ${job.title}`, "good");
                 UI.render();
@@ -1462,12 +1741,51 @@
                     UI.log("Partida cargada desde la nube.", "info");
                     UI.els.modals.settings.classList.remove('active');
                 }
+            },
+
+            async submitScore(score) {
+                if (!this.user || !sb) return;
+                // Assuming 'leaderboard' table exists: id, user_id, email, score, created_at
+                await sb.from('leaderboard').insert({
+                    user_id: this.user.id,
+                    email: this.user.email,
+                    score: score
+                });
             }
         };
 
-        // --- 6. EVENT LISTENERS ---
+        // Activity Modal (Dynamic Courses)
         UI.els.btns.work.onclick = () => Game.work();
-        UI.els.btns.study.onclick = () => UI.els.modals.act.classList.add('active'); // Opens Act Modal
+        UI.els.btns.study.onclick = () => {
+            const list = document.getElementById('courses-list');
+            list.innerHTML = '';
+
+            COURSES.forEach(c => {
+                const isActive = state.activeCourse && state.activeCourse.id === c.id;
+                const isOwned = state.education && state.education.includes(c.id);
+
+                let statusHtml = '';
+                if (isActive) statusHtml = `<span style="color:#4dffea">En Curso (${state.activeCourse.monthsLeft} meses)</span>`;
+                else if (isOwned) statusHtml = `<span style="color:#aaa">Completado</span>`;
+
+                const btn = document.createElement('button');
+                btn.className = 'act-btn';
+                btn.onclick = () => Game.startCourse(c.id);
+                if (isActive || isOwned) btn.disabled = true;
+
+                btn.innerHTML = `
+                    <div class="act-info">
+                        <h4>${c.title}</h4>
+                        <p>${c.duration} meses. Penalidad: -${c.penalty} Energía/mes.</p>
+                        ${statusHtml}
+                    </div>
+                    <div class="act-cost">-$${c.cost}</div>
+                 `;
+                list.appendChild(btn);
+            });
+
+            UI.els.modals.act.classList.add('active');
+        };
         UI.els.modals.closeAct.onclick = () => UI.els.modals.act.classList.remove('active');
         UI.els.btns.rest.onclick = () => Game.rest();
         UI.els.btns.next.onclick = () => Game.nextMonth();
