@@ -624,6 +624,396 @@
         .hidden {
             display: none;
         }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 10px;
+            background: transparent;
+            border: none;
+            color: #aaa;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-btn.active {
+            color: #fff;
+            border-bottom: 3px solid var(--accent-color);
+        }
+
+        .market-card {
+            background: #1a1a1a;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Finance Panel CSS */
+        .finance-panel {
+            background: #222;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #333;
+        }
+
+        .fin-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .fin-label {
+            color: #888;
+        }
+
+        .fin-val {
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .fin-val.passive {
+            color: #4dffea;
+        }
+
+        .asset-bar {
+            height: 8px;
+            background: #111;
+            border-radius: 4px;
+            display: flex;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .asset-seg {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .seg-cash {
+            background-color: #39FF14;
+        }
+
+        .seg-inv {
+            background-color: #00bcd4;
+        }
+
+        /* Cyan */
+        .seg-re {
+            background-color: #ff9800;
+        }
+
+        /* Orange */
+
+        /* ============================================ */
+        /* DEV MODE STYLES (REMOVE IN PRODUCTION) */
+        /* ============================================ */
+        .dev-panel {
+            background: #0a0a0a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            color: #00ff00;
+        }
+
+        .dev-header {
+            background: #1a1a1a;
+            padding: 10px 15px;
+            border-bottom: 1px solid #00ff00;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .dev-body {
+            padding: 15px;
+        }
+
+        .dev-body h4 {
+            color: #00ff00;
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 5px;
+            margin-top: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
+        .dev-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+
+        .dev-buttons button {
+            background: #1a1a1a;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 8px 15px;
+            cursor: pointer;
+        }
+
+            .dev-input-row label {
+                flex: 1;
+                font-size: 0.85rem;
+            }
+
+            .dev-input-row input {
+                flex: 1;
+                background: #1a1a1a;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                padding: 5px 8px;
+                font-family: 'Courier New', monospace;
+            }
+
+            .dev-input-row button {
+                background: #1a1a1a;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                padding: 5px 15px;
+                cursor: pointer;
+                font-family: 'Courier New', monospace;
+                transition: all 0.2s;
+            }
+
+            .dev-input-row button:hover {
+                background: #00ff00;
+                color: #0a0a0a;
+            }
+
+            #dev-state-viewer {
+                background: #000;
+                border: 1px solid #00ff00;
+                padding: 10px;
+                max-height: 200px;
+                overflow-y: auto;
+                font-size: 0.7rem;
+                color: #00ff00;
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                margin: 10px 0;
+            }
+
+            #dev-auth {
+                text-align: center;
+                padding: 20px;
+            }
+
+            #dev-auth input {
+                background: #1a1a1a;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                padding: 10px;
+                width: 80%;
+                margin-bottom: 10px;
+                font-family: 'Courier New', monospace;
+            }
+
+            #dev-auth button {
+                background: #1a1a1a;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                padding: 10px 30px;
+                cursor: pointer;
+                font-family: 'Courier New', monospace;
+                transition: all 0.2s;
+            }
+
+            #dev-auth button:hover {
+                background: #00ff00;
+                color: #0a0a0a;
+            }
+
+            .dev-panel .close-btn {
+                background: transparent;
+                border: 1px solid #00ff00;
+                color: #00ff00;
+                font-size: 1.5rem;
+                width: 30px;
+                height: 30px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+
+            .dev-panel .close-btn:hover {
+                background: #00ff00;
+                color: #0a0a0a;
+            }
+
+            /* === LIFESTYLE SHOP MODAL === */
+            .lifestyle-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+                max-height: 500px;
+                overflow-y: auto;
+                padding: 5px;
+            }
+
+            .lifestyle-card {
+                background: linear-gradient(135deg, #1e1e2e 0%, #2a2a3e 100%);
+                border: 2px solid #444;
+                border-radius: 12px;
+                padding: 15px;
+                transition: all 0.3s;
+                cursor: pointer;
+                position: relative;
+            }
+
+            .lifestyle-card:hover {
+                border-color: #667eea;
+                transform: translateY(-5px);
+                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            }
+
+            .lifestyle-card.current {
+                border-color: #4CAF50;
+                background: linear-gradient(135deg, #1e3a1e 0%, #2a4a2a 100%);
+            }
+
+            .lifestyle-card.current::before {
+                content: "✓ ACTUAL";
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                background: #4CAF50;
+                color: white;
+                padding: 3px 8px;
+                border-radius: 5px;
+                font-size: 0.7rem;
+                font-weight: bold;
+            }
+
+            .lifestyle-card-title {
+                font-size: 1.2rem;
+                font-weight: bold;
+                margin-bottom: 8px;
+                color: #fff;
+            }
+
+            .lifestyle-card-desc {
+                font-size: 0.85rem;
+                color: #aaa;
+                margin-bottom: 12px;
+                font-style: italic;
+            }
+
+            .lifestyle-card-stats {
+                display: flex;
+                flex-direction: column;
+                gap: 5px;
+                margin-bottom: 12px;
+                font-size: 0.85rem;
+            }
+
+            .lifestyle-card-stat {
+                display: flex;
+                justify-content: space-between;
+                padding: 3px 0;
+            }
+
+            .lifestyle-card-stat-label {
+                color: #999;
+            }
+
+            .lifestyle-card-stat-value {
+                color: #fff;
+                font-weight: bold;
+            }
+
+            .lifestyle-card-stat-value.positive {
+                color: #4CAF50;
+            }
+
+            .lifestyle-card-stat-value.negative {
+                color: #f44336;
+            }
+
+            .lifestyle-card-btn {
+                width: 100%;
+                padding: 10px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border: none;
+                border-radius: 8px;
+                color: white;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .lifestyle-card-btn:hover {
+                transform: scale(1.05);
+                box-shadow: 0 5px 15px rgba(102, 126, 234, 0.5);
+            }
+
+            .lifestyle-card-btn:disabled {
+                background: #555;
+                cursor: not-allowed;
+                opacity: 0.5;
+            }
+
+            .shop-tab {
+                flex: 1;
+                padding: 12px 20px;
+                background: #2a2a3e;
+                border: 2px solid #444;
+                border-radius: 8px;
+                color: #aaa;
+                font-weight: bold;
+                cursor: pointer;
+                transition: all 0.3s;
+            }
+
+            .shop-tab:hover {
+                border-color: #667eea;
+                color: #fff;
+            }
+
+            .shop-tab.active {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-color: #667eea;
+                color: white;
+            }
+
+            .lifestyle-tab-content {
+                animation: fadeIn 0.3s;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
+            @media (max-width: 768px) {
+                .lifestyle-grid {
+                    grid-template-columns: 1fr;
+                }
+            }
     </style>
 </head>
 
@@ -632,12 +1022,26 @@
     <header>
         <div class="header-top">
             <div class="date-display" id="date-display">Año 18 - Mes 1</div>
-            <button class="settings-btn" id="shop-trigger" style="margin-right:10px;">🛒</button>
-            <button class="settings-btn" id="settings-trigger">⚙️</button>
+            <div>
+                <button class="settings-btn" id="shop-trigger" style="margin-right:10px;">🛒</button>
+                <button class="settings-btn" id="settings-trigger">⚙️</button>
+            </div>
         </div>
 
-        <div class="stats-row">
-            <div class="money-display" id="money-display">$0</div>
+        <div class="finance-panel">
+            <div class="fin-row">
+                <span>Efectivo: <span class="money-display" id="money-display">$0</span></span>
+                <span>Neto: <span id="networth-val">$0</span></span>
+            </div>
+            <div class="fin-row" style="font-size:0.8rem;">
+                <span>Activo: <span id="income-active" style="color:var(--accent-color)">$0/m</span></span>
+                <span>Pasivo: <span id="income-passive" class="fin-val passive">$0/m</span></span>
+            </div>
+            <div class="asset-bar" id="fn-asset-bar">
+                <div class="asset-seg seg-cash" style="width:100%"></div>
+                <div class="asset-seg seg-inv" style="width:0%"></div>
+                <div class="asset-seg seg-re" style="width:0%"></div>
+            </div>
         </div>
 
         <div class="job-display" id="job-trigger">
@@ -654,24 +1058,31 @@
         <div class="stat-grid">
             <!-- Row 1 -->
             <div class="bar-group">
-                <div class="bar-label"><span>Salud</span> <span id="health-val">100%</span></div>
+                <div class="bar-label"><span>💪 Salud Física</span> <span id="health-val">100%</span></div>
                 <div class="progress-bg">
                     <div class="progress-fill health-fill" id="health-bar" style="width: 100%;"></div>
                 </div>
             </div>
+            <div class="bar-group">
+                <div class="bar-label"><span>🧠 Salud Mental</span> <span id="mhealth-val">100%</span></div>
+                <div class="progress-bg">
+                    <div class="progress-fill" id="mhealth-bar" style="width: 100%; background: #70a1ff;"></div>
+                </div>
+            </div>
+            <!-- Row 2 -->
             <div class="bar-group">
                 <div class="bar-label"><span>Felicidad</span> <span id="happiness-val">100%</span></div>
                 <div class="progress-bg">
                     <div class="progress-fill happiness-fill" id="happiness-bar" style="width: 100%;"></div>
                 </div>
             </div>
-            <!-- Row 2 -->
             <div class="bar-group">
                 <div class="bar-label"><span>Energía</span> <span id="energy-val">100%</span></div>
                 <div class="progress-bg">
                     <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%;"></div>
                 </div>
             </div>
+            <!-- Row 3 -->
             <div class="bar-group">
                 <div class="bar-label"><span>Inteligencia</span> <span id="intel-val">10</span></div>
                 <div class="progress-bg">
@@ -779,35 +1190,133 @@
                 <span>Actividades</span>
                 <button class="close-btn" id="close-act-modal">&times;</button>
             </div>
-            <div class="modal-body">
-                <h4 style="margin-top:0; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Acciones Rápidas
-                </h4>
-                <button class="act-btn" onclick="Game.doActivity('study')">
-                    <div class="act-info">
-                        <h4>Estudiar</h4>
-                        <p>Mejora tu Inteligencia.</p>
-                    </div>
-                    <div class="act-cost">-$200<br>-25 E</div>
-                </button>
-                <button class="act-btn" onclick="Game.doActivity('gym')">
-                    <div class="act-info">
-                        <h4>Gimnasio</h4>
-                        <p>Ejercicio moderado.</p>
-                    </div>
-                    <div class="act-cost">-$40<br>-20 E</div>
-                </button>
-                <button class="act-btn" onclick="Game.doActivity('marathon')">
-                    <div class="act-info">
-                        <h4>Maratón</h4>
-                        <p>Gran impulso a Salud y Felicidad.</p>
-                    </div>
-                    <div class="act-cost">-$100<br>-50 E</div>
-                </button>
 
-                <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Educación
-                    Superior</h4>
-                <div id="courses-list">
-                    <!-- Courses injected by JS -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="GameUI.switchActTab('courses')">Educación</button>
+                <button class="tab-btn" onclick="GameUI.switchActTab('social')">Social</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="act-tab-courses">
+                    <h4 style="margin-top:0; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Acciones
+                        Rápidas</h4>
+                    <button class="act-btn" onclick="Game.doActivity('study')">
+                        <div class="act-info">
+                            <h4>Estudiar</h4>
+                            <p>Mejora tu Inteligencia.</p>
+                        </div>
+                        <div class="act-cost">-$200<br>-25 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.doActivity('gym')">
+                        <div class="act-info">
+                            <h4>Gimnasio</h4>
+                            <p>Ejercicio moderado.</p>
+                        </div>
+                        <div class="act-cost">-$40<br>-20 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.doActivity('meditate')">
+                        <div class="act-info">
+                            <h4>🧘 Meditación</h4>
+                            <p>Calma tu mente y reduce el estrés.</p>
+                        </div>
+                        <div class="act-cost">Gratis<br>-10 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.doActivity('therapy')">
+                        <div class="act-info">
+                            <h4>🛋️ Terapia</h4>
+                            <p>Sesión profesional para tu salud mental.</p>
+                        </div>
+                        <div class="act-cost">-$100<br>-5 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.doActivity('marathon')">
+                        <div class="act-info">
+                            <h4>Maratón</h4>
+                            <p>Gran impulso a Salud y Felicidad.</p>
+                        </div>
+                        <div class="act-cost">-$100<br>-50 E</div>
+                    </button>
+                    <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Educación
+                        Superior</h4>
+                    <div id="courses-list"></div>
+                </div>
+
+                <div id="act-tab-social" class="hidden">
+                    <button class="act-btn" onclick="Game.party()">
+                        <div class="act-info">
+                            <h4>Salir de Fiesta 🎉</h4>
+                            <p>Pásalo bien y conoce gente nueva.</p>
+                        </div>
+                        <div class="act-cost">-$150<br>-40 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.showLifestyleShop()"
+                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <div class="act-info">
+                            <h4>🏠 Lifestyle Shop</h4>
+                            <p>Compra vivienda y vehículos.</p>
+                        </div>
+                        <div class="act-cost">Estatus: <span id="status-display-btn">0</span></div>
+                    </button>
+                    <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Mis
+                        Contactos</h4>
+                    <div id="friends-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lifestyle Shop Modal -->
+    <div class="modal-overlay" id="lifestyle-modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>🏠 Lifestyle Shop</h2>
+                <button class="close-modal" id="close-lifestyle">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Status Bar -->
+                <div
+                    style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
+                    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;">
+                        <div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">💰 Dinero</div>
+                            <div style="font-size: 1.3rem; font-weight: bold; color: #fff;" id="lifestyle-money">$0
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">⭐ Estatus</div>
+                            <div style="font-size: 1.3rem; font-weight: bold; color: #fff;" id="lifestyle-status">0
+                            </div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">🏠 Vivienda</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #fff;"
+                                id="lifestyle-current-housing">-</div>
+                        </div>
+                        <div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">🚗 Vehículo</div>
+                            <div style="font-size: 1.1rem; font-weight: bold; color: #fff;"
+                                id="lifestyle-current-vehicle">-</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="shop-tabs" style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <button class="shop-tab active" onclick="UI.switchLifestyleTab('housing')" id="tab-housing">
+                        🏠 Viviendas
+                    </button>
+                    <button class="shop-tab" onclick="UI.switchLifestyleTab('vehicles')" id="tab-vehicles">
+                        🚗 Vehículos
+                    </button>
+                </div>
+
+                <!-- Housing Tab -->
+                <div id="lifestyle-tab-housing" class="lifestyle-tab-content">
+                    <div class="lifestyle-grid" id="housing-grid"></div>
+                </div>
+
+                <!-- Vehicles Tab -->
+                <div id="lifestyle-tab-vehicles" class="lifestyle-tab-content hidden">
+                    <div class="lifestyle-grid" id="vehicles-grid"></div>
                 </div>
             </div>
         </div>
@@ -817,13 +1326,33 @@
     <div class="modal-overlay" id="shop-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span>Mercado & Inventario</span>
+                <span>Mercado & Finanzas</span>
                 <button class="close-btn" id="close-shop-modal">&times;</button>
             </div>
-            <div class="modal-body" id="shop-list-container">
-                <!-- Shop items injected here -->
+
+            <div class="tabs">
+                <button class="tab-btn active" onclick="GameUI.switchShopTab('goods')">Bienes</button>
+                <button class="tab-btn" onclick="GameUI.switchShopTab('invest')">Inversiones</button>
+                <button class="tab-btn" onclick="GameUI.switchShopTab('realestate')">Inmuebles</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="shop-tab-goods">
+                    <div id="shop-list-container">
+                        <!-- Shop items injected here -->
+                    </div>
+                </div>
+            </div>
+            <div id="shop-tab-invest" class="hidden">
+                <div id="invest-list-container">
+                    <!-- Investments injected here -->
+                </div>
+            </div>
+            <div id="shop-tab-realestate" class="hidden">
+                <div id="realestate-list-container"></div>
             </div>
         </div>
+    </div>
     </div>
 
     <!-- Settings Modal -->
@@ -834,6 +1363,18 @@
                 <button class="close-btn" id="close-settings-modal">&times;</button>
             </div>
             <div class="modal-body">
+
+                <!-- Diet/Lifestyle Section -->
+                <div class="settings-group">
+                    <h4>🍽️ Estilo de Vida</h4>
+                    <label style="display:block; margin-bottom:5px; color:#aaa;">Dieta:</label>
+                    <select id="diet-selector"
+                        style="width:100%; padding: 10px; margin-bottom: 10px; background: #333; color: white; border: none; border-radius: 5px;">
+                        <option value="fast_food">Comida Rápida ($100/mes, -2 Salud Física)</option>
+                        <option value="balanced" selected>Balanceada ($300/mes)</option>
+                        <option value="chef">Chef Privado ($1000/mes, +2 Salud Física)</option>
+                    </select>
+                </div>
 
                 <!-- Auth Section -->
                 <div class="settings-group" id="auth-section">
@@ -858,6 +1399,134 @@
                     <div class="status-msg" id="save-msg">Inicia sesión para guardar.</div>
                 </div>
 
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- DEV MODE PANEL (REMOVE IN PRODUCTION) -->
+    <!-- ============================================ -->
+    <div class="modal-overlay" id="dev-modal">
+        <div class="dev-panel">
+            <div class="dev-header">
+                <span>🔧 DEV MODE</span>
+                <button class="close-btn" id="close-dev-modal">&times;</button>
+            </div>
+            <div class="dev-body">
+                <!-- Password section (shown first time) -->
+                <div id="dev-auth" class="hidden">
+                    <p style="margin-bottom: 15px;">🔒 Enter password to unlock Dev Mode</p>
+                    <input type="password" id="dev-password" placeholder="Password">
+                    <button id="dev-auth-btn">UNLOCK</button>
+                </div>
+
+                <!-- Main panel (shown after auth) -->
+                <div id="dev-content" class="hidden">
+                    <h4>⚡ CHEATS</h4>
+                    <div class="dev-buttons">
+                        <button onclick="DevMode.addMoney()">+$100,000</button>
+                        <button onclick="DevMode.maxStats()">Max Stats</button>
+                        <button onclick="DevMode.advanceYear()">+1 Year</button>
+                    </div>
+
+                    <h4>📊 FULL STAT EDITOR</h4>
+
+                    <!-- Money & Time -->
+                    <div class="dev-input-row">
+                        <label>💰 Money:</label>
+                        <input type="number" id="dev-money" placeholder="Current: $0">
+                        <button onclick="DevMode.setStat('money')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>📅 Age (months):</label>
+                        <input type="number" id="dev-age" min="0" placeholder="Total months">
+                        <button onclick="DevMode.setStat('totalMonths')">Set</button>
+                    </div>
+
+                    <!-- Health Stats -->
+                    <div class="dev-input-row">
+                        <label>💪 Physical Health:</label>
+                        <input type="number" id="dev-phealth" min="0" max="100" placeholder="0-100">
+                        <button onclick="DevMode.setStat('physicalHealth')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>🧠 Mental Health:</label>
+                        <input type="number" id="dev-mhealth" min="0" max="100" placeholder="0-100">
+                        <button onclick="DevMode.setStat('mentalHealth')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>😊 Happiness:</label>
+                        <input type="number" id="dev-happiness" min="0" max="100" placeholder="0-100">
+                        <button onclick="DevMode.setStat('happiness')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>⚡ Energy:</label>
+                        <input type="number" id="dev-energy" min="0" max="100" placeholder="0-100">
+                        <button onclick="DevMode.setStat('energy')">Set</button>
+                    </div>
+
+                    <!-- Skills -->
+                    <div class="dev-input-row">
+                        <label>🧠 Intelligence:</label>
+                        <input type="number" id="dev-int" min="0" max="100" placeholder="0-100">
+                        <button onclick="DevMode.setStat('intelligence')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>📈 Experience:</label>
+                        <input type="number" id="dev-exp" min="0" placeholder="0+">
+                        <button onclick="DevMode.setStat('experience')">Set</button>
+                    </div>
+
+                    <!-- Career -->
+                    <div class="dev-input-row">
+                        <label>💼 Job XP:</label>
+                        <input type="number" id="dev-jobxp" min="0" max="100" placeholder="0-100">
+                        <button onclick="DevMode.setStat('jobXP')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>🍽️ Diet:</label>
+                        <select id="dev-diet"
+                            style="flex:1; background:#1a1a1a; border:1px solid #00ff00; color:#00ff00; padding:5px; font-family:'Courier New',monospace;">
+                            <option value="fast_food">Fast Food</option>
+                            <option value="balanced">Balanced</option>
+                            <option value="chef">Private Chef</option>
+                        </select>
+                        <button onclick="DevMode.setStat('diet')">Set</button>
+                    </div>
+
+                    <!-- Lifestyle -->
+                    <div class="dev-input-row">
+                        <label>🏠 Housing:</label>
+                        <select id="dev-housing"
+                            style="flex:1; background:#1a1a1a; border:1px solid #00ff00; color:#00ff00; padding:5px; font-family:'Courier New',monospace;">
+                            <option value="couch">Sofá</option>
+                            <option value="studio">Estudio</option>
+                            <option value="apartment">Apartamento</option>
+                            <option value="house">Casa</option>
+                            <option value="mansion">Mansión</option>
+                        </select>
+                        <button onclick="DevMode.setStat('housing')">Set</button>
+                    </div>
+                    <div class="dev-input-row">
+                        <label>🚗 Vehicle:</label>
+                        <select id="dev-vehicle"
+                            style="flex:1; background:#1a1a1a; border:1px solid #00ff00; color:#00ff00; padding:5px; font-family:'Courier New',monospace;">
+                            <option value="none">A Pie</option>
+                            <option value="bike">Bicicleta</option>
+                            <option value="scooter">Scooter</option>
+                            <option value="car_used">Coche Usado</option>
+                            <option value="car_new">Coche Nuevo</option>
+                            <option value="luxury">Lujo</option>
+                            <option value="jet">Jet</option>
+                        </select>
+                        <button onclick="DevMode.setStat('vehicle')">Set</button>
+                    </div>
+
+                    <h4>🖥️ STATE VIEWER</h4>
+                    <pre id="dev-state-viewer">// State will appear here</pre>
+                    <button class="dev-buttons" onclick="DevMode.refreshState()" style="width:100%;">Refresh
+                        State</button>
+                </div>
             </div>
         </div>
     </div>
@@ -912,6 +1581,20 @@
             { id: 'dev_bootcamp', title: 'Bootcamp Full Stack', cost: 5000, duration: 6, penalty: 30, degree: 'Dev Certified' },
             { id: 'mba_biz', title: 'MBA Ejecutivo', cost: 15000, duration: 12, penalty: 40, degree: 'Master Business' },
             { id: 'sport_cert', title: 'Certificación Entrenador', cost: 3000, duration: 4, penalty: 20, degree: 'Coach Lic.' }
+
+        ];
+
+        const ASSETS = [
+            { id: 'stock', name: 'Acciones (S&P)', startPrice: 100, vol: 0.05 },
+            { id: 'crypto', name: 'Bitcoin', startPrice: 5000, vol: 0.25 },
+            { id: 'gold', name: 'Oro', startPrice: 200, vol: 0.02 }
+        ];
+
+        const REAL_ESTATE = [
+            { id: 'apt_small', name: 'Apt. Pequeño', price: 50000, rent: 200, maint: 50 },
+            { id: 'house', name: 'Casa Familiar', price: 150000, rent: 650, maint: 150 },
+            { id: 'office', name: 'Oficina Comercial', price: 500000, rent: 2200, maint: 600 },
+            { id: 'building', name: 'Edificio Residencial', price: 2000000, rent: 9000, maint: 3000 }
         ];
 
         const SHOP_ITEMS = [
@@ -922,6 +1605,66 @@
             { id: 'laptop', name: 'Laptop Gamer', price: 2000, maint: 0, desc: '+20% Salario (Devs) y Felicidad', effect: { type: 'wage_mult_high', val: 1.2 } },
             { id: 'car', name: 'Automóvil', price: 5000, maint: 200, desc: 'Gran estatus (+5 Felicidad/mes)', effect: { type: 'happy_boost', val: 5 } },
             { id: 'apt', name: 'Apartamento Lujoso', price: 50000, maint: 800, desc: 'Vida de rico. +20 Felicidad/mes', effect: { type: 'happy_boost', val: 20 } }
+        ];
+
+        // --- HOUSING OPTIONS ---
+        const HOUSING = [
+            { id: 'couch', name: '🛋️ Sofá de Amigo', cost: 0, maint: 0, happiness: -10, energyRecovery: -5, status: 0, desc: 'Gratis pero incómodo' },
+            { id: 'studio', name: '🏠 Estudio Alquiler', cost: 5000, maint: 800, happiness: 5, energyRecovery: 0, status: 10, desc: 'Tu propio espacio' },
+            { id: 'apartment', name: '🏢 Apartamento', cost: 50000, maint: 1500, happiness: 15, energyRecovery: 5, status: 30, desc: 'Cómodo y espacioso' },
+            { id: 'house', name: '🏡 Casa Propia', cost: 200000, maint: 2500, happiness: 30, energyRecovery: 10, status: 60, desc: 'El sueño americano' },
+            { id: 'mansion', name: '🏰 Mansión', cost: 1000000, maint: 8000, happiness: 50, energyRecovery: 20, status: 100, desc: 'Vida de lujo' }
+        ];
+
+        // --- VEHICLE OPTIONS ---
+        const VEHICLES = [
+            { id: 'none', name: '🚶 A Pie', cost: 0, maint: 0, energyReduction: 0, status: 0, desc: 'Transporte público' },
+            { id: 'bike', name: '🚲 Bicicleta', cost: 500, maint: 20, energyReduction: 2, status: 5, desc: 'Ecológico y saludable' },
+            { id: 'scooter', name: '🛵 Scooter', cost: 3000, maint: 100, energyReduction: 5, status: 15, desc: 'Rápido en la ciudad' },
+            { id: 'car_used', name: '🚗 Coche Usado', cost: 15000, maint: 300, energyReduction: 8, status: 25, desc: 'Funcional y confiable' },
+            { id: 'car_new', name: '🚙 Coche Nuevo', cost: 40000, maint: 500, energyReduction: 10, status: 50, desc: 'Comodidad moderna' },
+            { id: 'luxury', name: '🏎️ Coche de Lujo', cost: 150000, maint: 2000, energyReduction: 12, status: 80, desc: 'Estatus y poder' },
+            { id: 'jet', name: '✈️ Jet Privado', cost: 5000000, maint: 50000, energyReduction: 15, status: 150, desc: 'El cielo es el límite' }
+        ];
+
+        // --- ELITE EVENTS ---
+        const ELITE_EVENTS = [
+            {
+                id: 'business_dinner',
+                minStatus: 100,
+                text: '🍷 Cena de Negocios: Un CEO te invita a cenar.',
+                effect: () => {
+                    if (Math.random() > 0.5) {
+                        return { money: 5000, msg: 'Hiciste contactos valiosos. +$5000', type: 'good' };
+                    } else {
+                        return { experience: 10, msg: 'Aprendiste de los mejores. +10 Exp', type: 'good' };
+                    }
+                }
+            },
+            {
+                id: 'yacht_party',
+                minStatus: 150,
+                text: '🛥️ Fiesta en Yate: Invitación exclusiva.',
+                effect: () => {
+                    return { happiness: 20, msg: 'Conociste gente influyente. +20 Felicidad', type: 'good' };
+                }
+            },
+            {
+                id: 'investment_tip',
+                minStatus: 120,
+                text: '💼 Tip de Inversión: Un magnate comparte un secreto.',
+                effect: () => {
+                    return { money: 10000, msg: 'Invertiste sabiamente. +$10,000', type: 'good' };
+                }
+            },
+            {
+                id: 'exclusive_club',
+                minStatus: 180,
+                text: '🎩 Club Exclusivo: Te invitan a un club privado.',
+                effect: () => {
+                    return { happiness: 15, experience: 5, msg: 'Networking de élite. +Exp +Felicidad', type: 'good' };
+                }
+            }
         ];
 
         // --- EVENTS DB ---
@@ -991,21 +1734,38 @@
         let state = {
             totalMonths: 0,
             money: 600,
-            health: 100,
+            physicalHealth: 100,
+            mentalHealth: 100,
             happiness: 100,
+            diet: 'balanced', // fast_food, balanced, chef
             intelligence: 10,
             energy: 100,
             experience: 0,
-            experience: 0,
-            currJobId: 'unemployed',
             jobXP: 0,
             promotions: 0,
+            currJobId: 'unemployed', // Current job ID
             education: [],
             activeCourse: null,
             inventory: [],
             consecutiveWork: 0,
-            sickDuration: 0
+            sickDuration: 0,
+            portfolio: { stock: { qty: 0, avg: 0 }, crypto: { qty: 0, avg: 0 }, gold: { qty: 0, avg: 0 } },
+            marketPrices: { stock: 100, crypto: 5000, gold: 200 },
+            realEstate: [], // Array of owned IDs
+            rePrices: {}, // Dynamic prices for RE
+            pendingEvent: null, // { id, timer }
+            financialFreedom: false,
+            friends: [], // {id, name, jobTitle, relation, bonusJobId}
+            partner: null, // {name, salary, relation, status: 'dating'|'living'|'married', jobTitle}
+            housing: 'couch', // Current housing ID
+            vehicle: 'none', // Current vehicle ID
+            status: 0 // Social status (0-250+)
         };
+
+        // Init RE Prices if empty
+        REAL_ESTATE.forEach(re => {
+            if (!state.rePrices[re.id]) state.rePrices[re.id] = re.price;
+        });
 
         // Load Legacy
         const legacyData = JSON.parse(localStorage.getItem('lifeSim_legacy'));
@@ -1029,12 +1789,14 @@
                     happy: document.getElementById('happiness-bar'),
                     energy: document.getElementById('energy-bar'),
                     intel: document.getElementById('intel-bar'),
+                    mhealth: document.getElementById('mhealth-bar')
                 },
                 vals: {
                     health: document.getElementById('health-val'),
                     happy: document.getElementById('happiness-val'),
                     energy: document.getElementById('energy-val'),
                     intel: document.getElementById('intel-val'),
+                    mhealth: document.getElementById('mhealth-val')
                 },
                 log: document.getElementById('event-log'),
                 btns: {
@@ -1096,6 +1858,34 @@
                 // Money Animation
                 this.animateNumber(this.els.money, parseInt(this.els.money.innerText.replace(/[^0-9-]/g, '')) || 0, state.money);
 
+                // Finance Panel
+                const fin = Game.calculateFinancials();
+                document.getElementById('networth-val').innerText = `$${Math.floor(fin.netWorth).toLocaleString()}`;
+
+                // Color passive income
+                const piEl = document.getElementById('income-passive');
+                piEl.innerText = `$${Math.floor(fin.passiveIncome)}/m`;
+
+                const aiEl = document.getElementById('income-active');
+                aiEl.innerText = `$${Math.floor(fin.activeIncome)}/m`;
+
+                // Bars
+                const safeNet = Math.max(1, fin.netWorth); // Avoid /0
+                const cashPct = Math.max(0, (fin.cash / safeNet) * 100);
+                const invPct = Math.max(0, (fin.investments / safeNet) * 100);
+                const rePct = Math.max(0, (fin.realEstate / safeNet) * 100);
+
+                const bar = document.getElementById('fn-asset-bar');
+                bar.children[0].style.width = `${cashPct}%`;
+                bar.children[1].style.width = `${invPct}%`;
+                bar.children[2].style.width = `${rePct}%`;
+
+                // Achievement Check
+                if (fin.passiveIncome >= fin.expenses && !state.financialFreedom) {
+                    state.financialFreedom = true;
+                    this.showAlert("¡LIBERTAD FINANCIERA! 🚀", "Tus ingresos pasivos superan tus gastos. ¡Eres libre!");
+                }
+
                 // Job
                 const job = JOBS.find(j => j.id === state.currJobId) || JOBS[0];
                 this.els.jobTitle.innerText = `${job.title} ($${job.salary}/mes)`;
@@ -1125,9 +1915,13 @@
                     this.els.vals[type].innerText = type === 'intel' ? val : `${Math.floor(val)}%`;
                 };
 
-                setBar('health', state.health);
-                if (state.health < 20) this.els.bars.health.classList.add('critical');
+                setBar('health', state.physicalHealth);
+                if (state.physicalHealth < 20) this.els.bars.health.classList.add('critical');
                 else this.els.bars.health.classList.remove('critical');
+
+                setBar('mhealth', state.mentalHealth);
+                if (state.mentalHealth < 20) this.els.bars.mhealth.classList.add('critical');
+                else this.els.bars.mhealth.classList.remove('critical');
 
                 setBar('happy', state.happiness);
                 setBar('energy', state.energy);
@@ -1237,8 +2031,267 @@
                     this.els.modals.alert.classList.remove('active');
                     if (callback) callback();
                 };
+            },
+
+            switchShopTab(tab) {
+                const goods = document.getElementById('shop-tab-goods');
+                const invest = document.getElementById('shop-tab-invest');
+                const re = document.getElementById('shop-tab-realestate');
+                const btns = document.querySelectorAll('.tab-btn'); // Note: this selects ALL tab-btns globally not scoped.
+                // Fixing selector to be scoped to shop modal manually/implicitly by order or ID would be better but for now carefully indexing
+
+                // Let's rely on event.target logic or explicit IDs in future. For now, we know the Shop ones are first rendered?
+                // Actually with Act Modal also having tabs, querySelectorAll('.tab-btn') gets ALL active tabs.
+                // We better Scope this or use specific IDs for buttons.
+                // IMPORTANT: Since we added tabs to Act Modal, we need to be careful.
+                // Refactoring to simple ID toggling to be safe.
+
+                const shopBtns = document.getElementById('shop-modal').querySelectorAll('.tab-btn');
+
+                goods.classList.add('hidden');
+                invest.classList.add('hidden');
+                re.classList.add('hidden');
+                shopBtns.forEach(b => b.classList.remove('active'));
+
+                if (tab === 'goods') {
+                    goods.classList.remove('hidden');
+                    shopBtns[0].classList.add('active');
+                } else if (tab === 'invest') {
+                    invest.classList.remove('hidden');
+                    shopBtns[1].classList.add('active');
+                    this.renderInvestments();
+                } else if (tab === 'realestate') {
+                    re.classList.remove('hidden');
+                    shopBtns[2].classList.add('active');
+                    this.renderRealEstate();
+                }
+            },
+
+            switchLifestyleTab(tab) {
+                const housingTab = document.getElementById('lifestyle-tab-housing');
+                const vehiclesTab = document.getElementById('lifestyle-tab-vehicles');
+                const housingBtn = document.getElementById('tab-housing');
+                const vehiclesBtn = document.getElementById('tab-vehicles');
+
+                // Hide all tabs
+                housingTab.classList.add('hidden');
+                vehiclesTab.classList.add('hidden');
+
+                // Remove active from all buttons
+                housingBtn.classList.remove('active');
+                vehiclesBtn.classList.remove('active');
+
+                // Show selected tab
+                if (tab === 'housing') {
+                    housingTab.classList.remove('hidden');
+                    housingBtn.classList.add('active');
+                } else if (tab === 'vehicles') {
+                    vehiclesTab.classList.remove('hidden');
+                    vehiclesBtn.classList.add('active');
+                }
+            },
+
+            switchActTab(tab) {
+                const courses = document.getElementById('act-tab-courses');
+                const social = document.getElementById('act-tab-social');
+                const actBtns = document.getElementById('activity-modal').querySelectorAll('.tab-btn');
+
+                courses.classList.add('hidden');
+                social.classList.add('hidden');
+                actBtns.forEach(b => b.classList.remove('active'));
+
+                if (tab === 'courses') {
+                    courses.classList.remove('hidden');
+                    actBtns[0].classList.add('active');
+                    Game.renderCourses(); // Helper to re-render courses
+                } else {
+                    social.classList.remove('hidden');
+                    actBtns[1].classList.add('active');
+                    this.renderSocialTab();
+                }
+            },
+
+            renderSocialTab() {
+                const list = document.getElementById('friends-list');
+                list.innerHTML = '';
+
+                // --- PARTNER SECTION ---
+                const pSection = document.createElement('div');
+                pSection.style.cssText = "border-bottom: 1px solid #444; margin-bottom: 15px; padding-bottom: 10px;";
+
+                if (!state.partner) {
+                    pSection.innerHTML = `
+                        <h4 style="color:#aaa; margin-top:0;">Situación Sentimental</h4>
+                        <div class="market-card" style="justify-content:center; padding: 20px;">
+                            <button class="act-btn" style="width:100%;" onclick="Game.findLove()">
+                                Buscar Pareja ♥ ($100)
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    const p = state.partner;
+                    const statusLabels = { 'dating': 'Saliendo', 'living': 'Conviviendo', 'married': 'Casados' };
+                    let nextStepBtn = '';
+
+                    if (p.status === 'dating' && p.relation > 60) {
+                        nextStepBtn = `<button class="act-btn" style="flex:1; background:#00bcd4;" onclick="Game.advanceRel()">Mudarse Juntos</button>`;
+                    } else if (p.status === 'living' && p.relation > 90) {
+                        nextStepBtn = `<button class="act-btn" style="flex:1; background:#ff9800;" onclick="Game.advanceRel()">Proponer Matrimonio ($2k)</button>`;
+                    }
+
+                    pSection.innerHTML = `
+                        <h4 style="color:#aaa; margin-top:0;">💕 Pareja: ${statusLabels[p.status]}</h4>
+                        <div class="market-card" style="display:block;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                                <div>
+                                    <div style="font-weight:bold; color:#ff69b4;">${p.name}</div>
+                                    <div style="font-size:0.8rem; color:#aaa;">${p.jobTitle} ($${p.salary}/m)</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:0.9rem;">Relación: ${p.relation}%</div>
+                                </div>
+                            </div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="act-btn" style="flex:1;" onclick="Game.datePartner()">Cita ($80)</button>
+                                ${nextStepBtn}
+                                <button class="act-btn" style="flex:1; background:#552222;" onclick="Game.breakup()">Romper</button>
+                            </div>
+                        </div>
+                    `;
+                }
+                list.appendChild(pSection);
+
+                // --- FRIENDS SECTION ---
+                const fHeader = document.createElement('h4');
+                fHeader.innerText = "Amigos & Contactos";
+                fHeader.style.color = "#aaa";
+                list.appendChild(fHeader);
+
+                if (state.friends.length === 0) {
+                    const empty = document.createElement('p');
+                    empty.className = 'status-msg';
+                    empty.innerText = 'No tienes amigos. ¡Sal de fiesta!';
+                    list.appendChild(empty);
+                } else {
+                    state.friends.forEach(f => {
+                        const isNet = f.relation > 80;
+
+                        const el = document.createElement('div');
+                        el.className = 'market-card';
+                        el.innerHTML = `
+                       <div>
+                           <div style="font-weight:bold; color:#fff;">${f.name} ${isNet ? '⭐' : ''}</div>
+                           <div style="font-size:0.8rem; color:#aaa;">${f.jobTitle}</div>
+                           <div style="font-size:0.75rem; color:${isNet ? '#4dffea' : '#888'};">Relación: ${f.relation}/100</div>
+                       </div>
+                       <button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" onclick="Game.maintainFriend('${f.id}')">
+                           Llamar ($50)
+                       </button>
+                    `;
+                        list.appendChild(el);
+                    });
+                }
+            },
+
+            renderRealEstate() {
+                const container = document.getElementById('realestate-list-container');
+                container.innerHTML = '';
+
+                REAL_ESTATE.forEach(prop => {
+                    // Check how many we own of this type (initially designed as unique in plan but lets support multiples or just one logic? 
+                    // Plan said "Array of strings (IDs)". If we allow multiple, we count them.
+                    const ownedCount = state.realEstate.filter(id => id === prop.id).length;
+                    const currentPrice = state.rePrices[prop.id];
+
+                    // Net Income calc
+                    const net = prop.rent - prop.maint;
+
+                    const el = document.createElement('div');
+                    el.className = 'market-card';
+                    el.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; margin-bottom:10px; padding:10px; background:#1e1e1e; border:1px solid #444; border-radius:6px;";
+
+                    el.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:5px;">
+                            <span style="font-weight:bold; color:#fff; font-size:1rem;">${prop.name}</span>
+                            <span style="color:var(--accent-color); font-weight:bold;">$${currentPrice.toLocaleString()}</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem; color:#aaa; margin-bottom:8px;">
+                            <span>Renta: $${prop.rent} | Mant: $${prop.maint}</span>
+                            <span>Neto: <span style="color:#${net > 0 ? '4dffea' : 'ff3939'}">+$${net}/mes</span></span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
+                            <span style="font-size:0.8rem; color:#888;">Propiedad: ${ownedCount}</span>
+                            <div style="display:flex; gap:5px;">
+                                <button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" onclick="Game.buyRealEstate('${prop.id}')">Comprar</button>
+                                ${ownedCount > 0 ? `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" onclick="Game.sellRealEstate('${prop.id}')">Vender</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            },
+
+            renderInvestments() {
+                const container = document.getElementById('invest-list-container');
+                container.innerHTML = '';
+
+                ASSETS.forEach(asset => {
+                    const price = state.marketPrices[asset.id];
+                    const holding = state.portfolio[asset.id];
+                    const profit = (price - holding.avg) * holding.qty;
+                    const profitClass = profit >= 0 ? 'good' : 'bad';
+                    const profitTxt = profit !== 0 ? `<br><span class="${profitClass}">P/L: $${profit.toFixed(0)}</span>` : '';
+
+                    const el = document.createElement('div');
+                    el.className = 'market-card';
+                    el.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:#fff;">${asset.name}</div>
+                            <div style="font-size:0.8rem; color:#aaa;">Precio: $${price.toFixed(2)}</div>
+                            <div style="font-size:0.8rem;">Posees: ${holding.qty} (Media: $${holding.avg.toFixed(0)})${profitTxt}</div>
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                             <button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" onclick="Game.trade('${asset.id}', 'buy')">Comprar</button>
+                             <button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" onclick="Game.trade('${asset.id}', 'sell')">Vender</button>
+                        </div>
+                    `;
+                    container.appendChild(el);
+                });
+            },
+
+            renderShop() {
+                const list = this.els.modals.shopList;
+                list.innerHTML = ''; // Start fresh
+
+                // If tab is Invest, re-render invest
+                const investTab = document.getElementById('shop-tab-invest');
+                if (investTab && !investTab.classList.contains('hidden')) {
+                    this.renderInvestments();
+                    return;
+                }
+
+                // Render Goods
+                SHOP_ITEMS.forEach(item => {
+                    const owned = state.inventory.includes(item.id);
+                    const el = document.createElement('div');
+                    // Style inline for simplicity as requested
+                    el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #333;";
+
+                    el.innerHTML = `
+                        <div>
+                            <div style="font-weight:bold; color:var(--text-color);">${item.name}</div>
+                            <div style="font-size:0.8rem; color:#888;">${item.desc}</div>
+                            <div style="font-size:0.8rem; color:#aaa;">Mant: $${item.maint}/mes</div>
+                        </div>
+                        <button class="btn-select-job" ${owned ? 'disabled' : ''} onclick="Game.buyItem('${item.id}')">
+                            ${owned ? 'Comprado' : '$' + item.price}
+                        </button>
+                    `;
+                    list.appendChild(el);
+                });
             }
         };
+        window.GameUI = UI;
 
         // --- 4. GAME LOGIC ---
         const Game = {
@@ -1300,7 +2353,7 @@
 
             updateStat(key, amount) {
                 state[key] += amount;
-                if (key !== 'money' && key !== 'intelligence' && key !== 'experience') {
+                if (['happiness', 'physicalHealth', 'mentalHealth', 'energy', 'intelligence', 'experience'].includes(key)) {
                     if (state[key] > 100) state[key] = 100;
                     if (state[key] < 0) state[key] = 0;
                 }
@@ -1317,14 +2370,21 @@
                 // Burnout Check
                 state.consecutiveWork++;
                 if (state.consecutiveWork > 2) {
-                    this.updateStat('health', -10);
+                    this.updateStat('physicalHealth', -5);
+                    this.updateStat('mentalHealth', -15);
                     this.updateStat('happiness', -15);
-                    UI.log("¡BURNOUT! Estás trabajando demasiado seguido. Descansa un poco.", "bad");
+                    UI.log("¡BURNOUT! Estás trabajando demasiado seguido. Tu mente y cuerpo sufren.", "bad");
                 }
 
                 const job = JOBS.find(j => j.id === state.currJobId);
                 if (state.currJobId === 'unemployed') {
                     UI.log("No tienes empleo. Consigue uno tocando la barra de arriba.", "info");
+                    return;
+                }
+
+                if (!job) {
+                    UI.log("Error: Trabajo no encontrado. Contacta soporte.", "bad");
+                    console.error("Job not found for ID:", state.currJobId);
                     return;
                 }
 
@@ -1343,9 +2403,16 @@
                 // Energy Cost with Efficiency Bonus
                 let energyCost = Math.max(10, 30 - (state.promotions * 2));
 
+                // Vehicle reduces energy cost
+                const vehicle = VEHICLES.find(v => v.id === state.vehicle);
+                if (vehicle) {
+                    energyCost = Math.max(5, energyCost - vehicle.energyReduction);
+                }
+
                 this.updateStat('money', Math.floor(earned));
                 this.updateStat('energy', -energyCost);
-                this.updateStat('health', -2);
+                this.updateStat('physicalHealth', -1);
+                this.updateStat('mentalHealth', -2); // Work is stressful
                 this.updateStat('experience', 1);
 
                 // XP Gain
@@ -1426,17 +2493,30 @@
                     if (state.money < 40) return UI.log("Dinero insuficiente.", "bad");
                     this.updateStat('money', -40);
                     this.updateStat('energy', -20);
-                    this.updateStat('health', 5);
+                    this.updateStat('physicalHealth', 5);
+                    this.updateStat('mentalHealth', 2);
                     this.updateStat('happiness', 2);
-                    UI.log("Buena sesión en el gym. +Salud, +Felicidad.", "good");
+                    UI.log("Gym session: ¡Te sientes fuerte!", "good");
+                }
+                else if (type === 'meditate') {
+                    this.updateStat('energy', -10);
+                    this.updateStat('mentalHealth', 5);
+                    UI.log("Meditación: Tu mente se aclara.", "good");
+                }
+                else if (type === 'therapy') {
+                    if (state.money < 100) return UI.log("No tienes $100.", "bad");
+                    this.updateStat('money', -100);
+                    this.updateStat('energy', -5);
+                    this.updateStat('mentalHealth', 15);
+                    UI.log("Terapia: Has procesado tus emociones.", "good");
                 }
                 else if (type === 'marathon') {
                     if (state.money < 100) return UI.log("Dinero insuficiente.", "bad");
                     this.updateStat('money', -100);
                     this.updateStat('energy', -50);
-                    this.updateStat('health', 15);
+                    this.updateStat('physicalHealth', 15);
                     this.updateStat('happiness', 10);
-                    UI.log("Corriste una maratón. ¡Te sientes genial!", "good");
+                    UI.log("Corriste una maratón. ¡Gran logro físico!", "good");
                 }
 
                 UI.els.modals.act.classList.remove('active');
@@ -1486,32 +2566,75 @@
                 // Sickness Check
                 if (state.sickDuration > 0) {
                     state.sickDuration--;
-                    UI.log("Sigues recuperándote de tu enfermedad...", "bad");
-                } else if (state.health < 30) {
+                    UI.log("Sigues enfermo (-Salud Física).", "bad");
+                    this.updateStat('physicalHealth', -5);
+                } else if (state.physicalHealth < 30) {
                     if (Math.random() < 0.3) {
                         state.sickDuration = 2;
-                        UI.log("¡Te has enfermado gravemente! No podrás trabajar por 2 meses.", "bad");
+                        UI.log("¡Te has enfermado gravemente!", "bad");
                         this.updateStat('happiness', -20);
                     } else {
-                        UI.log("Tu salud es frágil. Cuidate o te enfermarás.", "info");
+                        UI.log("Tu cuerpo se siente débil. Cuidate.", "info");
                     }
                 }
 
-                // Mantenimiento de Items
+                // Aging (Over 50 years = 600 months)
+                if (state.totalMonths > 600) {
+                    this.updateStat('physicalHealth', -2); // Extra decay
+                    if (Math.random() < 0.2) UI.log("Te duelen las articulaciones por la edad.", "info");
+                }
+
+                // Diet Logic
+                let dietCost = 0;
+                let dietHealth = 0;
+                if (state.diet === 'fast_food') { dietCost = 100; dietHealth = -2; }
+                else if (state.diet === 'balanced') { dietCost = 300; dietHealth = 0; }
+                else if (state.diet === 'chef') { dietCost = 1000; dietHealth = 2; }
+
+                this.updateStat('physicalHealth', dietHealth);
+
+                // Housing & Vehicle Effects
+                const housing = HOUSING.find(h => h.id === state.housing);
+                const vehicle = VEHICLES.find(v => v.id === state.vehicle);
+
+                if (housing) {
+                    this.updateStat('happiness', housing.happiness);
+                    this.updateStat('energy', housing.energyRecovery);
+                }
+
+                // Mantenimiento de Items & Diet Cost & Housing & Vehicle
                 let stats = this.calculateItemEffects();
-                let totalCost = CONFIG.costOfLiving + stats.maint;
+                let totalCost = CONFIG.costOfLiving + stats.maint + dietCost;
+
+                if (housing) totalCost += housing.maint;
+                if (vehicle) totalCost += vehicle.maint;
 
                 this.updateStat('money', -totalCost);
                 this.updateStat('happiness', stats.happy);
 
-                let msg = `Mes nuevo. Gastos: -$${totalCost} (Vida + Mantenimiento)`;
+                let logTone = state.mentalHealth < 30 ? "pessimistic" : "normal";
+                let msg = state.mentalHealth < 30 ? `Todo es gris. Gastos: -$${totalCost}.` : `Mes nuevo. Gastos: -$${totalCost} (Vida + Mant)`;
                 let type = 'normal';
 
                 if (state.money < 0) {
-                    msg += " ¡Estás en DEUDA! (-Felicidad)";
-                    this.updateStat('happiness', -5);
-                    this.updateStat('health', -2);
+                    msg += " DEUDA.";
+                    this.updateStat('mentalHealth', -10);
+                    this.updateStat('happiness', -10);
                     type = 'bad';
+                }
+
+                // Elite Events (5% chance if status >= 100)
+                if (state.status >= 100 && Math.random() < 0.05) {
+                    const eligibleEvents = ELITE_EVENTS.filter(e => state.status >= e.minStatus);
+                    if (eligibleEvents.length > 0) {
+                        const event = eligibleEvents[Math.floor(Math.random() * eligibleEvents.length)];
+                        UI.log(event.text, 'info');
+                        const result = event.effect();
+                        if (result.money) this.updateStat('money', result.money);
+                        if (result.experience) this.updateStat('experience', result.experience);
+                        if (result.happiness) this.updateStat('happiness', result.happiness);
+                        UI.log(result.msg, result.type);
+                    }
                 }
 
                 // Education Progress
@@ -1532,8 +2655,150 @@
                 }
 
                 state.energy = maxEnergy;
+
+                // Market Fluctuation
+                this.updateMarket();
+                this.handleMarketEvents(); // Handle crashes/booms
+
+                // Real Estate Logic
+                this.processRealEstate();
+
+                // Social Decay
+                this.socialDecay();
+
+                // Partner Logic
+                if (state.partner) {
+                    state.partner.relation -= 2;
+                    if (state.partner.relation < 0) state.partner.relation = 0;
+
+                    // Effects
+                    if (state.partner.relation > 80) {
+                        this.updateStat('happiness', 10);
+                        msg += " 😍";
+                    } else if (state.partner.relation < 30) {
+                        this.updateStat('happiness', -5);
+                        this.updateStat('mentalHealth', -5); // Toxic relationship
+                        msg += " 💔";
+                    }
+
+                    // Random Argument (2%)
+                    if (Math.random() < 0.02) {
+                        UI.showAlert("Discusión de Pareja", "Las cosas están tensas. ¡Cuidado!", () => {
+                            state.partner.relation -= 15;
+                            UI.renderSocialTab();
+                        });
+                    }
+                }
+
+                // Log History (Cloud)
+                const financials = this.calculateFinancials();
+                DB.logHistory(state.totalMonths, financials);
+
                 UI.log(msg, type);
                 this.randomEvent();
+                UI.render();
+            },
+
+            updateMarket() {
+                let report = "";
+                ASSETS.forEach(asset => {
+                    const volatility = asset.vol;
+                    const changePct = (Math.random() - 0.5) * 2 * volatility; // e.g. -0.05 to +0.05
+                    let newPrice = state.marketPrices[asset.id] * (1 + changePct);
+                    newPrice = Math.max(1, newPrice); // Min price 1
+
+                    state.marketPrices[asset.id] = newPrice;
+
+                    // Log big moves
+                    if (changePct > volatility * 0.8) report += `🚀 ${asset.name} sube con fuerza! `;
+                    if (changePct < -volatility * 0.8) report += `📉 ${asset.name} se desploma! `;
+                });
+                if (report) UI.log(report, "info");
+            },
+
+            trade(assetId, type) { // type: 'buy', 'sell'
+                const price = state.marketPrices[assetId];
+                const holding = state.portfolio[assetId];
+
+                if (type === 'buy') {
+                    if (state.money < price) {
+                        UI.showAlert("Fondos Insuficientes", "No tienes dinero para comprar este activo.");
+                        return;
+                    }
+                    this.updateStat('money', -price);
+
+                    // Calc Avg Price
+                    const totalVal = (holding.qty * holding.avg) + price;
+                    holding.qty++;
+                    holding.avg = totalVal / holding.qty;
+                    UI.renderShop(); // Re-render to show update
+                    UI.render(); // Update money header
+                } else {
+                    if (holding.qty <= 0) return;
+
+                    this.updateStat('money', price);
+                    holding.qty--;
+                    if (holding.qty === 0) holding.avg = 0;
+
+                    UI.renderShop();
+                    UI.render();
+                }
+            },
+
+            processRealEstate() {
+                // 1. Appreciation (0.5%)
+                let totalValue = 0;
+                Object.keys(state.rePrices).forEach(id => {
+                    const oldP = state.rePrices[id];
+                    const newP = oldP * 1.005; // +0.5%
+                    state.rePrices[id] = newP;
+                });
+
+                // 2. Income
+                let totalIncome = 0;
+                let totalMaint = 0;
+
+                state.realEstate.forEach(ownedId => {
+                    const prop = REAL_ESTATE.find(p => p.id === ownedId);
+                    if (prop) {
+                        totalIncome += prop.rent;
+                        totalMaint += prop.maint;
+                    }
+                });
+
+                if (state.realEstate.length > 0) {
+                    const net = totalIncome - totalMaint;
+                    this.updateStat('money', net);
+                    UI.log(`Inmuebles: +$${totalIncome} Renta - $${totalMaint} Mant. = $${net} Neto.`, "good");
+                }
+            },
+
+            buyRealEstate(id) {
+                const price = state.rePrices[id];
+                if (state.money < price) {
+                    UI.showAlert("Fondos Insuficientes", "No te alcanza para la inicial.");
+                    return;
+                }
+                this.updateStat('money', -price);
+                if (!state.realEstate) state.realEstate = [];
+                state.realEstate.push(id);
+
+                const prop = REAL_ESTATE.find(p => p.id === id);
+                UI.log(`¡Nueva Propiedad! Compraste: ${prop.name}`, "good");
+                UI.renderRealEstate(); // Force re-render of this tab
+                UI.render();
+            },
+
+            sellRealEstate(id) {
+                const idx = state.realEstate.indexOf(id);
+                if (idx === -1) return;
+
+                const price = state.rePrices[id];
+                state.realEstate.splice(idx, 1);
+                this.updateStat('money', price);
+
+                UI.log(`Vendiste propiedad por $${Math.floor(price)}.`, "good");
+                UI.renderRealEstate();
                 UI.render();
             },
 
@@ -1553,7 +2818,9 @@
 
             applyEffect(res) {
                 if (res.money) this.updateStat('money', res.money);
-                if (res.health) this.updateStat('health', res.health);
+                if (res.health) this.updateStat('physicalHealth', res.health); // Retro-fit
+                if (res.physicalHealth) this.updateStat('physicalHealth', res.physicalHealth);
+                if (res.mentalHealth) this.updateStat('mentalHealth', res.mentalHealth);
                 if (res.happiness) this.updateStat('happiness', res.happiness);
                 if (res.energy) this.updateStat('energy', res.energy);
                 if (res.intelligence) this.updateStat('intelligence', res.intelligence);
@@ -1582,17 +2849,52 @@
                 UI.els.modals.event.classList.add('active');
             },
 
+            handleMarketEvents() {
+                // 1. Process Pending
+                if (state.pendingEvent) {
+                    state.pendingEvent.timer--;
+                    if (state.pendingEvent.timer <= 0) {
+                        // Execute
+                        const evt = MARKET_EVENTS.find(e => e.id === state.pendingEvent.id);
+                        if (evt) {
+                            evt.effect(state);
+                            UI.log(evt.msg, evt.id.includes('crash') || evt.id === 'inflation' ? 'bad' : 'good');
+                        }
+                        state.pendingEvent = null;
+                    }
+                    return; // Don't trigger new event while one is pending
+                }
+
+                // 2. Roll New Event (5% chance)
+                // TODO: Define MARKET_EVENTS constant if needed
+                /*
+                if (Math.random() < 0.05) {
+                    const evt = MARKET_EVENTS[Math.floor(Math.random() * MARKET_EVENTS.length)];
+                    state.pendingEvent = { id: evt.id, timer: 1 }; // 1 month warning
+                    UI.log(`📰 NOTICIA: ${evt.warn}`, "info");
+                }
+                */
+            },
+
             applyToJob(jobId) {
                 const job = JOBS.find(j => j.id === jobId);
                 if (!job) return;
+
+                // Networking Bonus
+                let discount = 1;
+                const contact = state.friends.find(f => f.bonusJobId === job.id && f.relation > 80);
+                if (contact) {
+                    discount = 0.8;
+                    UI.log(`¡NETWORKING! ${contact.name} te recomendó. Requisitos -20%.`, "good");
+                }
 
                 // Verify Requirements
                 const reqs = job.req;
                 let missing = [];
 
-                if (reqs.int && state.intelligence < reqs.int) missing.push(`Inteligencia ${reqs.int}`);
+                if (reqs.int && state.intelligence < (reqs.int * discount)) missing.push(`Inteligencia ${Math.ceil(reqs.int * discount)}`);
                 if (reqs.exp && state.experience < reqs.exp) missing.push(`Experiencia ${reqs.exp}`);
-                if (reqs.health && state.health < reqs.health) missing.push(`Salud ${reqs.health}`);
+                if (reqs.health && state.physicalHealth < reqs.health) missing.push(`Salud ${reqs.health}`);
                 if (reqs.happy && state.happiness < reqs.happy) missing.push(`Felicidad ${reqs.happy}`);
                 if (reqs.deg && !state.education.includes(reqs.deg)) {
                     const c = COURSES.find(x => x.id === reqs.deg);
@@ -1614,8 +2916,8 @@
             },
 
             checkGameOver() {
-                if (state.health <= 0) {
-                    UI.showAlert("GAME OVER", "Tu cuerpo no pudo más. Has muerto.", () => location.reload()); // Simple reload for now
+                if (state.physicalHealth <= 0) {
+                    UI.showAlert("GAME OVER", "Tu cuerpo ha fallado. Has muerto.", () => location.reload());
                     this.disableGame();
                     return true;
                 }
@@ -1658,6 +2960,384 @@
                 });
 
                 return { maint: Math.max(0, maint - colRed), happy };
+            },
+
+            // --- SOCIAL LOGIC ---
+            party() {
+                if (state.money < 150) return UI.showAlert("No tienes dinero", "Salir cuesta $150.");
+                if (state.energy < 40) return UI.showAlert("Sin energía", "Estás muy cansado.");
+
+                this.updateStat('money', -150);
+                this.updateStat('energy', -40);
+                this.updateStat('happiness', 15);
+
+                // 40% Chance new friend
+                if (Math.random() < 0.4) {
+                    this.makeFriend();
+                } else {
+                    UI.log("Saliste de fiesta. Te divertiste, pero no conociste a nadie clave.", "normal");
+                }
+
+                UI.render();
+            },
+
+            makeFriend() {
+                const names = ["Ana", "Carlos", "Sofia", "Miguel", "Lucia", "David", "Elena", "Jorge", "Maria", "Pablo"];
+                const rndName = names[Math.floor(Math.random() * names.length)];
+
+                // Pick a random Job ID this friend works at
+                const relevantJobs = JOBS.filter(j => j.id !== 'unemployed');
+                const rndJob = relevantJobs[Math.floor(Math.random() * relevantJobs.length)];
+
+                const newFriend = {
+                    id: Date.now().toString(),
+                    name: rndName,
+                    jobTitle: rndJob.title,
+                    bonusJobId: rndJob.id,
+                    relation: 50
+                };
+
+                state.friends.push(newFriend);
+                UI.log(`¡Conociste a ${newFriend.name}! Trabaja de ${newFriend.jobTitle}.`, "good");
+                // UI.renderFriends(); // TODO: Implement renderFriends function
+            },
+
+            maintainFriend(id) {
+                if (state.money < 50) return;
+                if (state.energy < 10) return;
+
+                const f = state.friends.find(x => x.id === id);
+                if (!f) return;
+
+                this.updateStat('money', -50);
+                this.updateStat('energy', -10);
+                f.relation = Math.min(100, f.relation + 15);
+
+                UI.renderFriends();
+                UI.log(`Llamaste a ${f.name}. Relación mejorada.`, "normal");
+                UI.render();
+            },
+
+
+            // --- PARTNER LOGIC ---
+            findLove() {
+                if (state.money < 100) return UI.showAlert("Sin dinero", "Necesitas $100 para salir a buscar citas.");
+                this.updateStat('money', -100);
+                this.updateStat('energy', -20);
+
+                if (Math.random() < 0.35) {
+                    // Success
+                    const names = ["Valeria", "Gabriela", "Daniela", "Andrea", "Camila", "Juan", "Pedro", "Luis", "Javier"];
+                    const name = names[Math.floor(Math.random() * names.length)];
+                    const job = JOBS.filter(j => j.id !== 'unemployed')[Math.floor(Math.random() * (JOBS.length - 1))];
+
+                    state.partner = {
+                        name: name,
+                        jobTitle: job.title,
+                        salary: job.salary,
+                        relation: 50,
+                        status: 'dating'
+                    };
+                    UI.showAlert("¡Flechazo! 💘", `Has conocido a ${name}. Es ${job.title}. ¿Será el amor de tu vida?`);
+                    UI.renderSocialTab();
+                } else {
+                    UI.log("Tuviste un par de citas malas. Nadie interesante.", "normal");
+                }
+                UI.render();
+            },
+
+            datePartner() {
+                if (!state.partner) return;
+                if (state.money < 80) return UI.showAlert("Sin dinero", "No puedes pagar la cena.");
+
+                this.updateStat('money', -80);
+                this.updateStat('energy', -15);
+                this.updateStat('happiness', 5);
+
+                state.partner.relation = Math.min(100, state.partner.relation + 10);
+                UI.log(`Cita romántica con ${state.partner.name}. ❤️`, "good");
+                UI.renderSocialTab();
+                UI.render();
+            },
+
+            advanceRel() {
+                if (!state.partner) return;
+                const p = state.partner;
+
+                if (p.status === 'dating') {
+                    // Move in
+                    p.status = 'living';
+                    p.relation += 10;
+                    this.updateStat('happiness', 20);
+                    UI.showAlert("¡Nuevo Hogar! 🏠", "Ahora vivís juntos. Los gastos se comparten (50%).");
+                } else if (p.status === 'living') {
+                    // Marry
+                    if (state.money < 2000) return UI.showAlert("Anillo Caro", "Necesitas $2000 para el anillo.");
+                    this.updateStat('money', -2000);
+                    p.status = 'married';
+                    p.relation = 100;
+                    this.updateStat('happiness', 50);
+                    UI.showAlert("¡BODA! 💍", "¡Vivan los novios! Estabilidad máxima.");
+                }
+                UI.renderSocialTab();
+                UI.render();
+            },
+
+            breakup() {
+                if (!state.partner) return;
+                state.partner = null;
+                this.updateStat('happiness', -30);
+                UI.showAlert("Ruptura 💔", "Se acabó. Te sientes vacío.");
+                UI.renderSocialTab();
+                UI.render();
+            },
+
+            socialDecay() {
+                if (state.friends.length === 0) return;
+                let msg = "";
+                state.friends.forEach(f => {
+                    f.relation -= 2;
+                    if (f.relation < 0) f.relation = 0;
+                    if (f.relation < 20) msg = `${f.name} se está olvidando de ti. `;
+                });
+                if (msg) UI.log(msg, "info");
+            },
+
+            // --- HOUSING & VEHICLE SYSTEM ---
+
+            buyHousing(housingId) {
+                const housing = HOUSING.find(h => h.id === housingId);
+                if (!housing) return;
+
+                if (state.money < housing.cost) {
+                    UI.log(`No tienes $${housing.cost.toLocaleString()} para ${housing.name}`, 'bad');
+                    return;
+                }
+
+                state.money -= housing.cost;
+                state.housing = housingId;
+                this.updateStatus();
+                UI.log(`🏠 Compraste: ${housing.name}`, 'good');
+                UI.render();
+            },
+
+            buyVehicle(vehicleId) {
+                const vehicle = VEHICLES.find(v => v.id === vehicleId);
+                if (!vehicle) return;
+
+                if (state.money < vehicle.cost) {
+                    UI.log(`No tienes $${vehicle.cost.toLocaleString()} para ${vehicle.name}`, 'bad');
+                    return;
+                }
+
+                state.money -= vehicle.cost;
+                state.vehicle = vehicleId;
+                this.updateStatus();
+                UI.log(`🚗 Compraste: ${vehicle.name}`, 'good');
+                UI.render();
+            },
+
+            updateStatus() {
+                const housing = HOUSING.find(h => h.id === state.housing);
+                const vehicle = VEHICLES.find(v => v.id === state.vehicle);
+                state.status = (housing?.status || 0) + (vehicle?.status || 0);
+            },
+
+            showLifestyleShop() {
+                // Open modal
+                document.getElementById('lifestyle-modal').classList.add('active');
+
+                // Update status bar
+                this.updateLifestyleModalStatus();
+
+                // Populate housing cards
+                this.populateHousingCards();
+
+                // Populate vehicle cards
+                this.populateVehicleCards();
+            },
+
+            updateLifestyleModalStatus() {
+                const currentHousing = HOUSING.find(h => h.id === state.housing);
+                const currentVehicle = VEHICLES.find(v => v.id === state.vehicle);
+
+                document.getElementById('lifestyle-money').textContent = `$${state.money.toLocaleString()}`;
+                document.getElementById('lifestyle-status').textContent = state.status;
+                document.getElementById('lifestyle-current-housing').textContent = currentHousing.name;
+                document.getElementById('lifestyle-current-vehicle').textContent = currentVehicle.name;
+                document.getElementById('status-display-btn').textContent = state.status;
+            },
+
+            populateHousingCards() {
+                const grid = document.getElementById('housing-grid');
+                grid.innerHTML = '';
+
+                HOUSING.forEach(housing => {
+                    const isCurrent = housing.id === state.housing;
+                    const canAfford = state.money >= housing.cost;
+
+                    const card = document.createElement('div');
+                    card.className = `lifestyle-card ${isCurrent ? 'current' : ''}`;
+
+                    card.innerHTML = `
+                        <div class="lifestyle-card-title">${housing.name}</div>
+                        <div class="lifestyle-card-desc">${housing.desc}</div>
+                        <div class="lifestyle-card-stats">
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">💰 Costo:</span>
+                                <span class="lifestyle-card-stat-value">${housing.cost === 0 ? 'Gratis' : '$' + housing.cost.toLocaleString()}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">🔧 Mant/Mes:</span>
+                                <span class="lifestyle-card-stat-value">$${housing.maint.toLocaleString()}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">😊 Felicidad:</span>
+                                <span class="lifestyle-card-stat-value ${housing.happiness >= 0 ? 'positive' : 'negative'}">${housing.happiness > 0 ? '+' : ''}${housing.happiness}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">⚡ Energía:</span>
+                                <span class="lifestyle-card-stat-value ${housing.energyRecovery >= 0 ? 'positive' : 'negative'}">${housing.energyRecovery > 0 ? '+' : ''}${housing.energyRecovery}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">⭐ Estatus:</span>
+                                <span class="lifestyle-card-stat-value positive">+${housing.status}</span>
+                            </div>
+                        </div>
+                        <button class="lifestyle-card-btn" ${isCurrent || !canAfford ? 'disabled' : ''} onclick="Game.buyHousingFromModal('${housing.id}')">
+                            ${isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')}
+                        </button>
+                    `;
+
+                    grid.appendChild(card);
+                });
+            },
+
+            populateVehicleCards() {
+                const grid = document.getElementById('vehicles-grid');
+                grid.innerHTML = '';
+
+                VEHICLES.forEach(vehicle => {
+                    const isCurrent = vehicle.id === state.vehicle;
+                    const canAfford = state.money >= vehicle.cost;
+
+                    const card = document.createElement('div');
+                    card.className = `lifestyle-card ${isCurrent ? 'current' : ''}`;
+
+                    card.innerHTML = `
+                        <div class="lifestyle-card-title">${vehicle.name}</div>
+                        <div class="lifestyle-card-desc">${vehicle.desc}</div>
+                        <div class="lifestyle-card-stats">
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">💰 Costo:</span>
+                                <span class="lifestyle-card-stat-value">${vehicle.cost === 0 ? 'Gratis' : '$' + vehicle.cost.toLocaleString()}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">🔧 Mant/Mes:</span>
+                                <span class="lifestyle-card-stat-value">$${vehicle.maint.toLocaleString()}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">⚡ Reduce Energía:</span>
+                                <span class="lifestyle-card-stat-value positive">-${vehicle.energyReduction}</span>
+                            </div>
+                            <div class="lifestyle-card-stat">
+                                <span class="lifestyle-card-stat-label">⭐ Estatus:</span>
+                                <span class="lifestyle-card-stat-value positive">+${vehicle.status}</span>
+                            </div>
+                        </div>
+                        <button class="lifestyle-card-btn" ${isCurrent || !canAfford ? 'disabled' : ''} onclick="Game.buyVehicleFromModal('${vehicle.id}')">
+                            ${isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')}
+                        </button>
+                    `;
+
+                    grid.appendChild(card);
+                });
+            },
+
+            buyHousingFromModal(housingId) {
+                this.buyHousing(housingId);
+                this.updateLifestyleModalStatus();
+                this.populateHousingCards();
+                this.populateVehicleCards();
+            },
+
+            buyVehicleFromModal(vehicleId) {
+                this.buyVehicle(vehicleId);
+                this.updateLifestyleModalStatus();
+                this.populateHousingCards();
+                this.populateVehicleCards();
+            },
+
+            renderCourses() {
+                UI.els.btns.study.click(); // Hacky reuse of existing render logic in the study button handler
+            },
+
+            calculateFinancials() {
+                // 1. Assets
+                let cash = state.money;
+
+                // Inv
+                let investments = 0;
+                ASSETS.forEach(a => {
+                    investments += state.portfolio[a.id].qty * state.marketPrices[a.id];
+                });
+
+                // RE
+                let realEstate = 0;
+                let passiveIncome = 0;
+                let reMaint = 0;
+
+                state.realEstate.forEach(id => {
+                    const price = state.rePrices[id];
+                    const prop = REAL_ESTATE.find(p => p.id === id);
+                    if (prop) {
+                        realEstate += price;
+                        passiveIncome += prop.rent;
+                        reMaint += prop.maint;
+                    }
+                });
+
+                // Net Passive (Rent - Maint)
+                passiveIncome -= reMaint;
+
+                // 2. Expenses
+                const itemEffects = this.calculateItemEffects();
+                const totalMaint = itemEffects.maint; // Items maint
+                let baseLiving = CONFIG.costOfLiving;
+
+                // PARTNER EFFECT
+                let partnerIncome = 0;
+                if (state.partner && (state.partner.status === 'living' || state.partner.status === 'married')) {
+                    baseLiving /= 2; // Split costs
+                    partnerIncome = state.partner.salary;
+                }
+
+                // DIET COST
+                let dietCost = 0;
+                if (state.diet === 'fast_food') dietCost = 100;
+                else if (state.diet === 'balanced') dietCost = 300;
+                else if (state.diet === 'chef') dietCost = 1000;
+
+                const expenses = baseLiving + totalMaint + dietCost;
+
+                // 3. Active
+                const job = JOBS.find(j => j.id === state.currJobId);
+                let activeIncome = job ? job.salary : 0;
+                if (state.inventory.includes('suit')) activeIncome *= 1.1; // simplified reuse logic
+
+                // Add partner income to active for display purposes mostly, or separate? 
+                // Plan said "Household income". Let's add to active for simple Net calculation
+                activeIncome += partnerIncome;
+
+                return {
+                    cash,
+                    investments,
+                    realEstate,
+                    netWorth: cash + investments + realEstate,
+                    passiveIncome, // Net
+                    activeIncome,
+                    expenses
+                };
             }
         };
 
@@ -1751,6 +3431,19 @@
                     email: this.user.email,
                     score: score
                 });
+            },
+
+            async logHistory(month, fin) {
+                if (!this.user || !sb) return;
+                try {
+                    await sb.from('game_history').insert({
+                        user_id: this.user.id,
+                        month: month,
+                        net_worth: fin.netWorth,
+                        cash: fin.cash,
+                        assets: fin.investments + fin.realEstate
+                    });
+                } catch (e) { console.log("Log history fail", e); }
             }
         };
 
@@ -1836,7 +3529,15 @@
         UI.els.modals.closeJob.onclick = () => UI.els.modals.job.classList.remove('active');
 
         // Settings Modal
-        UI.els.btns.settings.onclick = () => UI.els.modals.settings.classList.add('active');
+        UI.els.btns.settings.onclick = () => {
+            const dietSel = document.getElementById('diet-selector');
+            dietSel.value = state.diet;
+            UI.els.modals.settings.classList.add('active');
+        };
+        document.getElementById('diet-selector').onchange = (e) => {
+            state.diet = e.target.value;
+            UI.log(`Dieta cambiada a: ${state.diet}`, "info");
+        };
         UI.els.modals.closeSettings.onclick = () => UI.els.modals.settings.classList.remove('active');
 
         // Shop Modal
@@ -1873,9 +3574,322 @@
         UI.els.auth.saveBtn.onclick = () => DB.saveGame();
         UI.els.auth.loadBtn.onclick = () => DB.loadGame();
 
+        // Lifestyle Modal
+        document.getElementById('close-lifestyle').onclick = () => {
+            document.getElementById('lifestyle-modal').classList.remove('active');
+        };
+
         // Init
         setTimeout(() => DB.init(), 500); // Small delay to ensure Supabase loads
         UI.render();
+
+        // ============================================
+        // DEV MODE (REMOVE IN PRODUCTION)
+        // ============================================
+        const DevMode = {
+            keySequence: [],
+            sequenceTimeout: null,
+            longPressTimer: null,
+            isAuthenticated: false,
+
+            init() {
+                // Check session auth
+                this.isAuthenticated = sessionStorage.getItem('devModeAuth') === 'true';
+
+                // Keyboard activation (d + e + v)
+                document.addEventListener('keydown', (e) => this.handleKeyPress(e));
+
+                // Long press activation on money display
+                const moneyEl = document.getElementById('money-display');
+                if (moneyEl) {
+                    // Touch events (mobile)
+                    moneyEl.addEventListener('touchstart', (e) => this.startLongPress(e));
+                    moneyEl.addEventListener('touchend', () => this.cancelLongPress());
+                    moneyEl.addEventListener('touchcancel', () => this.cancelLongPress());
+
+                    // Mouse events (desktop)
+                    moneyEl.addEventListener('mousedown', (e) => this.startLongPress(e));
+                    moneyEl.addEventListener('mouseup', () => this.cancelLongPress());
+                    moneyEl.addEventListener('mouseleave', () => this.cancelLongPress());
+                }
+
+                // Close button
+                document.getElementById('close-dev-modal')?.addEventListener('click', () => {
+                    this.closePanel();
+                });
+
+                // Auth button
+                document.getElementById('dev-auth-btn')?.addEventListener('click', () => {
+                    this.authenticate();
+                });
+
+                // Allow Enter key on password input
+                document.getElementById('dev-password')?.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.authenticate();
+                });
+            },
+
+            handleKeyPress(e) {
+                const key = e.key.toLowerCase();
+                this.keySequence.push(key);
+
+                // Keep only last 3 keys
+                if (this.keySequence.length > 3) {
+                    this.keySequence.shift();
+                }
+
+                // Check if sequence matches 'dev'
+                if (this.keySequence.join('') === 'dev') {
+                    this.activate();
+                    this.keySequence = [];
+                }
+
+                // Reset sequence after 2 seconds of inactivity
+                clearTimeout(this.sequenceTimeout);
+                this.sequenceTimeout = setTimeout(() => {
+                    this.keySequence = [];
+                }, 2000);
+            },
+
+            startLongPress(e) {
+                e.preventDefault();
+                this.longPressTimer = setTimeout(() => {
+                    this.activate();
+                }, 3000);
+            },
+
+            cancelLongPress() {
+                clearTimeout(this.longPressTimer);
+            },
+
+            activate() {
+                if (this.isAuthenticated) {
+                    this.showPanel();
+                } else {
+                    this.showAuthPrompt();
+                }
+            },
+
+            showAuthPrompt() {
+                const modal = document.getElementById('dev-modal');
+                const authSection = document.getElementById('dev-auth');
+                const contentSection = document.getElementById('dev-content');
+
+                modal.classList.add('active');
+                authSection.classList.remove('hidden');
+                contentSection.classList.add('hidden');
+
+                setTimeout(() => {
+                    document.getElementById('dev-password')?.focus();
+                }, 100);
+            },
+
+            authenticate() {
+                const password = document.getElementById('dev-password').value;
+                if (password === 'admin123') {
+                    this.isAuthenticated = true;
+                    sessionStorage.setItem('devModeAuth', 'true');
+                    document.getElementById('dev-password').value = '';
+                    this.showPanel();
+                } else {
+                    alert('❌ Invalid password');
+                    document.getElementById('dev-password').value = '';
+                }
+            },
+
+            showPanel() {
+                const modal = document.getElementById('dev-modal');
+                const authSection = document.getElementById('dev-auth');
+                const contentSection = document.getElementById('dev-content');
+
+                modal.classList.add('active');
+                authSection.classList.add('hidden');
+                contentSection.classList.remove('hidden');
+
+                this.loadCurrentValues();
+                this.refreshState();
+            },
+
+            closePanel() {
+                document.getElementById('dev-modal').classList.remove('active');
+            },
+
+            // ========== CHEAT FUNCTIONS ==========
+
+            addMoney() {
+                Game.updateStat('money', 100000);
+                UI.log('[DEV] 💰 Added $100,000', 'good');
+                this.refreshState();
+            },
+
+            maxStats() {
+                state.physicalHealth = 100;
+                state.mentalHealth = 100;
+                state.happiness = 100;
+                state.energy = 100;
+                UI.render();
+                UI.log('[DEV] ⚡ All stats maxed to 100', 'good');
+                this.refreshState();
+            },
+
+            advanceYear() {
+                for (let i = 0; i < 12; i++) {
+                    Game.nextMonth();
+                }
+                UI.log('[DEV] 📅 Advanced 1 year (12 months)', 'info');
+                this.refreshState();
+            },
+
+            // ========== UNIVERSAL STAT SETTER ==========
+
+            setStat(statName) {
+                // Map stat names to input IDs
+                const inputMap = {
+                    'money': 'dev-money',
+                    'totalMonths': 'dev-age',
+                    'physicalHealth': 'dev-phealth',
+                    'mentalHealth': 'dev-mhealth',
+                    'happiness': 'dev-happiness',
+                    'energy': 'dev-energy',
+                    'intelligence': 'dev-int',
+                    'experience': 'dev-exp',
+                    'jobXP': 'dev-jobxp',
+                    'diet': 'dev-diet',
+                    'housing': 'dev-housing',
+                    'vehicle': 'dev-vehicle'
+                };
+
+                const inputId = inputMap[statName];
+                if (!inputId) {
+                    alert('❌ Unknown stat: ' + statName);
+                    return;
+                }
+
+                const element = document.getElementById(inputId);
+                if (!element) {
+                    alert('❌ Input not found');
+                    return;
+                }
+
+                // Handle select elements (diet, housing, vehicle)
+                if (['diet', 'housing', 'vehicle'].includes(statName)) {
+                    state[statName] = element.value;
+                    if (statName === 'housing' || statName === 'vehicle') {
+                        Game.updateStatus();
+                    }
+                    const emoji = { 'diet': '🍽️', 'housing': '🏠', 'vehicle': '🚗' }[statName];
+                    UI.log(`[DEV] ${emoji} ${statName} set to ${element.value}`, 'info');
+                    UI.render();
+                    this.refreshState();
+                    return;
+                }
+
+                // Handle numeric values
+                const val = parseInt(element.value);
+                if (isNaN(val)) {
+                    alert('❌ Please enter a valid number');
+                    return;
+                }
+
+                // Apply value with appropriate constraints
+                if (statName === 'money') {
+                    state.money = val;
+                    UI.log(`[DEV] 💰 Money set to $${val.toLocaleString()}`, 'info');
+                } else if (statName === 'totalMonths') {
+                    state.totalMonths = Math.max(0, val);
+                    UI.log(`[DEV] 📅 Age set to ${val} months (${Math.floor(((18 * 12) + val) / 12)} years)`, 'info');
+                } else if (['physicalHealth', 'mentalHealth', 'happiness', 'energy', 'intelligence', 'jobXP'].includes(statName)) {
+                    state[statName] = Math.max(0, Math.min(100, val));
+                    const emoji = {
+                        'physicalHealth': '💪',
+                        'mentalHealth': '🧠',
+                        'happiness': '😊',
+                        'energy': '⚡',
+                        'intelligence': '🧠',
+                        'jobXP': '💼'
+                    }[statName];
+                    UI.log(`[DEV] ${emoji} ${statName} set to ${val}`, 'info');
+                } else if (statName === 'experience') {
+                    state.experience = Math.max(0, val);
+                    UI.log(`[DEV] 📈 Experience set to ${val}`, 'info');
+                } else {
+                    state[statName] = val;
+                    UI.log(`[DEV] ${statName} set to ${val}`, 'info');
+                }
+
+                UI.render();
+                this.refreshState();
+            },
+
+            // ========== LOAD CURRENT VALUES ==========
+
+            loadCurrentValues() {
+                // Pre-populate all inputs with current values
+                document.getElementById('dev-money').value = state.money;
+                document.getElementById('dev-age').value = state.totalMonths;
+                document.getElementById('dev-phealth').value = Math.floor(state.physicalHealth);
+                document.getElementById('dev-mhealth').value = Math.floor(state.mentalHealth);
+                document.getElementById('dev-happiness').value = Math.floor(state.happiness);
+                document.getElementById('dev-energy').value = Math.floor(state.energy);
+                document.getElementById('dev-int').value = Math.floor(state.intelligence);
+                document.getElementById('dev-exp').value = state.experience;
+                document.getElementById('dev-jobxp').value = Math.floor(state.jobXP);
+                document.getElementById('dev-diet').value = state.diet;
+                document.getElementById('dev-housing').value = state.housing;
+                document.getElementById('dev-vehicle').value = state.vehicle;
+            },
+
+            refreshState() {
+                const viewer = document.getElementById('dev-state-viewer');
+                if (viewer) {
+                    // Create a simplified state view for readability
+                    const stateSnapshot = {
+                        // Core Stats
+                        money: state.money,
+                        physicalHealth: state.physicalHealth,
+                        mentalHealth: state.mentalHealth,
+                        happiness: state.happiness,
+                        energy: state.energy,
+                        intelligence: state.intelligence,
+                        experience: state.experience,
+
+                        // Time
+                        totalMonths: state.totalMonths,
+                        age: Math.floor(((18 * 12) + state.totalMonths) / 12),
+
+                        // Career
+                        currJobId: state.currJobId,
+                        jobXP: state.jobXP,
+                        promotions: state.promotions,
+
+                        // Lifestyle
+                        diet: state.diet,
+                        housing: state.housing,
+                        vehicle: state.vehicle,
+                        status: state.status,
+
+                        // Relationships
+                        partner: state.partner ? {
+                            name: state.partner.name,
+                            status: state.partner.status,
+                            relation: state.partner.relation
+                        } : null,
+                        friendsCount: state.friends?.length || 0,
+
+                        // Assets
+                        inventory: state.inventory,
+                        realEstateCount: state.realEstate?.length || 0,
+                        education: state.education
+                    };
+
+                    viewer.textContent = JSON.stringify(stateSnapshot, null, 2);
+                }
+            }
+        };
+
+        // Initialize Dev Mode
+        DevMode.init();
+        console.log('🔧 Dev Mode initialized. Press "d+e+v" or long-press money to activate.');
 
     </script>
 </body>
