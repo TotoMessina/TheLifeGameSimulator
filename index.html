@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Simulador de Vida: Pobre a Rico</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1a1a1a">
+    <!-- Import Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1E1E1E;
+            --text-color: #E0E0E0;
+            --accent-color: #39FF14;
+            /* Neon Green */
+            --danger-color: #FF3939;
+            --info-color: #4da6ff;
+            --secondary-text: #A0A0A0;
+            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            flex: 0 0 auto;
+            background-color: #1a1a1a;
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .money-display {
+            color: var(--accent-color);
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(57, 255, 20, 0.3);
+            transition: color 0.3s, transform 0.2s;
+        }
+
+        .money-display.gain {
+            color: #39FF14;
+            transform: scale(1.1);
+        }
+
+        .money-display.loss {
+            color: #FF3939;
+            transform: scale(1.1);
+        }
+
+        /* Settings Button styled as transparent icon */
+        .settings-btn {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .date-display {
+            color: var(--secondary-text);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .job-display {
+            font-size: 0.8rem;
+            color: #ddd;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #252525;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #444;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .bar-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .bar-label {
+            font-size: 0.75rem;
+            color: var(--secondary-text);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bg {
+            height: 6px;
+            background-color: #333;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 50%;
+            transition: width 0.4s ease;
+        }
+
+        .health-fill {
+            background-color: #ff4d4d;
+        }
+
+        .happiness-fill {
+            background-color: #4dffea;
+        }
+
+        .intelligence-fill {
+            background-color: #cf39ff;
+        }
+
+        .energy-fill {
+            background-color: #ffd700;
+        }
+
+
+        /* --- Main Content (Log) --- */
+        main {
+            flex: 1 1 auto;
+            position: relative;
+            /* For floating text */
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            scroll-behavior: smooth;
+        }
+
+        .float-text {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-weight: bold;
+            font-size: 1.2rem;
+            pointer-events: none;
+            animation: floatUp 1.2s forwards;
+            text-shadow: 1px 1px 2px black;
+            z-index: 100;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                top: 40%;
+                transform: translate(-50%, 0) scale(0.8);
+            }
+
+            50% {
+                transform: translate(-50%, -20px) scale(1.2);
+            }
+
+            100% {
+                opacity: 0;
+                top: 20%;
+                transform: translate(-50%, -40px) scale(1);
+            }
+        }
+
+        .event-card {
+            background-color: var(--card-bg);
+            border-left: 3px solid var(--accent-color);
+            padding: 12px 15px;
+            border-radius: 4px;
+            animation: fadeIn 0.4s ease-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            font-size: 0.95rem;
+            line-height: 1.4;
+            flex-shrink: 0;
+        }
+
+        .event-card.bad {
+            border-left-color: var(--danger-color);
+        }
+
+        .event-card.info {
+            border-left-color: var(--info-color);
+        }
+
+        .event-date {
+            font-size: 0.7rem;
+            color: #666;
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* --- Footer (Controls) --- */
+        footer {
+            flex: 0 0 auto;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-top: 1px solid #333;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr) 1.2fr;
+            gap: 8px;
+            padding-bottom: max(10px, env(safe-area-inset-bottom));
+        }
+
+        button {
+            background-color: #2c2c2c;
+            color: var(--text-color);
+            border: 1px solid #444;
+            padding: 10px 4px;
+            border-radius: 8px;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active:not([disabled]) {
+            transform: scale(0.96);
+            background-color: #383838;
+        }
+
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            filter: grayscale(0.8);
+        }
+
+        button.primary {
+            background-color: var(--accent-color);
+            color: #000;
+            border: none;
+            box-shadow: 0 0 8px rgba(57, 255, 20, 0.2);
+        }
+
+        button.primary:active:not([disabled]) {
+            background-color: #2ecc12;
+        }
+
+        .btn-icon {
+            font-size: 1.3rem;
+            margin-bottom: 2px;
+        }
+
+        /* --- Modals --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background: #1E1E1E;
+            width: 90%;
+            max-width: 400px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+        }
+
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .modal-body {
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .job-item {
+            background: #252525;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .job-details h4 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+            color: var(--accent-color);
+        }
+
+        .job-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .job-req {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .job-item.locked {
+            opacity: 0.6;
+        }
+
+        .btn-select-job {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            background: #444;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+        }
+
+        .btn-select-job.active-job {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: #fff;
+            padding: 0;
+        }
+
+        /* Settings specific */
+        .settings-group {
+            border: 1px solid #333;
+            padding: 10px;
+            border-radius: 6px;
+            background: #252525;
+        }
+
+        .settings-group h4 {
+            margin: 0 0 10px 0;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #111;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+        }
+
+        .btn-full {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 5px;
+            flex-direction: row;
+        }
+
+        .status-msg {
+            font-size: 0.8rem;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-top">
+            <div class="date-display" id="date-display">Año 18 - Mes 1</div>
+            <button class="settings-btn" id="settings-trigger">⚙️</button>
+        </div>
+
+        <div class="stats-row">
+            <div class="money-display" id="money-display">$0</div>
+        </div>
+
+        <div class="job-display" id="job-trigger">
+            <span id="job-title-display">Mendigo ($0/mes)</span>
+            <span>ℹ️ Cambiar</span>
+        </div>
+
+        <div class="stat-grid">
+            <!-- Row 1 -->
+            <div class="bar-group">
+                <div class="bar-label"><span>Salud</span> <span id="health-val">100%</span></div>
+                <div class="progress-bg">
+                    <div class="progress-fill health-fill" id="health-bar" style="width: 100%;"></div>
+                </div>
+            </div>
+            <div class="bar-group">
+                <div class="bar-label"><span>Felicidad</span> <span id="happiness-val">100%</span></div>
+                <div class="progress-bg">
+                    <div class="progress-fill happiness-fill" id="happiness-bar" style="width: 100%;"></div>
+                </div>
+            </div>
+            <!-- Row 2 -->
+            <div class="bar-group">
+                <div class="bar-label"><span>Energía</span> <span id="energy-val">100%</span></div>
+                <div class="progress-bg">
+                    <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%;"></div>
+                </div>
+            </div>
+            <div class="bar-group">
+                <div class="bar-label"><span>Inteligencia</span> <span id="intel-val">10</span></div>
+                <div class="progress-bg">
+                    <div class="progress-fill intelligence-fill" id="intel-bar" style="width: 10%;"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main id="event-log">
+        <div class="event-card info">
+            <span class="event-date">Inicio</span>
+            Bienvenido. Tienes 18 años. Comienza tu historia.
+        </div>
+    </main>
+
+    <footer>
+        <button id="btn-work">
+            <span class="btn-icon">💼</span>Trabajar
+        </button>
+        <button id="btn-study">
+            <span class="btn-icon">📚</span>Estudiar
+        </button>
+        <button id="btn-rest">
+            <span class="btn-icon">💤</span>Descansar
+        </button>
+        <button id="btn-next" class="primary">
+            <span class="btn-icon">📅</span>Sig. Mes
+        </button>
+    </footer>
+
+    <!-- Job Modal -->
+    <div class="modal-overlay" id="job-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Oportunidades de Empleo</span>
+                <button class="close-btn" id="close-job-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="job-list-container">
+                <!-- Job items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Ajustes & Guardado</span>
+                <button class="close-btn" id="close-settings-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Auth Section -->
+                <div class="settings-group" id="auth-section">
+                    <h4>Cuenta (Cloud Save)</h4>
+                    <div id="auth-form">
+                        <input type="email" id="email-input" placeholder="Email">
+                        <input type="password" id="pass-input" placeholder="Contraseña">
+                        <button class="btn-full primary" id="btn-login">Iniciar / Registrar</button>
+                    </div>
+                    <div id="user-info" class="hidden">
+                        <p style="font-size: 0.85rem; margin-bottom:10px;">Usuario: <span id="user-email"></span></p>
+                        <button class="btn-full" id="btn-logout">Cerrar Sesión</button>
+                    </div>
+                    <div class="status-msg" id="auth-msg"></div>
+                </div>
+
+                <!-- Save/Load Section -->
+                <div class="settings-group">
+                    <h4>Partida</h4>
+                    <button class="btn-full" id="btn-save" disabled>💾 Guardar en Nube</button>
+                    <button class="btn-full" id="btn-load" disabled>📂 Cargar de Nube</button>
+                    <div class="status-msg" id="save-msg">Inicia sesión para guardar.</div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SUPABASE CONFIG ---
+        // TODO: Replace with your actual Supabase URL and Key
+        const SUPABASE_URL = 'https://ulqifkyuklkjywlpkauw.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVscWlma3l1a2xranl3bHBrYXV3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAyODE0ODQsImV4cCI6MjA4NTg1NzQ4NH0.CVgCUF_Hy06Ks2Q0xyJiKUBsx_G-y5PA59ArRRtLjYE';
+
+        let sb = null;
+        try {
+            if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+                sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch (e) {
+            console.error("Supabase init error:", e);
+        }
+
+        // --- 1. CONFIG & DATA ---
+        const CONFIG = {
+            startAge: 18,
+            costOfLiving: 500,
+            studyCost: 200,
+            baseWage: 0 // Base added to job salary if relevant
+        };
+
+        const JOBS = [
+            { id: 0, title: 'Sin Empleo', salary: 0, reqInt: 0, reqExp: 0 },
+            { id: 1, title: 'Repartidor', salary: 700, reqInt: 10, reqExp: 0 },
+            { id: 2, title: 'Mesero', salary: 1100, reqInt: 20, reqExp: 0 },
+            { id: 3, title: 'Asistente Admin.', salary: 1600, reqInt: 40, reqExp: 5 },
+            { id: 4, title: 'Junior Dev', salary: 2500, reqInt: 60, reqExp: 10 },
+            { id: 5, title: 'Senior Dev', salary: 4500, reqInt: 85, reqExp: 30 },
+            { id: 6, title: 'CEO', salary: 10000, reqInt: 95, reqExp: 60 }
+        ];
+
+        // --- 2. GAME STATE ---
+        let state = {
+            totalMonths: 0,
+            money: 600,
+            health: 100,
+            happiness: 100,
+            intelligence: 10,
+            energy: 100,
+            experience: 0,
+            currJobId: 0
+        };
+
+        // --- 3. UI CONTROLLER ---
+        const UI = {
+            els: {
+                date: document.getElementById('date-display'),
+                money: document.getElementById('money-display'),
+                jobTitle: document.getElementById('job-title-display'),
+                jobTrigger: document.getElementById('job-trigger'),
+                bars: {
+                    health: document.getElementById('health-bar'),
+                    happy: document.getElementById('happiness-bar'),
+                    energy: document.getElementById('energy-bar'),
+                    intel: document.getElementById('intel-bar'),
+                },
+                vals: {
+                    health: document.getElementById('health-val'),
+                    happy: document.getElementById('happiness-val'),
+                    energy: document.getElementById('energy-val'),
+                    intel: document.getElementById('intel-val'),
+                },
+                log: document.getElementById('event-log'),
+                btns: {
+                    work: document.getElementById('btn-work'),
+                    study: document.getElementById('btn-study'),
+                    rest: document.getElementById('btn-rest'),
+                    next: document.getElementById('btn-next'),
+                    settings: document.getElementById('settings-trigger')
+                },
+                modals: {
+                    job: document.getElementById('job-modal'),
+                    jobList: document.getElementById('job-list-container'),
+                    closeJob: document.getElementById('close-job-modal'),
+                    settings: document.getElementById('settings-modal'),
+                    closeSettings: document.getElementById('close-settings-modal')
+                },
+                auth: {
+                    section: document.getElementById('auth-section'),
+                    form: document.getElementById('auth-form'),
+                    userInfo: document.getElementById('user-info'),
+                    email: document.getElementById('user-email'),
+                    msg: document.getElementById('auth-msg'),
+                    loginBtn: document.getElementById('btn-login'),
+                    logoutBtn: document.getElementById('btn-logout'),
+                    emailInput: document.getElementById('email-input'),
+                    passInput: document.getElementById('pass-input'),
+                    saveBtn: document.getElementById('btn-save'),
+                    loadBtn: document.getElementById('btn-load'),
+                    saveMsg: document.getElementById('save-msg')
+                }
+            },
+
+            render() {
+                // Date
+                const totalM = (CONFIG.startAge * 12) + state.totalMonths;
+                const yrs = Math.floor(totalM / 12);
+                const mos = (totalM % 12) + 1;
+                this.els.date.innerText = `Año ${yrs} - Mes ${mos}`;
+
+                // Money
+                this.els.money.innerText = `$${state.money.toLocaleString()}`;
+
+                // Job
+                const job = JOBS[state.currJobId];
+                this.els.jobTitle.innerText = `${job.title} ($${job.salary}/mes)`;
+
+                // Bars
+                const setBar = (type, val, max = 100) => {
+                    const pct = Math.min(100, Math.max(0, (val / max) * 100));
+                    this.els.bars[type].style.width = `${pct}%`;
+                    this.els.vals[type].innerText = type === 'intel' ? val : `${Math.floor(val)}%`;
+                };
+
+                setBar('health', state.health);
+                setBar('happy', state.happiness);
+                setBar('energy', state.energy);
+                setBar('intel', state.intelligence, 100);
+
+                // Button States (Energy Check)
+                const hasEnergy = state.energy >= 20;
+                this.els.btns.work.disabled = !hasEnergy;
+                this.els.btns.study.disabled = !hasEnergy;
+                this.els.btns.rest.disabled = state.energy >= 100;
+
+                // Auto Scroll
+                setTimeout(() => {
+                    this.els.log.scrollTop = this.els.log.scrollHeight;
+                }, 50);
+            },
+
+            log(msg, type = 'normal') {
+                const card = document.createElement('div');
+                card.className = `event-card ${type}`;
+                const totalM = (CONFIG.startAge * 12) + state.totalMonths;
+                const yrs = Math.floor(totalM / 12);
+                const mos = (totalM % 12) + 1;
+
+                card.innerHTML = `<span class="event-date">Año ${yrs}/${mos}</span>${msg}`;
+                this.els.log.appendChild(card);
+            },
+
+            floatText(text, color) {
+                const el = document.createElement('div');
+                el.className = 'float-text';
+                el.innerText = text;
+                el.style.color = color;
+                el.style.left = (50 + (Math.random() * 20 - 10)) + '%';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 1300);
+            },
+
+            flashMoney(amount) {
+                const el = this.els.money;
+                const isGain = amount > 0;
+                el.classList.remove('gain', 'loss');
+                void el.offsetWidth;
+                el.classList.add(isGain ? 'gain' : 'loss');
+
+                const color = isGain ? '#39FF14' : '#FF3939';
+                const sign = isGain ? '+' : '';
+                this.floatText(`${sign}$${Math.abs(amount)}`, color);
+            },
+
+            // Updates Auth UI based on session
+            updateAuthUI(user) {
+                if (user) {
+                    this.els.auth.form.classList.add('hidden');
+                    this.els.auth.userInfo.classList.remove('hidden');
+                    this.els.auth.email.innerText = user.email;
+                    this.els.auth.saveBtn.disabled = false;
+                    this.els.auth.loadBtn.disabled = false;
+                    this.els.auth.saveMsg.innerText = "Sesión activa.";
+                    this.els.auth.saveMsg.style.color = "#4dffea";
+                } else {
+                    this.els.auth.form.classList.remove('hidden');
+                    this.els.auth.userInfo.classList.add('hidden');
+                    this.els.auth.email.innerText = "";
+                    this.els.auth.saveBtn.disabled = true;
+                    this.els.auth.loadBtn.disabled = true;
+                    this.els.auth.saveMsg.innerText = "Inicia sesión para guardar.";
+                    this.els.auth.saveMsg.style.color = "#888";
+                }
+            }
+        };
+
+        // --- 4. GAME LOGIC ---
+        const Game = {
+            updateStat(key, amount) {
+                state[key] += amount;
+                if (key !== 'money' && key !== 'intelligence' && key !== 'experience') {
+                    if (state[key] > 100) state[key] = 100;
+                    if (state[key] < 0) state[key] = 0;
+                }
+                if (key === 'money') UI.flashMoney(amount);
+            },
+
+            work() {
+                if (state.energy < 20) return;
+
+                const job = JOBS[state.currJobId];
+                if (state.currJobId === 0) {
+                    UI.log("No tienes empleo. Consigue uno tocando la barra de arriba.", "info");
+                    return;
+                }
+                const earned = job.salary;
+                this.updateStat('money', earned);
+                this.updateStat('energy', -30);
+                this.updateStat('health', -1);
+                this.updateStat('experience', 1);
+
+                UI.log(`Trabajaste como ${job.title}. Ganaste $${earned}.`, "normal");
+                UI.render();
+            },
+
+            study() {
+                if (state.energy < 20) return;
+                if (state.money < CONFIG.studyCost) {
+                    UI.log("No tienes suficiente dinero para estudiar.", "bad");
+                    return;
+                }
+                this.updateStat('money', -CONFIG.studyCost);
+                this.updateStat('energy', -25);
+                this.updateStat('intelligence', 2 + Math.floor(state.intelligence * 0.05));
+
+                UI.log(`Estudiaste intensamente. Tu inteligencia ha mejorado.`, "info");
+                UI.render();
+            },
+
+            rest() {
+                this.updateStat('energy', 40);
+                this.updateStat('health', 1);
+                this.updateStat('happiness', 2);
+                UI.log("Tomaste un descanso. Recuperaste energía.", "normal");
+                UI.render();
+            },
+
+            nextMonth() {
+                if (this.checkGameOver()) return;
+                state.totalMonths++;
+                this.updateStat('money', -CONFIG.costOfLiving);
+                let msg = `Mes nuevo. Gastos de vida: -$${CONFIG.costOfLiving}`;
+                let type = 'normal';
+
+                if (state.money < 0) {
+                    msg += " ¡Estás en DEUDA! (-Felicidad)";
+                    this.updateStat('happiness', -5);
+                    this.updateStat('health', -2);
+                    type = 'bad';
+                }
+                state.energy = 100;
+                UI.log(msg, type);
+                this.randomEvent();
+                UI.render();
+            },
+
+            randomEvent() {
+                const r = Math.random();
+                if (r < 0.08) {
+                    const lost = 150;
+                    this.updateStat('money', -lost);
+                    this.updateStat('happiness', -8);
+                    UI.log(`Te multaron por exceso de velocidad. -$${lost}`, "bad");
+                } else if (r > 0.95) {
+                    const gain = 300;
+                    this.updateStat('money', gain);
+                    UI.log(`Ganaste un pequeño premio en la lotería. +$${gain}`, "info");
+                }
+            },
+
+            setJob(jobId) {
+                const job = JOBS.find(j => j.id === jobId);
+                if (!job) return;
+                if (state.intelligence < job.reqInt || state.experience < job.reqExp) {
+                    UI.log(`No cumples los requisitos para ser ${job.title}.`, "bad");
+                    return;
+                }
+                state.currJobId = jobId;
+                UI.log(`¡Felicidades! Ahora trabajas como ${job.title}.`, "info");
+                UI.render();
+                UI.els.modals.job.classList.remove('active');
+            },
+
+            checkGameOver() {
+                if (state.health <= 0) {
+                    UI.log("GAME OVER: Tu salud ha llegado a 0.", "bad");
+                    this.disableGame();
+                    return true;
+                }
+                return false;
+            },
+            disableGame() { Object.values(UI.els.btns).forEach(b => b.disabled = true); }
+        };
+
+        // --- 5. SUPABASE LOGIC ---
+        const DB = {
+            user: null,
+
+            async init() {
+                if (!sb) return;
+                try {
+                    const { data: { session } } = await sb.auth.getSession();
+                    this.user = session?.user || null;
+                    UI.updateAuthUI(this.user);
+
+                    sb.auth.onAuthStateChange((_event, session) => {
+                        this.user = session?.user || null;
+                        UI.updateAuthUI(this.user);
+                    });
+                } catch (e) { console.log("Supabase/Auth offline or not conn."); }
+            },
+
+            async login(email, password) {
+                if (!sb) return alert("Configura SUPABASE_URL y KEY en el código.");
+                UI.els.auth.msg.innerText = "Conectando...";
+
+                // Try SignIn
+                let { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+                if (error) {
+                    // Try SignUp if login failed (Basic helper for this user request)
+                    console.log("Login failed, trying signup:", error.message);
+                    const { data: signUpData, error: signUpError } = await sb.auth.signUp({ email, password });
+                    if (signUpError) {
+                        UI.els.auth.msg.innerText = "Error: " + signUpError.message;
+                    } else {
+                        UI.els.auth.msg.innerText = "¡Registro exitoso! Ya estás logueado.";
+                    }
+                } else {
+                    UI.els.auth.msg.innerText = "";
+                    UI.els.modals.settings.classList.remove('active');
+                }
+            },
+
+            async logout() {
+                if (!sb) return;
+                await sb.auth.signOut();
+            },
+
+            async saveGame() {
+                if (!this.user) return;
+                UI.els.auth.saveMsg.innerText = "Guardando...";
+
+                const { error } = await sb
+                    .from('saves')
+                    .upsert({ user_id: this.user.id, game_data: state });
+
+                if (error) {
+                    UI.els.auth.saveMsg.innerText = "Error al guardar: " + error.message;
+                } else {
+                    UI.els.auth.saveMsg.innerText = "¡Partida guardada!";
+                    setTimeout(() => UI.els.auth.saveMsg.innerText = "Sesión activa.", 2000);
+                }
+            },
+
+            async loadGame() {
+                if (!this.user) return;
+                UI.els.auth.saveMsg.innerText = "Cargando...";
+
+                const { data, error } = await sb
+                    .from('saves')
+                    .select('game_data')
+                    .single();
+
+                if (error) {
+                    UI.els.auth.saveMsg.innerText = "No se encontró partida guardada.";
+                } else if (data) {
+                    state = data.game_data;
+                    UI.render();
+                    Game.randomEvent(); // Just to refresh state/visuals maybe
+                    UI.log("Partida cargada desde la nube.", "info");
+                    UI.els.modals.settings.classList.remove('active');
+                }
+            }
+        };
+
+        // --- 6. EVENT LISTENERS ---
+        UI.els.btns.work.onclick = () => Game.work();
+        UI.els.btns.study.onclick = () => Game.study();
+        UI.els.btns.rest.onclick = () => Game.rest();
+        UI.els.btns.next.onclick = () => Game.nextMonth();
+
+        // Jobs Modal
+        UI.els.jobTrigger.onclick = () => {
+            const container = UI.els.modals.jobList;
+            container.innerHTML = '';
+            JOBS.forEach(job => {
+                const isUnlocked = state.intelligence >= job.reqInt && state.experience >= job.reqExp;
+                const isCurrent = state.currJobId === job.id;
+                const div = document.createElement('div');
+                div.className = `job-item ${!isUnlocked ? 'locked' : ''}`;
+                div.innerHTML = `
+                    <div class="job-details">
+                        <h4>${job.title} ${isCurrent ? '(Actual)' : ''}</h4>
+                        <p>Salario: $${job.salary}</p>
+                        <div class="job-req">Req: Int ${job.reqInt} | Exp ${job.reqExp}</div>
+                    </div>
+                    ${!isCurrent ? `<button class="btn-select-job" onclick="Game.setJob(${job.id})" ${!isUnlocked ? 'disabled' : ''}>${isUnlocked ? 'Aplicar' : 'Bloqueado'}</button>` : ''}
+                `;
+                container.appendChild(div);
+            });
+            UI.els.modals.job.classList.add('active');
+        };
+        UI.els.modals.closeJob.onclick = () => UI.els.modals.job.classList.remove('active');
+
+        // Settings Modal
+        UI.els.btns.settings.onclick = () => UI.els.modals.settings.classList.add('active');
+        UI.els.modals.closeSettings.onclick = () => UI.els.modals.settings.classList.remove('active');
+
+        // Auth Listeners
+        UI.els.auth.loginBtn.onclick = () => {
+            const email = UI.els.auth.emailInput.value;
+            const pass = UI.els.auth.passInput.value;
+            if (email && pass) DB.login(email, pass);
+        };
+        UI.els.auth.logoutBtn.onclick = () => DB.logout();
+        UI.els.auth.saveBtn.onclick = () => DB.saveGame();
+        UI.els.auth.loadBtn.onclick = () => DB.loadGame();
+
+        // Init
+        setTimeout(() => DB.init(), 500); // Small delay to ensure Supabase loads
+        UI.render();
+
+    </script>
+</body>
+
+</html>
