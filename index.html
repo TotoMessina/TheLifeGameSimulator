@@ -114,7 +114,7 @@
         .stat-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 10px;
         }
 
         .bar-group {
@@ -157,6 +157,63 @@
 
         .energy-fill {
             background-color: #ffd700;
+        }
+
+        @keyframes blinkRed {
+            0% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .critical {
+            animation: blinkRed 1s infinite;
+        }
+
+        /* Activity Modal Buttons */
+        .act-btn {
+            background: #252525;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            margin-bottom: 10px;
+            width: 100%;
+            color: #fff;
+            text-align: left;
+        }
+
+        .act-btn:active {
+            background: #333;
+        }
+
+        .act-info h4 {
+            margin: 0;
+            color: var(--accent-color);
+            font-size: 1rem;
+        }
+
+        .act-info p {
+            margin: 2px 0 0;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .act-cost {
+            text-align: right;
+            font-size: 0.9rem;
+            font-weight: bold;
+            color: #ff6b6b;
         }
 
 
@@ -217,6 +274,12 @@
 
         .event-card.bad {
             border-left-color: var(--danger-color);
+            color: #ffaaaa;
+        }
+
+        .event-card.good {
+            border-left-color: var(--accent-color);
+            color: #ccffcc;
         }
 
         .event-card.info {
@@ -242,40 +305,132 @@
             }
         }
 
-        /* --- Footer (Controls) --- */
+        /* Event Choice Modal */
+        .choice-btn {
+            background-color: #333;
+            color: #fff;
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .choice-btn:active {
+            background-color: #444;
+        }
+
+        .choice-text {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .choice-sub {
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        /* Shop Items */
+        .shop-item {
+            background: #252525;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .shop-details h4 {
+            margin: 0 0 5px 0;
+            font-size: 0.95rem;
+            color: var(--text-color);
+        }
+
+        .shop-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .shop-cost {
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: bold;
+            margin-top: 4px;
+        }
+
+        .shop-maint {
+            font-size: 0.75rem;
+            color: #ff6b6b;
+        }
+
+        .btn-buy {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .btn-buy:disabled {
+            background: #444;
+            color: #888;
+        }
+
+        .owned-tag {
+            color: #4dffea;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        /* Footer (Bottom Nav) */
         footer {
             flex: 0 0 auto;
             background-color: #1a1a1a;
-            padding: 10px;
             border-top: 1px solid #333;
             display: grid;
-            grid-template-columns: repeat(3, 1fr) 1.2fr;
-            gap: 8px;
-            padding-bottom: max(10px, env(safe-area-inset-bottom));
+            grid-template-columns: repeat(4, 1fr);
+            gap: 2px;
+            height: auto;
+            min-height: 60px;
+            padding: 4px;
+            padding-bottom: max(4px, env(safe-area-inset-bottom));
         }
 
-        button {
-            background-color: #2c2c2c;
-            color: var(--text-color);
-            border: 1px solid #444;
-            padding: 10px 4px;
-            border-radius: 8px;
-            font-family: inherit;
-            font-weight: 600;
-            font-size: 0.8rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 4px;
-            -webkit-tap-highlight-color: transparent;
+        footer button {
+            background: transparent;
+            border: none;
+            border-radius: 4px;
+            padding: 4px;
+            color: #888;
+            font-size: 0.65rem;
+            gap: 2px;
+            height: 100%;
         }
 
-        button:active:not([disabled]) {
-            transform: scale(0.96);
-            background-color: #383838;
+        footer button:active:not([disabled]) {
+            background-color: #252525;
+            transform: scale(0.95);
+        }
+
+        footer button.primary {
+            background: transparent;
+            color: var(--accent-color);
+            box-shadow: none;
+        }
+
+        footer button .btn-icon {
+            font-size: 1.4rem;
+            display: block;
+            margin-bottom: 2px;
         }
 
         button:disabled {
@@ -454,6 +609,7 @@
     <header>
         <div class="header-top">
             <div class="date-display" id="date-display">Año 18 - Mes 1</div>
+            <button class="settings-btn" id="shop-trigger" style="margin-right:10px;">🛒</button>
             <button class="settings-btn" id="settings-trigger">⚙️</button>
         </div>
 
@@ -508,7 +664,7 @@
             <span class="btn-icon">💼</span>Trabajar
         </button>
         <button id="btn-study">
-            <span class="btn-icon">📚</span>Estudiar
+            <span class="btn-icon">⚡</span>Mejorar
         </button>
         <button id="btn-rest">
             <span class="btn-icon">💤</span>Descansar
@@ -517,6 +673,21 @@
             <span class="btn-icon">📅</span>Sig. Mes
         </button>
     </footer>
+
+    <!-- Event Choice Modal -->
+    <div class="modal-overlay" id="event-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Evento</span>
+            </div>
+            <div class="modal-body">
+                <p id="event-text" style="font-size: 1rem; line-height: 1.5; margin-bottom: 20px;">...</p>
+                <div id="event-choices">
+                    <!-- Choices injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Job Modal -->
     <div class="modal-overlay" id="job-modal">
@@ -527,6 +698,63 @@
             </div>
             <div class="modal-body" id="job-list-container">
                 <!-- Job items injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Generic Alert Modal -->
+    <div class="modal-overlay" id="alert-modal" style="z-index: 100;">
+        <div class="modal-content" style="max-width:300px; text-align: center;">
+            <div class="modal-body">
+                <h3 id="alert-title" style="margin-top:0; color:var(--text-color);">Alerta</h3>
+                <p id="alert-msg" style="color:#aaa; font-size:0.9rem; margin-bottom:20px;">Mensaje</p>
+                <button class="btn-full primary" id="alert-ok-btn">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Modal -->
+    <div class="modal-overlay" id="activity-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Actividades</span>
+                <button class="close-btn" id="close-act-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <button class="act-btn" onclick="Game.doActivity('study')">
+                    <div class="act-info">
+                        <h4>Estudiar</h4>
+                        <p>Mejora tu Inteligencia.</p>
+                    </div>
+                    <div class="act-cost">-$200<br>-25 E</div>
+                </button>
+                <button class="act-btn" onclick="Game.doActivity('gym')">
+                    <div class="act-info">
+                        <h4>Gimnasio</h4>
+                        <p>Ejercicio moderado.</p>
+                    </div>
+                    <div class="act-cost">-$40<br>-20 E</div>
+                </button>
+                <button class="act-btn" onclick="Game.doActivity('marathon')">
+                    <div class="act-info">
+                        <h4>Maratón</h4>
+                        <p>Gran impulso a Salud y Felicidad.</p>
+                    </div>
+                    <div class="act-cost">-$100<br>-50 E</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shop Modal -->
+    <div class="modal-overlay" id="shop-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>Mercado & Inventario</span>
+                <button class="close-btn" id="close-shop-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="shop-list-container">
+                <!-- Shop items injected here -->
             </div>
         </div>
     </div>
@@ -591,13 +819,99 @@
         };
 
         const JOBS = [
-            { id: 0, title: 'Sin Empleo', salary: 0, reqInt: 0, reqExp: 0 },
-            { id: 1, title: 'Repartidor', salary: 700, reqInt: 10, reqExp: 0 },
-            { id: 2, title: 'Mesero', salary: 1100, reqInt: 20, reqExp: 0 },
-            { id: 3, title: 'Asistente Admin.', salary: 1600, reqInt: 40, reqExp: 5 },
-            { id: 4, title: 'Junior Dev', salary: 2500, reqInt: 60, reqExp: 10 },
-            { id: 5, title: 'Senior Dev', salary: 4500, reqInt: 85, reqExp: 30 },
-            { id: 6, title: 'CEO', salary: 10000, reqInt: 95, reqExp: 60 }
+            // None
+            { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {} },
+
+            // Tech Path (Inteligence Focus)
+            { id: 'tech_trainee', title: 'Trainee IT', salary: 800, career: 'tech', req: { int: 20 } },
+            { id: 'tech_jr', title: 'Junior Dev', salary: 1500, career: 'tech', req: { int: 40, exp: 5 } },
+            { id: 'tech_sr', title: 'Senior Dev', salary: 3500, career: 'tech', req: { int: 70, exp: 20 } },
+            { id: 'tech_cto', title: 'CTO', salary: 8000, career: 'tech', req: { int: 90, exp: 50 } },
+
+            // Corporate Path (Balanced)
+            { id: 'corp_assist', title: 'Asistente', salary: 1000, career: 'corp', req: { int: 15, happy: 50 } },
+            { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 } },
+            { id: 'corp_manager', title: 'Gerente', salary: 4000, career: 'corp', req: { int: 60, exp: 30 } },
+            { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70 } },
+
+            // Sports Path (Health/Energy Focus)
+            { id: 'sport_amateur', title: 'Amateur Deport.', salary: 500, career: 'sport', req: { health: 60, energy: 50 } },
+            { id: 'sport_pro', title: 'Deportista Pro', salary: 3000, career: 'sport', req: { health: 80, exp: 10 } },
+            { id: 'sport_star', title: 'Estrella Mundial', salary: 15000, career: 'sport', req: { health: 95, exp: 40, happy: 70 } },
+            { id: 'sport_legend', title: 'Leyenda', salary: 25000, career: 'sport', req: { health: 100, exp: 80 } }
+        ];
+
+        const SHOP_ITEMS = [
+            { id: 'book_stats', name: 'Libros Técnicos', price: 150, maint: 0, desc: '+10% ganancia al Estudiar', effect: { type: 'study_boost', val: 1.1 } },
+            { id: 'bike', name: 'Bicicleta', price: 300, maint: 0, desc: 'Reduce costos transporte (-$20/mes)', effect: { type: 'col_red', val: 20 } },
+            { id: 'phone', name: 'Smartphone Alta Gama', price: 800, maint: 20, desc: '+2 Felicidad/mes', effect: { type: 'happy_boost', val: 2 } },
+            { id: 'suit', name: 'Traje Elegante', price: 500, maint: 0, desc: '+10% Salario (Oficina)', effect: { type: 'wage_mult', val: 1.1 } }, // Simplified to all jobs for MVP
+            { id: 'laptop', name: 'Laptop Gamer', price: 2000, maint: 0, desc: '+20% Salario (Devs) y Felicidad', effect: { type: 'wage_mult_high', val: 1.2 } },
+            { id: 'car', name: 'Automóvil', price: 5000, maint: 200, desc: 'Gran estatus (+5 Felicidad/mes)', effect: { type: 'happy_boost', val: 5 } },
+            { id: 'apt', name: 'Apartamento Lujoso', price: 50000, maint: 800, desc: 'Vida de rico. +20 Felicidad/mes', effect: { type: 'happy_boost', val: 20 } }
+        ];
+
+        // --- EVENTS DB ---
+        const EVENTS = [
+            // Instant Events
+            { id: 1, type: 'instant', text: "Encontraste $50 en el suelo.", effect: (s) => ({ money: 50, msg: "¡Suerte! +$50", type: 'good' }) },
+            { id: 2, type: 'instant', text: "Perdiste tu billetera.", effect: (s) => ({ money: -100, happiness: -5, msg: "Qué mala suerte. -$100", type: 'bad' }) },
+            { id: 3, type: 'instant', text: "Te enfermaste de gripe.", effect: (s) => ({ health: -10, energy: -20, msg: "Gripe fuerte. -Salud, -Energía", type: 'bad' }) },
+            { id: 4, type: 'instant', text: "Un amigo te invita a cenar.", effect: (s) => ({ happiness: 10, msg: "Cena gratis. +Felicidad", type: 'good' }) },
+            { id: 5, type: 'instant', text: "Tu ropa se rompió.", effect: (s) => ({ money: -50, msg: "Gastos de ropa. -$50", type: 'bad' }) },
+
+            // Choice Events
+            {
+                id: 6, type: 'choice', text: "Te ofrecen un 'negocio' rápido pero dudoso.",
+                choices: [
+                    {
+                        text: "Aceptar (Riesgo)", sub: "Ganar mucho o perder mucho", action: (s) => {
+                            return Math.random() > 0.5
+                                ? { money: 1000, msg: "¡Salió bien! Ganaste $1000", type: 'good' }
+                                : { money: -500, happiness: -10, msg: "Era una estafa. Perdiste $500", type: 'bad' };
+                        }
+                    },
+                    { text: "Rechazar", sub: "Mejor prevenir", action: (s) => ({ happiness: 2, msg: "Evitaste problemas.", type: 'info' }) }
+                ]
+            },
+            {
+                id: 7, type: 'choice', text: "Tu jefe te pide trabajar horas extra no pagadas.",
+                choices: [
+                    { text: "Hacerlo", sub: "Ganas experiencia, pierdes energía", action: (s) => ({ experience: 2, energy: -30, happiness: -5, msg: "Tu jefe lo valora. +Exp", type: 'info' }) },
+                    { text: "Negarse", sub: "Mantienes dignidad", action: (s) => ({ happiness: 5, msg: "Te respetaste a ti mismo. +Felicidad", type: 'good' }) }
+                ]
+            },
+            {
+                id: 8, type: 'choice', text: "Oferta de curso online con descuento.",
+                choices: [
+                    {
+                        text: "Comprar ($150)", sub: "+Inteligencia", action: (s) => {
+                            if (s.money < 150) return { msg: "No tienes dinero suficiente.", type: 'bad' };
+                            return { money: -150, intelligence: 5, msg: "Aprendiste mucho. +Int", type: 'good' };
+                        }
+                    },
+                    { text: "No gracias", sub: "Ahorrar dinero", action: (s) => ({ msg: "Pasaste la oferta.", type: 'info' }) }
+                ]
+            },
+            {
+                id: 9, type: 'choice', text: "Un mendigo te pide ayuda.",
+                choices: [
+                    {
+                        text: "Dar $10", sub: "Te sientes bien", action: (s) => {
+                            if (s.money < 10) return { msg: "No tienes cambio.", type: 'info' };
+                            return { money: -10, happiness: 5, msg: "Ayudaste a alguien. +Felicidad", type: 'good' };
+                        }
+                    },
+                    { text: "Ignorar", sub: "Nada cambia", action: (s) => ({ msg: "Seguiste caminando.", type: 'info' }) }
+                ]
+            },
+            {
+                id: 10, type: 'choice', text: "Encuentras un gatito abandonado.",
+                choices: [
+                    { text: "Adoptarlo ($50/mes)", sub: "+Felicidad constante, -Dinero", action: (s) => ({ money: -100, happiness: 15, msg: "Tienes mascota nueva (Gastos veterinario -$100).", type: 'good' }) },
+                    { text: "Llevarlo a refugio", sub: "Haces lo correcto", action: (s) => ({ happiness: 2, msg: "El gatito está a salvo.", type: 'info' }) }
+                ]
+            }
         ];
 
         // --- 2. GAME STATE ---
@@ -609,7 +923,11 @@
             intelligence: 10,
             energy: 100,
             experience: 0,
-            currJobId: 0
+            experience: 0,
+            currJobId: 'unemployed',
+            inventory: [],
+            consecutiveWork: 0,
+            sickDuration: 0
         };
 
         // --- 3. UI CONTROLLER ---
@@ -644,7 +962,20 @@
                     jobList: document.getElementById('job-list-container'),
                     closeJob: document.getElementById('close-job-modal'),
                     settings: document.getElementById('settings-modal'),
-                    closeSettings: document.getElementById('close-settings-modal')
+                    closeSettings: document.getElementById('close-settings-modal'),
+                    event: document.getElementById('event-modal'),
+                    eventText: document.getElementById('event-text'),
+                    eventChoices: document.getElementById('event-choices'),
+                    shop: document.getElementById('shop-modal'),
+                    shopList: document.getElementById('shop-list-container'),
+                    closeShop: document.getElementById('close-shop-modal'),
+                    shopBtn: document.getElementById('shop-trigger'),
+                    act: document.getElementById('activity-modal'),
+                    closeAct: document.getElementById('close-act-modal'),
+                    alert: document.getElementById('alert-modal'),
+                    alertTitle: document.getElementById('alert-title'),
+                    alertMsg: document.getElementById('alert-msg'),
+                    alertBtn: document.getElementById('alert-ok-btn')
                 },
                 auth: {
                     section: document.getElementById('auth-section'),
@@ -669,11 +1000,13 @@
                 const mos = (totalM % 12) + 1;
                 this.els.date.innerText = `Año ${yrs} - Mes ${mos}`;
 
-                // Money
-                this.els.money.innerText = `$${state.money.toLocaleString()}`;
+                this.els.date.innerText = `Año ${yrs} - Mes ${mos}`;
+
+                // Money Animation
+                this.animateNumber(this.els.money, parseInt(this.els.money.innerText.replace(/[^0-9-]/g, '')) || 0, state.money);
 
                 // Job
-                const job = JOBS[state.currJobId];
+                const job = JOBS.find(j => j.id === state.currJobId) || JOBS[0];
                 this.els.jobTitle.innerText = `${job.title} ($${job.salary}/mes)`;
 
                 // Bars
@@ -684,15 +1017,26 @@
                 };
 
                 setBar('health', state.health);
+                if (state.health < 20) this.els.bars.health.classList.add('critical');
+                else this.els.bars.health.classList.remove('critical');
+
                 setBar('happy', state.happiness);
                 setBar('energy', state.energy);
                 setBar('intel', state.intelligence, 100);
 
                 // Button States (Energy Check)
                 const hasEnergy = state.energy >= 20;
-                this.els.btns.work.disabled = !hasEnergy;
-                this.els.btns.study.disabled = !hasEnergy;
+                const isSick = state.sickDuration > 0;
+
+                this.els.btns.work.disabled = !hasEnergy || isSick;
+                this.els.btns.study.disabled = !hasEnergy; // This is now 'Mejorar' btn
                 this.els.btns.rest.disabled = state.energy >= 100;
+
+                if (isSick) {
+                    this.els.btns.work.innerHTML = '<span class="btn-icon">🤒</span>Enfermo';
+                } else {
+                    this.els.btns.work.innerHTML = '<span class="btn-icon">💼</span>Trabajar';
+                }
 
                 // Auto Scroll
                 setTimeout(() => {
@@ -733,7 +1077,6 @@
                 this.floatText(`${sign}$${Math.abs(amount)}`, color);
             },
 
-            // Updates Auth UI based on session
             updateAuthUI(user) {
                 if (user) {
                     this.els.auth.form.classList.add('hidden');
@@ -752,6 +1095,39 @@
                     this.els.auth.saveMsg.innerText = "Inicia sesión para guardar.";
                     this.els.auth.saveMsg.style.color = "#888";
                 }
+            },
+
+            animateNumber(el, start, end) {
+                if (start === end) return;
+                const duration = 500;
+                const startTime = performance.now();
+
+                const step = (currentTime) => {
+                    const elapsed = currentTime - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    // Ease out quart
+                    const ease = 1 - Math.pow(1 - progress, 4);
+
+                    const current = Math.floor(start + (end - start) * ease);
+                    el.innerText = `$${current.toLocaleString()}`;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        el.innerText = `$${end.toLocaleString()}`; // Ensure final value
+                    }
+                };
+                requestAnimationFrame(step);
+            },
+
+            showAlert(title, msg, callback) {
+                this.els.modals.alertTitle.innerText = title;
+                this.els.modals.alertMsg.innerText = msg;
+                this.els.modals.alert.classList.add('active');
+                this.els.modals.alertBtn.onclick = () => {
+                    this.els.modals.alert.classList.remove('active');
+                    if (callback) callback();
+                };
             }
         };
 
@@ -767,50 +1143,113 @@
             },
 
             work() {
+                if (state.sickDuration > 0) {
+                    UI.log("Estás demasiado enfermo para trabajar.", "bad");
+                    return;
+                }
                 if (state.energy < 20) return;
 
-                const job = JOBS[state.currJobId];
-                if (state.currJobId === 0) {
+                // Burnout Check
+                state.consecutiveWork++;
+                if (state.consecutiveWork > 2) {
+                    this.updateStat('health', -10);
+                    this.updateStat('happiness', -15);
+                    UI.log("¡BURNOUT! Estás trabajando demasiado seguido. Descansa un poco.", "bad");
+                }
+
+                const job = JOBS.find(j => j.id === state.currJobId);
+                if (state.currJobId === 'unemployed') {
                     UI.log("No tienes empleo. Consigue uno tocando la barra de arriba.", "info");
                     return;
                 }
-                const earned = job.salary;
-                this.updateStat('money', earned);
+
+                let earned = job.salary;
+
+                // Item Effects: Wage Multiplier
+                if (state.inventory.includes('suit')) earned *= 1.1;
+                if (state.inventory.includes('laptop') && (job.career === 'tech')) earned *= 1.2;
+
+                this.updateStat('money', Math.floor(earned));
                 this.updateStat('energy', -30);
-                this.updateStat('health', -1);
+                this.updateStat('health', -2);
                 this.updateStat('experience', 1);
 
-                UI.log(`Trabajaste como ${job.title}. Ganaste $${earned}.`, "normal");
+                UI.log(`Trabajaste como ${job.title}. Ganaste $${Math.floor(earned)}.`, "normal");
                 UI.render();
             },
 
-            study() {
+            doActivity(type) {
                 if (state.energy < 20) return;
-                if (state.money < CONFIG.studyCost) {
-                    UI.log("No tienes suficiente dinero para estudiar.", "bad");
-                    return;
-                }
-                this.updateStat('money', -CONFIG.studyCost);
-                this.updateStat('energy', -25);
-                this.updateStat('intelligence', 2 + Math.floor(state.intelligence * 0.05));
 
-                UI.log(`Estudiaste intensamente. Tu inteligencia ha mejorado.`, "info");
+                if (type === 'study') {
+                    if (state.money < CONFIG.studyCost) return UI.log("Dinero insuficiente.", "bad");
+                    this.updateStat('money', -CONFIG.studyCost);
+                    this.updateStat('energy', -25);
+
+                    let gain = 2 + Math.floor(state.intelligence * 0.05);
+                    // Item Effect
+                    if (state.inventory.includes('book_stats')) gain = Math.ceil(gain * 1.5);
+
+                    this.updateStat('intelligence', gain);
+                    UI.log(`Estudiaste intensamente. +${gain} Int.`, "info");
+                }
+                else if (type === 'gym') {
+                    if (state.money < 40) return UI.log("Dinero insuficiente.", "bad");
+                    this.updateStat('money', -40);
+                    this.updateStat('energy', -20);
+                    this.updateStat('health', 5);
+                    this.updateStat('happiness', 2);
+                    UI.log("Buena sesión en el gym. +Salud, +Felicidad.", "good");
+                }
+                else if (type === 'marathon') {
+                    if (state.money < 100) return UI.log("Dinero insuficiente.", "bad");
+                    this.updateStat('money', -100);
+                    this.updateStat('energy', -50);
+                    this.updateStat('health', 15);
+                    this.updateStat('happiness', 10);
+                    UI.log("Corriste una maratón. ¡Te sientes genial!", "good");
+                }
+
+                UI.els.modals.act.classList.remove('active');
                 UI.render();
             },
 
             rest() {
+                state.consecutiveWork = 0; // Reset burnout
                 this.updateStat('energy', 40);
-                this.updateStat('health', 1);
-                this.updateStat('happiness', 2);
-                UI.log("Tomaste un descanso. Recuperaste energía.", "normal");
+                this.updateStat('health', 2);
+                this.updateStat('happiness', 3);
+                UI.log("Tomaste un descanso y te relajaste.", "normal");
                 UI.render();
             },
 
             nextMonth() {
                 if (this.checkGameOver()) return;
-                state.totalMonths++;
-                this.updateStat('money', -CONFIG.costOfLiving);
-                let msg = `Mes nuevo. Gastos de vida: -$${CONFIG.costOfLiving}`;
+
+                state.consecutiveWork = 0; // Reset burnout monthly
+
+                // Sickness Check
+                if (state.sickDuration > 0) {
+                    state.sickDuration--;
+                    UI.log("Sigues recuperándote de tu enfermedad...", "bad");
+                } else if (state.health < 30) {
+                    if (Math.random() < 0.3) {
+                        state.sickDuration = 2;
+                        UI.log("¡Te has enfermado gravemente! No podrás trabajar por 2 meses.", "bad");
+                        this.updateStat('happiness', -20);
+                    } else {
+                        UI.log("Tu salud es frágil. Cuidate o te enfermarás.", "info");
+                    }
+                }
+
+                // Mantenimiento de Items
+                let stats = this.calculateItemEffects();
+                let totalCost = CONFIG.costOfLiving + stats.maint;
+
+                this.updateStat('money', -totalCost);
+                this.updateStat('happiness', stats.happy);
+
+                let msg = `Mes nuevo. Gastos: -$${totalCost} (Vida + Mantenimiento)`;
                 let type = 'normal';
 
                 if (state.money < 0) {
@@ -826,41 +1265,121 @@
             },
 
             randomEvent() {
-                const r = Math.random();
-                if (r < 0.08) {
-                    const lost = 150;
-                    this.updateStat('money', -lost);
-                    this.updateStat('happiness', -8);
-                    UI.log(`Te multaron por exceso de velocidad. -$${lost}`, "bad");
-                } else if (r > 0.95) {
-                    const gain = 300;
-                    this.updateStat('money', gain);
-                    UI.log(`Ganaste un pequeño premio en la lotería. +$${gain}`, "info");
+                // 20% Chance
+                if (Math.random() > 0.2) return;
+
+                const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+
+                if (event.type === 'instant') {
+                    const res = event.effect(state);
+                    this.applyEffect(res);
+                } else if (event.type === 'choice') {
+                    this.showEventModal(event);
                 }
             },
 
-            setJob(jobId) {
+            applyEffect(res) {
+                if (res.money) this.updateStat('money', res.money);
+                if (res.health) this.updateStat('health', res.health);
+                if (res.happiness) this.updateStat('happiness', res.happiness);
+                if (res.energy) this.updateStat('energy', res.energy);
+                if (res.intelligence) this.updateStat('intelligence', res.intelligence);
+                if (res.experience) this.updateStat('experience', res.experience);
+
+                UI.log(res.msg || "Evento procesado.", res.type || 'info');
+                UI.render();
+            },
+
+            showEventModal(event) {
+                UI.els.eventText.innerText = event.text;
+                UI.els.eventChoices.innerHTML = '';
+
+                event.choices.forEach(choice => {
+                    const btn = document.createElement('div');
+                    btn.className = 'choice-btn';
+                    btn.innerHTML = `<span class="choice-text">${choice.text}</span><span class="choice-sub">${choice.sub}</span>`;
+                    btn.onclick = () => {
+                        const res = choice.action(state);
+                        this.applyEffect(res);
+                        UI.els.modals.event.classList.remove('active');
+                    };
+                    UI.els.eventChoices.appendChild(btn);
+                });
+
+                UI.els.modals.event.classList.add('active');
+            },
+
+            applyToJob(jobId) {
                 const job = JOBS.find(j => j.id === jobId);
                 if (!job) return;
-                if (state.intelligence < job.reqInt || state.experience < job.reqExp) {
-                    UI.log(`No cumples los requisitos para ser ${job.title}.`, "bad");
+
+                // Verify Requirements
+                const reqs = job.req;
+                let missing = [];
+
+                if (reqs.int && state.intelligence < reqs.int) missing.push(`Inteligencia ${reqs.int}`);
+                if (reqs.exp && state.experience < reqs.exp) missing.push(`Experiencia ${reqs.exp}`);
+                if (reqs.health && state.health < reqs.health) missing.push(`Salud ${reqs.health}`);
+                if (reqs.happy && state.happiness < reqs.happy) missing.push(`Felicidad ${reqs.happy}`);
+
+                if (missing.length > 0) {
+                    UI.showAlert("Requisitos Insuficientes", `Te falta: ${missing.join(', ')}`);
                     return;
                 }
+
                 state.currJobId = jobId;
-                UI.log(`¡Felicidades! Ahora trabajas como ${job.title}.`, "info");
+                UI.showAlert("¡Contratado!", `Has sido contratado como ${job.title}.`);
+                UI.log(`Nueva carrera: ${job.title}`, "good");
                 UI.render();
                 UI.els.modals.job.classList.remove('active');
             },
 
             checkGameOver() {
                 if (state.health <= 0) {
-                    UI.log("GAME OVER: Tu salud ha llegado a 0.", "bad");
+                    UI.showAlert("GAME OVER", "Tu cuerpo no pudo más. Has muerto.", () => location.reload()); // Simple reload for now
                     this.disableGame();
                     return true;
                 }
                 return false;
             },
-            disableGame() { Object.values(UI.els.btns).forEach(b => b.disabled = true); }
+            disableGame() { Object.values(UI.els.btns).forEach(b => b.disabled = true); },
+
+            buyItem(itemId) {
+                const item = SHOP_ITEMS.find(i => i.id === itemId);
+                if (state.money < item.price) {
+                    UI.showAlert("Fondos Insuficientes", "No tienes suficiente dinero para comprar esto.");
+                    return;
+                }
+                if (state.inventory.includes(itemId)) return;
+
+                this.updateStat('money', -item.price);
+                state.inventory.push(itemId);
+                UI.log(`Compraste: ${item.name}`, "good");
+
+                // Refresh Shop UI if open
+                const container = UI.els.modals.shopList;
+                if (container && UI.els.modals.shop.classList.contains('active')) {
+                    // Could re-render shop here but lazy way is nice
+                    UI.els.modals.shopBtn.click();
+                }
+                UI.render();
+            },
+
+            calculateItemEffects() {
+                let maint = 0;
+                let happy = 0;
+                let colRed = 0;
+
+                state.inventory.forEach(id => {
+                    const item = SHOP_ITEMS.find(i => i.id === id);
+                    if (!item) return;
+                    maint += item.maint;
+                    if (item.effect.type === 'col_red') colRed += item.effect.val;
+                    if (item.effect.type === 'happy_boost') happy += item.effect.val;
+                });
+
+                return { maint: Math.max(0, maint - colRed), happy };
+            }
         };
 
         // --- 5. SUPABASE LOGIC ---
@@ -882,23 +1401,24 @@
             },
 
             async login(email, password) {
-                if (!sb) return alert("Configura SUPABASE_URL y KEY en el código.");
+                if (!sb) return UI.showAlert("Error", "Configura SUPABASE_URL en el código.");
                 UI.els.auth.msg.innerText = "Conectando...";
 
                 // Try SignIn
                 let { data, error } = await sb.auth.signInWithPassword({ email, password });
 
                 if (error) {
-                    // Try SignUp if login failed (Basic helper for this user request)
+                    // Try SignUp
                     console.log("Login failed, trying signup:", error.message);
                     const { data: signUpData, error: signUpError } = await sb.auth.signUp({ email, password });
                     if (signUpError) {
                         UI.els.auth.msg.innerText = "Error: " + signUpError.message;
                     } else {
-                        UI.els.auth.msg.innerText = "¡Registro exitoso! Ya estás logueado.";
+                        UI.els.auth.msg.innerText = "¡Registro exitoso!";
                     }
                 } else {
                     UI.els.auth.msg.innerText = "";
+                    UI.showAlert("Bienvenido", "Sesión iniciada correctamente.");
                     UI.els.modals.settings.classList.remove('active');
                 }
             },
@@ -947,7 +1467,8 @@
 
         // --- 6. EVENT LISTENERS ---
         UI.els.btns.work.onclick = () => Game.work();
-        UI.els.btns.study.onclick = () => Game.study();
+        UI.els.btns.study.onclick = () => UI.els.modals.act.classList.add('active'); // Opens Act Modal
+        UI.els.modals.closeAct.onclick = () => UI.els.modals.act.classList.remove('active');
         UI.els.btns.rest.onclick = () => Game.rest();
         UI.els.btns.next.onclick = () => Game.nextMonth();
 
@@ -955,21 +1476,43 @@
         UI.els.jobTrigger.onclick = () => {
             const container = UI.els.modals.jobList;
             container.innerHTML = '';
-            JOBS.forEach(job => {
-                const isUnlocked = state.intelligence >= job.reqInt && state.experience >= job.reqExp;
-                const isCurrent = state.currJobId === job.id;
-                const div = document.createElement('div');
-                div.className = `job-item ${!isUnlocked ? 'locked' : ''}`;
-                div.innerHTML = `
-                    <div class="job-details">
-                        <h4>${job.title} ${isCurrent ? '(Actual)' : ''}</h4>
-                        <p>Salario: $${job.salary}</p>
-                        <div class="job-req">Req: Int ${job.reqInt} | Exp ${job.reqExp}</div>
-                    </div>
-                    ${!isCurrent ? `<button class="btn-select-job" onclick="Game.setJob(${job.id})" ${!isUnlocked ? 'disabled' : ''}>${isUnlocked ? 'Aplicar' : 'Bloqueado'}</button>` : ''}
-                `;
-                container.appendChild(div);
+
+            // Group by Career
+            const careers = {
+                'tech': 'Tecnología',
+                'corp': 'Corporativo',
+                'sport': 'Deportes'
+            };
+
+            Object.entries(careers).forEach(([key, label]) => {
+                const header = document.createElement('h3');
+                header.style.cssText = "color: #fff; border-bottom: 1px solid #444; padding-bottom: 5px; margin-top:15px;";
+                header.innerText = label;
+                container.appendChild(header);
+
+                JOBS.filter(j => j.career === key).forEach(job => {
+                    const isCurrent = state.currJobId === job.id;
+                    const div = document.createElement('div');
+                    div.className = 'job-item';
+
+                    // Build req string
+                    let reqText = [];
+                    if (job.req.int) reqText.push(`Int ${job.req.int}`);
+                    if (job.req.exp) reqText.push(`Exp ${job.req.exp}`);
+                    if (job.req.health) reqText.push(`Salud ${job.req.health}`);
+
+                    div.innerHTML = `
+                        <div class="job-details">
+                            <h4>${job.title} ${isCurrent ? '(Actual)' : ''}</h4>
+                            <p>Salario: $${job.salary}</p>
+                            <div class="job-req">${reqText.join(' | ') || 'Sin requisitos'}</div>
+                        </div>
+                        ${!isCurrent ? `<button class="btn-select-job" onclick="Game.applyToJob('${job.id}')">Postular</button>` : ''}
+                    `;
+                    container.appendChild(div);
+                });
             });
+
             UI.els.modals.job.classList.add('active');
         };
         UI.els.modals.closeJob.onclick = () => UI.els.modals.job.classList.remove('active');
@@ -977,6 +1520,30 @@
         // Settings Modal
         UI.els.btns.settings.onclick = () => UI.els.modals.settings.classList.add('active');
         UI.els.modals.closeSettings.onclick = () => UI.els.modals.settings.classList.remove('active');
+
+        // Shop Modal
+        UI.els.modals.shopBtn.onclick = () => {
+            const container = UI.els.modals.shopList;
+            container.innerHTML = '';
+            SHOP_ITEMS.forEach(item => {
+                const owned = state.inventory.includes(item.id);
+                const div = document.createElement('div');
+                div.className = 'shop-item';
+                div.innerHTML = `
+                    <div class="shop-details">
+                        <h4>${item.name} ${owned ? '<span class="owned-tag">(En Posesión)</span>' : ''}</h4>
+                        <p>${item.desc}</p>
+                        <div class="shop-cost">$${item.price} ${item.maint > 0 ? `<span class="shop-maint">(-$${item.maint}/mes)</span>` : ''}</div>
+                    </div>
+                    <button class="btn-buy" onclick="Game.buyItem('${item.id}')" ${owned || state.money < item.price ? 'disabled' : ''}>
+                        ${owned ? 'Comprado' : 'Comprar'}
+                    </button>
+                 `;
+                container.appendChild(div);
+            });
+            UI.els.modals.shop.classList.add('active');
+        };
+        UI.els.modals.closeShop.onclick = () => UI.els.modals.shop.classList.remove('active');
 
         // Auth Listeners
         UI.els.auth.loginBtn.onclick = () => {
