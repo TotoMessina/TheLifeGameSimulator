@@ -199,34 +199,53 @@ document.getElementById('close-lifestyle').onclick = () => {
 
 // Initialization sequence
 // Initialization sequence
-window.onload = () => {
-    AudioSys.init();
+window.onload = async () => {
+    try {
+        AudioSys.init();
 
-    // Init Logic
-    setTimeout(() => {
-        DB.init();
+        // Init Logic
+        await new Promise(resolve => setTimeout(resolve, 500)); // Small visual delay
+
+        try {
+            await DB.init();
+        } catch (e) {
+            console.warn("Supabase Init Warning (Offline?):", e);
+        }
+
         Game.init();
+        UI.render();
 
-        // Splash Screen Removal
+        // Dev Mode
+        if (typeof DevMode !== 'undefined') {
+            DevMode.init();
+            console.log('🔧 Dev Mode initialized.');
+        }
+
+        // PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch(console.error);
+        }
+
+    } catch (e) {
+        console.error("Critical Init Error:", e);
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            const err = document.createElement('div');
+            err.style.color = '#ff5555';
+            err.style.padding = '20px';
+            err.style.zIndex = '9999';
+            err.innerText = "Error cargando: " + e.message;
+            splash.appendChild(err);
+        }
+    } finally {
+        // Splash Screen Removal - Guaranteed
         const splash = document.getElementById('splash-screen');
         if (splash) {
             setTimeout(() => {
                 splash.classList.add('hidden');
                 setTimeout(() => splash.remove(), 1000);
-            }, 1500);
+            }, 1000);
         }
-    }, 500);
-
-    // Initial render
-    UI.render();
-
-    // Dev Mode
-    DevMode.init();
-    console.log('🔧 Dev Mode initialized.');
-
-    // PWA
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').catch(console.error);
     }
 };
 

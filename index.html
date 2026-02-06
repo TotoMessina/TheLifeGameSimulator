@@ -11,8 +11,7 @@
         href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
     <!-- Import Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/style.css">
-</head>
+    <link rel="stylesheet" href="css/style.css?v=4">
 
 <body>
     <div id="splash-screen">
@@ -46,9 +45,12 @@
                     <span id="gpa-box" style="margin-left:10px; display:none;">GPA: <span id="gpa-display"
                             style="color:var(--primary-color); font-weight:bold;">0.0</span></span>
                 </div>
-                <div class="fin-row" style="font-size:0.8rem;">
-                    <span>Activo: <span id="income-active" style="color:var(--accent-color)">$0/m</span></span>
-                    <span>Pasivo: <span id="income-passive" class="fin-val passive">$0/m</span></span>
+                <div class="fin-row" style="font-size:0.8rem; justify-content: space-between;">
+                    <span title="Ingresos Totales (Salario + Pasivos)">Ing: <span id="income-total"
+                            style="color:var(--accent-color)">$0</span></span>
+                    <span title="Gastos Mensuales">Gas: <span id="expense-total" style="color:#ff4d4d">$0</span></span>
+                    <span title="Flujo de Caja Neto">Flujo: <span id="net-flow"
+                            style="font-weight:bold">$0</span></span>
                 </div>
                 <div class="asset-bar" id="fn-asset-bar">
                     <div class="asset-seg seg-cash" style="width:100%"></div>
@@ -117,7 +119,7 @@
                 <!-- Filled dynamically by UI.renderActions() based on Phase -->
             </div>
             <button id="btn-next" class="primary">
-                <span class="btn-icon">📅</span>Sig. Mes
+                <span class="btn-icon">📅 Siguiente mes</span>
             </button>
         </footer>
     </div>

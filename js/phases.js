@@ -12,21 +12,35 @@ const PhaseManager = {
                     label: '📚 Estudiar',
                     desc: 'Mejora notas e inteligencia',
                     color: '#4da6ff',
-                    onClick: () => School.setFocus('study')
+                    onClick: () => School.studyNow()
                 },
                 {
                     id: 'act-school-play',
                     label: '🎮 Jugar',
                     desc: 'Aumenta felicidad, baja notas',
                     color: '#ff9800',
-                    onClick: () => School.setFocus('hobby')
+                    onClick: () => School.playNow()
                 },
                 {
                     id: 'act-school-social',
                     label: '👫 Socializar',
                     desc: 'Aumenta popularidad',
                     color: '#e91e63',
-                    onClick: () => School.setFocus('social')
+                    onClick: () => School.socializeNow()
+                },
+                {
+                    id: 'act-school-help',
+                    label: '🤝 Ayudar',
+                    desc: 'Ayuda a compañeros (Prodigio)',
+                    color: '#8BC34A',
+                    onClick: () => School.helpClassmates()
+                },
+                {
+                    id: 'act-rest',
+                    label: '😴 Siesta',
+                    desc: 'Recupera energía',
+                    color: '#9E9E9E',
+                    onClick: () => Game.rest()
                 }
             ]
         },
@@ -34,29 +48,42 @@ const PhaseManager = {
             id: 'university',
             name: 'Universidad',
             startAge: 18,
-            endAge: 23, // Can end earlier if dropout
-            theme: 'theme-uni',
+            endAge: 23,
+            theme: 'theme-university',
             actions: [
                 {
-                    id: 'act-uni-class',
-                    label: '🎓 Ir a Clases',
-                    desc: 'Necesario para graduarse',
-                    color: '#9c27b0',
-                    onClick: () => UI.log("Asististe a clase. +Conocimiento", "good")
-                },
-                {
-                    id: 'act-uni-party',
-                    label: '🍻 Fiesta',
-                    desc: 'Cuidado con la resaca',
-                    color: '#e91e63',
-                    onClick: () => UI.log("¡Qué fiesta! -Salud +Felicidad", "normal")
+                    id: 'act-uni-study',
+                    label: '📚 Estudiar',
+                    desc: 'Mejora Notas (-20 E)',
+                    color: '#673AB7',
+                    onClick: () => School.studyNow()
                 },
                 {
                     id: 'act-uni-work',
-                    label: '☕ Trabajo en Cafetería',
-                    desc: 'Gana algo de dinero extra',
+                    label: '☕ Cafetería',
+                    desc: 'Trabajo Medio Tiempo (+$)',
                     color: '#795548',
-                    onClick: () => Game.work() // Modified work logic needed
+                    onClick: () => {
+                        if (state.currJobId === 'unemployed') Game.applyJob('pt_barista');
+                        else UI.log("Ya tienes empleo.", "info");
+                    }
+                },
+                {
+                    id: 'act-uni-job',
+                    label: '💼 Buscar Empleo',
+                    desc: 'Medio tiempo',
+                    color: '#2196F3',
+                    onClick: () => {
+                        UI.openModal('job-modal');
+                        UI.renderJobMarket();
+                    }
+                },
+                {
+                    id: 'act-uni-party',
+                    label: '🎉 Fiesta',
+                    desc: 'Socializa (-Energy)',
+                    color: '#E91E63',
+                    onClick: () => School.socializeNow()
                 }
             ]
         },
@@ -65,28 +92,52 @@ const PhaseManager = {
             name: 'Adultez',
             startAge: 23,
             endAge: 65,
-            theme: 'theme-adult', // Dynamic based on wealth (handled by updateTheme)
+            theme: 'theme-adult', // Dynamic
             actions: [
                 {
-                    id: 'act-work',
-                    label: '💼 Trabajar',
-                    desc: 'Gana dinero y experiencia',
-                    color: '#2196F3',
-                    onClick: () => Game.work()
+                    id: 'act-work-hard',
+                    label: '🔥 Trabajar Duro',
+                    desc: '++Rendimiento --Energía',
+                    color: '#FF5722',
+                    onClick: () => Game.workHard()
+                },
+                {
+                    id: 'act-flatter-boss',
+                    label: '👑 Adular Jefe',
+                    desc: '++Jefe --Colegas',
+                    color: '#9C27B0',
+                    onClick: () => Game.flatterBoss()
+                },
+                {
+                    id: 'act-social-work',
+                    label: '☕ Café con Colegas',
+                    desc: '++Colegas --Rendimiento',
+                    color: '#795548',
+                    onClick: () => Game.socializeColleagues()
                 },
                 {
                     id: 'act-study',
-                    label: '📚 Estudiar / Cursos',
+                    label: '📚 Cursos / Skills',
                     desc: 'Mejora tus habilidades',
                     color: '#673AB7',
-                    onClick: () => Game.study()
+                    onClick: () => Game.renderCourses()
                 },
                 {
                     id: 'act-projects',
                     label: '🚀 Proyectos',
                     desc: 'Emprende o crea algo',
                     color: '#FFC107',
-                    onClick: () => UI.openModal('activity-modal')
+                    onClick: () => {
+                        UI.openModal('activity-modal');
+                        UI.switchActTab('projects');
+                    }
+                },
+                {
+                    id: 'act-rest',
+                    label: '🛋️ Descansar',
+                    desc: 'Recupera energía (+40)',
+                    color: '#607D8B',
+                    onClick: () => Game.rest()
                 }
             ]
         },
@@ -100,16 +151,9 @@ const PhaseManager = {
                 {
                     id: 'act-retire-relax',
                     label: '🏖️ Relajarse',
-                    desc: 'Disfruta de tus ahorros',
+                    desc: 'Disfruta la vida (+Salud/Felicidad)',
                     color: '#00BCD4',
-                    onClick: () => UI.log("Disfrutas de la vida. +Salud", "good")
-                },
-                {
-                    id: 'act-retire-doctor',
-                    label: '💊 Ir al Médico',
-                    desc: 'Cuida tu salud',
-                    color: '#F44336',
-                    onClick: () => UI.log("Chequeo médico realizado.", "info")
+                    onClick: () => UI.log("Disfrutando del retiro...", "good")
                 }
             ]
         }
@@ -117,13 +161,26 @@ const PhaseManager = {
 
     getCurrentPhase() {
         const age = state.age;
+        // Prioritize Student Status for "Prodigies" (Under 18 Uni)
+        if (state.isStudent && age < 23) return this.PHASES.UNIVERSITY;
+
         if (age < 18) return this.PHASES.CHILDHOOD;
-        if (age < 23 && state.isStudent) return this.PHASES.UNIVERSITY; // Flag needed
+        // if (age >= 18 && age < 23 && state.isStudent) return this.PHASES.UNIVERSITY; // Covered above
         if (age < 65) return this.PHASES.ADULTHOOD;
         return this.PHASES.RETIREMENT;
     },
 
     checkTransition() {
+        // If pending graduation (Age 18), don't auto transition
+        if (state.age === 18 && !state.graduationHandled) return;
+
+        // Force Graduation at 23 if still student
+        if (state.age >= 23 && state.isStudent) {
+            state.isStudent = false;
+            state.education.push('university_degree'); // Generic degree if they survived
+            UI.log("¡Te has graduado de la Universidad! Bienvenido al mundo real.", "good");
+        }
+
         const currentPhase = this.getCurrentPhase();
         // If state.currentPhaseId doesn't match calculated phase, transition!
         if (state.phase !== currentPhase.id) {

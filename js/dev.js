@@ -203,7 +203,8 @@ const DevMode = {
 
     setStat(key, val) {
         state[key] = parseInt(val);
-        document.getElementById(`dev-val-${key === 'physicalHealth' ? 'health' : (key === 'intelligence' ? 'intel' : key)}`).innerText = val;
+        const el = document.getElementById(`dev-val-${key === 'physicalHealth' ? 'health' : (key === 'intelligence' ? 'intel' : key)}`);
+        if (el) el.innerText = val;
         UI.render();
     },
 

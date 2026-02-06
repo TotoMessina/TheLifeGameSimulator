@@ -33,7 +33,16 @@ const state = {
 
     // Collections: 0,
     currJobId: 'unemployed', // Current job ID
+    isStudent: false, // Flag for university phase
+    graduationHandled: false, // Flag for 18yo event
+    loans: 0,
+    network: 0,
     education: [],
+    work_relations: {
+        boss: 50,       // 0-100 Relationship
+        colleagues: 50, // 0-100 Relationship
+        performance: 50 // 0-100 Job Performance
+    },
     activeCourse: null,
     activeProject: null, // { id, name, typeId, progress, duration, penalty }
     creations: [], // { name, type, royalty, quality }

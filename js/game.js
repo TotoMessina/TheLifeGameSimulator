@@ -36,6 +36,15 @@ const Game = {
         // ...
 
         DB.saveGame(); // Auto-save on init just to be safe/sync
+
+        // State Migration / Safety Checks
+        if (!state.school) {
+            state.school = { grades: 70, popularity: 50, pressure: 0, focus: 'study' };
+        }
+        if (!state.work_relations) {
+            state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
+        }
+
         UI.render();
     },
 
@@ -155,6 +164,70 @@ const Game = {
         return score;
     },
 
+    calculateFinancials() {
+        let activeIncome = 0;
+        let passiveIncome = 0;
+        let expenses = 50 + (state.age * 5); // Base COL
+
+        // 1. Active Income (Job)
+        if (state.currJobId !== 'unemployed') {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job) activeIncome += job.salary;
+        }
+
+        // 2. Passive Income
+        // Real Estate (Rent approx 0.5% of value)
+        let reVal = 0;
+        if (state.realEstate) {
+            state.realEstate.forEach(id => {
+                const price = state.rePrices[id] || 0;
+                reVal += price;
+                passiveIncome += Math.floor(price * 0.005);
+            });
+        }
+
+        // Business (Dividends? 10% of profit?)
+        let bizVal = 0;
+        if (state.business && state.business.active) {
+            passiveIncome += Math.floor(state.business.revenue * 0.2); // 20% take home
+            bizVal = state.business.revenue * 12; // Val
+        }
+
+        // Portfolio Dividends? (Simplified 0.2% monthly)
+        let invVal = 0;
+        if (state.portfolio) {
+            Object.keys(state.portfolio).forEach(k => {
+                const p = state.portfolio[k];
+                const price = state.marketPrices[k] || 0;
+                invVal += p.qty * price;
+                if (k === 'stock') passiveIncome += Math.floor((p.qty * price) * 0.002);
+            });
+        }
+
+        // Creations (Royalties)
+        if (state.creations) {
+            state.creations.forEach(c => passiveIncome += c.royalty);
+        }
+
+        // 3. Expenses
+        if (state.children) expenses += state.children.length * 400;
+        if (state.partner && state.partner.status === 'living') expenses += 200;
+
+        // Loans?
+        if (state.loans > 0) expenses += Math.ceil(state.loans * 0.01); // 1% interest
+
+        const netWorth = state.money + reVal + bizVal + invVal;
+
+        return {
+            activeIncome,
+            passiveIncome,
+            expenses,
+            netWorth,
+            cash: state.money,
+            investments: invVal,
+            realEstate: reVal
+        };
+    },
     showEndGame(reason) {
         UI.els.modals.endGame.classList.add('active');
         const score = this.calculateScore();
@@ -289,24 +362,9 @@ const Game = {
                 AudioSys.playMoney();
                 Haptics.success();
             }
-        } else {
-            // Stat Changes Visuals
-            const valEl = UI.els.vals[key === 'physicalHealth' ? 'health' :
-                key === 'happiness' ? 'happy' :
-                    key === 'mentalHealth' ? 'mhealth' :
-                        key === 'intelligence' ? 'intel' : 'energy'];
 
-            if (valEl && amount !== 0) {
-                // Simple color flash or float text?
-                // Let's use log for significant changes
-                if (amount <= -5) {
-                    const names = { physicalHealth: 'Salud', mentalHealth: 'Salud Mental', happiness: 'Felicidad', energy: 'Energía', intelligence: 'Inteligencia' };
-                    UI.log(`${names[key] || key}: ${amount}`, 'bad');
-                }
-
-                // Maybe float text relative to the bar? 
-                // We don't have screen coords easily here without passing element.
-            }
+            // Maybe float text relative to the bar? 
+            // We don't have screen coords easily here without passing element.
         }
         this.checkAchievements();
     },
@@ -324,7 +382,6 @@ const Game = {
                 this.goToPrison(4);
                 UI.log("❌ Te atraparon robando. Fuiste a prisión.", "bad");
             } else {
-                this.updateStat('money', 80);
                 this.updateStat('happiness', 5);
                 UI.log("🥷 Robaste algo sin que te vieran. +$80", "good");
             }
@@ -417,13 +474,15 @@ const Game = {
         UI.render();
     },
 
-    promote(jobId) {
+    promote(arg) {
         // Alias to applyJob for manual job selection, but handle logic if it's an auto-promotion
-        // If jobId is passed (e.g. from UI), use applyJob
-        if (jobId) {
-            this.applyJob(jobId);
+        // If arg is a string (jobId), use applyJob
+        if (typeof arg === 'string') {
+            this.applyJob(arg);
             return;
         }
+
+        const isPolitical = arg === true;
 
         // Logic for auto-promotion (Dev Mode or in-game)
         const currentJob = JOBS.find(j => j.id === state.currJobId);
@@ -438,8 +497,14 @@ const Game = {
             state.currJobId = nextJob.id;
             state.jobXP = 0; // Reset XP for new role
             state.promotions++;
-            UI.showAlert("¡ASCENSO! 📈", `Te han promovido a ${nextJob.title}.`);
-            UI.log(`¡Ascenso! Ahora eres ${nextJob.title}.`, "good");
+
+            let title = isPolitical ? "¡ASCENSO POLÍTICO! 🤝" : "¡ASCENSO! 📈";
+            let msg = isPolitical ?
+                `Tu jefe te adora. Te ha ascendido a ${nextJob.title} saltándose las reglas.` :
+                `Te han promovido a ${nextJob.title}.`;
+
+            UI.showAlert(title, msg);
+            UI.log(msg, "good");
             AudioSys.playSuccess();
             UI.render();
         } else {
@@ -447,9 +512,30 @@ const Game = {
         }
     },
 
+    applyPerformanceReview() {
+        const rand = Math.random();
+        if (rand < 0.2) {
+            this.promote();
+        } else if (rand < 0.5) {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            const salary = job ? job.salary : 0;
+            const bonus = Math.floor(salary * 0.5);
+            state.money += bonus;
+            UI.log(`¡Bono de desempeño! +$${bonus}`, "good");
+            AudioSys.playMoney();
+        } else {
+            UI.log("Buen trabajo hoy. Sigues ganando experiencia.", "normal");
+        }
+    },
+
     applyJob(jobId) {
         const job = JOBS.find(j => j.id === jobId);
         if (!job) return;
+
+        // Restriction: Students can only take Part-Time jobs
+        if (state.isStudent && job.type !== 'part_time' && jobId !== 'unemployed') {
+            return UI.showAlert("Estudiante", "No puedes tener un empleo a tiempo completo mientras estudias. Acepta un trabajo de medio tiempo.");
+        }
 
         // Check reqs
         if (state.intelligence < (job.req.int || 0) ||
@@ -624,12 +710,154 @@ const Game = {
         UI.render();
     },
 
+    socializeColleagues() {
+        if (state.currJobId === 'unemployed') return UI.log("No tienes colegas, estás desempleado.", "bad");
+        if (state.energy < 15) return UI.log("Muy cansado.", "bad");
+
+        this.updateStat('energy', -15);
+        this.updateStat('jobXP', 2); // Networking helps
+        this.updateStat('happiness', 5);
+
+        // Boost all colleague relations
+        let count = 0;
+        if (state.friends) {
+            state.friends.forEach(f => {
+                if (f.isColleague) {
+                    f.relation = Math.min(100, f.relation + 5);
+                    count++;
+                }
+            });
+        }
+
+        if (count === 0) {
+            // Generate a colleague if none
+            this.generateColleague();
+            UI.log("Conociste a un nuevo colega en la máquina de café.", "good");
+        } else {
+            UI.log("Charlaste con tus compañeros de trabajo.", "good");
+        }
+        UI.render();
+    },
+
+    generateColleague() {
+        const names = ["Diego", "Laura", "Fernando", "Camila", "Javier"];
+        const name = names[Math.floor(Math.random() * names.length)];
+        if (!state.friends) state.friends = [];
+        state.friends.push({
+            name: name,
+            relation: 50,
+            isColleague: true,
+            jobTitle: 'Colega'
+        });
+    },
+
+    evolveFriends() {
+        // Called at age 18 to transition childhood friends?
+        // Or just cleanup?
+        UI.log("Tus amistades de la infancia han madurado.", "info");
+
+        if (state.friends) {
+            state.friends.forEach(f => {
+                f.relation = Math.max(20, f.relation - 10); // Drift apart slightly
+            });
+        }
+    },
+
+    triggerReunion() {
+        UI.showEventChoices("Reunión de Ex-alumnos", "Tus compañeros de secundaria se reúnen.", [
+            { text: "Ir (-$50)", onClick: () => { Game.updateStat('money', -50); Game.updateStat('happiness', 10); UI.log("Fue nostálgico.", "good"); } },
+            { text: "No ir", onClick: () => UI.log("Mejor dejar el pasado atrás.", "normal") }
+        ]);
+    },
+
+    triggerMillionaireOffer() {
+        UI.showEventChoices("Propuesta Indecente", "Un millonario te ofrece dinero por... compañía.", [
+            { text: "Aceptar (+$10,000, -Dignidad)", onClick: () => { Game.updateStat('money', 10000); Game.updateStat('happiness', -20); UI.log("Te sientes sucio pero rico.", "bad"); } },
+            { text: "Rechazar", onClick: () => UI.log("Tu dignidad no tiene precio.", "good") }
+        ]);
+    },
+
     rest() {
         state.consecutiveWork = 0;
         this.updateStat('energy', 40);
         this.updateStat('physicalHealth', 2);
         this.updateStat('happiness', 3);
         UI.log("Tomaste un descanso y te relajaste.", "normal");
+        UI.render();
+    },
+
+    processWorkEvents() {
+        if (state.currJobId === 'unemployed') return;
+
+        // Sabotage & Help Logic
+        if (state.friends && state.friends.length > 0) {
+            state.friends.forEach(f => {
+                if (f.isColleague) {
+                    // Sabotage Chance (Low Relation)
+                    if (f.relation < 30 && Math.random() < 0.05) {
+                        UI.log(`${f.name} intentó culparte de un error.`, "bad");
+                        this.updateStat('jobXP', -10);
+                        this.updateStat('mentalHealth', -5);
+                    }
+                    // Help Chance (High Relation)
+                    else if (f.relation > 80 && Math.random() < 0.05) {
+                        UI.log(`${f.name} te ayudó con un informe.`, "good");
+                        this.updateStat('jobXP', 5);
+                    }
+                }
+            });
+        }
+    },
+
+    workHard() {
+        if (state.energy < 30) return UI.log("Demasiado cansado para esforzarte extra.", "bad");
+
+        this.updateStat('energy', -30);
+        this.updateStat('jobXP', 5);
+        this.updateStat('happiness', -2); // Stress
+
+        // Bonus Chance
+        if (Math.random() < 0.4) {
+            UI.log("Tu esfuerzo extra impresionó a tu jefe. +XP", "good");
+            this.updateStat('jobXP', 5);
+        } else {
+            UI.log("Trabajaste duro, pero nadie lo notó.", "normal");
+        }
+        UI.render();
+    },
+
+    flatterBoss() {
+        if (state.currJobId === 'unemployed') return;
+
+        // Find boss (simplification: stored in special relation or just implicit?)
+        // Assuming we update a hidden 'bossRelation' or chance of promo?
+        // Let's assume we update a generic hidden stat or just give small XP/Reputation?
+        // User requirements mentioned "Political Promotions".
+        // Let's add a `bossRelation` to state if missing, or just check `promote(true)` chance.
+
+        if (!state.bossRelation) state.bossRelation = 50;
+
+        this.updateStat('energy', -10);
+        this.updateStat('status', -1); // Some dignity lost?
+
+        if (Math.random() < 0.7) {
+            state.bossRelation += 5;
+            UI.log("Le reíste los chistes al jefe. Le caes mejor.", "good");
+            if (state.bossRelation > 90) {
+                // Change to political promotion trigger?
+                // Let's just boost it.
+            }
+        } else {
+            state.bossRelation -= 5;
+            UI.log("Tu halago sonó falso. El jefe te miró raro.", "bad");
+        }
+
+        // Check for Political Promotion immediately?
+        if (state.bossRelation >= 100) {
+            this.promote(true); // Political promotion
+            state.bossRelation = 50; // Reset
+        }
+
         UI.render();
     },
 
@@ -641,11 +869,12 @@ const Game = {
         state.age = Math.floor(state.totalMonths / 12);
         state.consecutiveWork = 0;
 
-        // 1. BASE STAT DECAY (Fixed: This was missing!)
-        this.updateStat('physicalHealth', -1);
-        this.updateStat('mentalHealth', -2); // Crime stress? Life is hard.
-        this.updateStat('happiness', -1);
-        this.updateStat('energy', 10); // Passive rest
+        // 1. BASE STAT DECAY & FLUCTUATIONS
+        // Replaces static decay with randomized "Realism" logic
+        this.applyNaturalFluctuations();
+
+        // Passive rest (reduced slightly to balance fluctuations)
+        this.updateStat('energy', 5);
 
         // Age Decay
         if (state.age > 40) this.updateStat('physicalHealth', -1);
@@ -663,9 +892,34 @@ const Game = {
         // Routine Tick
         if (typeof Routine !== 'undefined') Routine.tick();
 
-        // School Tick (Under 18)
-        if (state.age < 18 && typeof School !== 'undefined') {
+        // School Tick (Under 18 OR University Student)
+        if ((state.age < 18 || state.isStudent) && typeof School !== 'undefined') {
             School.tick();
+        }
+
+        // Graduation Trigger
+        // Standard: 18 years (216 months)
+        // Skipped Grade: 17 years (204 months)
+        const graduationMonth = (state.school && state.school.skippedGrade) ? 204 : 216;
+
+        if (state.totalMonths >= graduationMonth) {
+            if (!state.graduationHandled) {
+                School.triggerGraduation();
+                // Hook: Evolve Friends at 18
+                this.evolveFriends();
+                return; // Stop processing to wait for user choice
+            }
+        }
+
+        // --- FRIEND EVENTS ---
+        // 1. Reunion (Age 28 = 336 months)
+        if (state.totalMonths === 336) {
+            this.triggerReunion();
+        }
+
+        // 2. Millionaire Offer (Age 30 = 360 months)
+        if (state.totalMonths === 360) {
+            this.triggerMillionaireOffer();
         }
 
         // Phase Transition Check
@@ -700,6 +954,20 @@ const Game = {
             }
         }
 
+        // Work Events (Sabotage, Promotion)
+        this.processWorkEvents();
+
+        // Work XP Gain (Auto)
+        if (state.currJobId !== 'unemployed') {
+            // Base XP + Performance Bonus
+            let xpGain = 2;
+            if (state.work_relations && state.work_relations.performance > 80) xpGain += 2;
+            this.updateStat('jobXP', xpGain);
+
+            // Auto Promote Check
+            if (state.jobXP >= 100) this.applyPerformanceReview();
+        }
+
         // Diet Effect
         if (state.diet === 'fast_food') {
             this.updateStat('physicalHealth', -1);
@@ -714,12 +982,24 @@ const Game = {
         // Financials (Calc and Apply Passive)
         const fin = this.calculateFinancials();
 
-        // Income is NOT automatically added, only passive income. Active is manual work.
-        // Wait, passive income IS added per month? Yes.
-        this.updateStat('money', fin.passiveIncome);
+        // Income Logic:
+        // Passive Income: Always added
+        // Active Income (Job): Now AUTOMATICALLY added per month (User Request)
+        const netCashFlow = (fin.activeIncome + fin.passiveIncome) - fin.expenses;
 
-        // Apply Expenses
-        this.updateStat('money', -fin.expenses);
+        this.updateStat('money', netCashFlow);
+
+        if (netCashFlow !== 0) {
+            // Optional: Don't spam log every month unless significant changes? 
+            // Or maybe just show in the UI summary.
+            // Let's log if negative to warn user
+            if (netCashFlow < 0) {
+                // Check if bankrupt
+                if (state.money < 0) UI.log("¡Tus gastos superan tus ingresos! Cuidado.", "bad");
+            }
+        }
+
+
 
         // Market Fluctuations including World Effects
         ASSETS.forEach(a => {
@@ -773,6 +1053,18 @@ const Game = {
         DB.saveGame();
         DB.logHistory(state.totalMonths, fin); // Log history point
         UI.render();
+    },
+
+    applyNaturalFluctuations() {
+        const stats = ['physicalHealth', 'mentalHealth', 'happiness', 'energy'];
+        stats.forEach(key => {
+            // Random change between -2 and +2
+            const delta = Math.floor(Math.random() * 5) - 2;
+
+            // We use updateStat but we MIGHT want to suppress logs for these small natural changes
+            // logic in updateStat logs if <= -6. Since delta is >= -2, it won't trigger BAD logs.
+            this.updateStat(key, delta);
+        });
     },
 
     randomEvent() {
@@ -972,7 +1264,6 @@ const Game = {
 
     // --- Helpers ---
     calculateFinancials() {
-        // ... (See Step 1163 for Logic)
         // 1. Assets
         let cash = state.money;
         let investments = 0;
@@ -1008,13 +1299,24 @@ const Game = {
             partnerIncome = state.partner.salary || 0;
         }
 
+        // Student Cost Reduction (University)
+        if (state.isStudent) {
+            // User requested extremely low cost of living.
+            baseLiving = 0; // Housing completely subsidized/free for students
+        }
+
         // Diet
         let dietCost = 0;
         if (state.diet === 'fast_food') dietCost = 100;
         else if (state.diet === 'balanced') dietCost = 300;
         else if (state.diet === 'chef') dietCost = 1000;
 
-        const expenses = baseLiving + totalMaint + dietCost;
+        // Student "Meal Plan" Discount (50% off food)
+        if (state.isStudent) {
+            dietCost = Math.floor(dietCost * 0.5);
+        }
+
+        let expenses = baseLiving + totalMaint + dietCost;
 
         // Family
         let petCost = 0;
@@ -1030,7 +1332,15 @@ const Game = {
             }
         });
 
-        const totalExpenses = expenses + petCost + childCost;
+        let totalExpenses = expenses + petCost + childCost;
+
+        // AGE EXEMPTION: Minors don't pay expenses
+        if (state.age < 18) {
+            totalExpenses = 0;
+            expenses = 0;
+            petCost = 0;
+            childCost = 0;
+        }
 
         // Creation Income (Royalties/Ads)
         let royalties = 0;
@@ -1039,10 +1349,17 @@ const Game = {
         }
         passiveIncome += royalties;
 
-        // Active
-        const job = JOBS.find(j => j.id === state.currJobId);
-        let activeIncome = job ? job.salary : 0;
-        if (state.inventory.includes('suit')) activeIncome *= 1.1;
+        // Active Income (Job)
+        let activeIncome = 0;
+
+        if (state.currJobId === 'custom_partner') {
+            activeIncome = 15000; // Fixed high salary for Partner
+        } else {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            activeIncome = job ? job.salary : 0;
+        }
+
+        if (state.inventory.includes('suit')) activeIncome *= 1.1; // Suit Bonus
         activeIncome += partnerIncome;
 
         return {
@@ -1078,6 +1395,23 @@ const Game = {
     renderCourses() {
         UI.els.modals.act.classList.add('active');
         UI.switchActTab('courses');
+    },
+
+    enrollCourse(id) {
+        if (state.education.includes(id)) return;
+        const course = COURSES.find(c => c.id === id);
+
+        if (state.money < course.cost) return UI.log("No tienes suficiente dinero.", "bad");
+
+        this.updateStat('money', -course.cost);
+        // Instant completion for MVP, or we can make it a project.
+        // Let's make it instant but with logging.
+        state.education.push(id);
+        Game.updateStat('intelligence', 10);
+
+        UI.log(`¡Completaste ${course.title}!`, "good");
+        UI.renderCoursesContent(); // Refresh list to show completed
+        UI.render();
     },
 
     // Social Logic (Simplified)

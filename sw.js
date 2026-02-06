@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sim-vida-v1';
+const CACHE_NAME = 'sim-vida-v4'; // Update to v4 to force HTML refresh
 const ASSETS = [
   './',
   './index.html',
@@ -23,13 +23,13 @@ self.addEventListener('fetch', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-    e.waitUntil(
-      caches.keys().then((keyList) => {
-        return Promise.all(keyList.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        }));
-      })
-    );
+  e.waitUntil(
+    caches.keys().then((keyList) => {
+      return Promise.all(keyList.map((key) => {
+        if (key !== CACHE_NAME) {
+          return caches.delete(key);
+        }
+      }));
+    })
+  );
 });

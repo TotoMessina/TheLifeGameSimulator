@@ -64,6 +64,44 @@ const UI = {
         }
     },
 
+    init() {
+        // this.cacheElements(); // Elements are cached in els object directly now
+        this.setupListeners();
+        this.render();
+    },
+
+    showEventChoices(title, text, choices) {
+        const modal = document.getElementById('event-modal');
+        const titleEl = modal.querySelector('.modal-header span');
+        const textEl = document.getElementById('event-text');
+        const choicesEl = document.getElementById('event-choices');
+
+        if (titleEl) titleEl.innerText = title;
+        if (textEl) textEl.innerText = text;
+        choicesEl.innerHTML = '';
+
+        choices.forEach(c => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-choice';
+            btn.style.width = '100%';
+            btn.style.marginBottom = '10px';
+            btn.style.padding = '10px';
+            btn.style.cursor = 'pointer';
+            btn.innerText = c.text;
+            btn.onclick = () => {
+                c.onClick();
+                modal.classList.remove('active');
+            };
+            choicesEl.appendChild(btn);
+        });
+
+        modal.classList.add('active');
+    },
+
+    cacheElements() {
+        // Placeholder if dynamic caching is needed later
+    },
+
     render() {
         // Date
         // Start age is 12 (144 months). But wait, state.totalMonths IS the age in months?
@@ -82,12 +120,27 @@ const UI = {
         const fin = Game.calculateFinancials();
         document.getElementById('networth-val').innerText = `$${Math.floor(fin.netWorth).toLocaleString()}`;
 
-        // Color passive income
-        const piEl = document.getElementById('income-passive');
-        piEl.innerText = `$${Math.floor(fin.passiveIncome)}/m`;
+        // Income / Expenses / Net
+        const totalInc = fin.activeIncome + fin.passiveIncome;
+        const netFlow = totalInc - fin.expenses;
 
-        const aiEl = document.getElementById('income-active');
-        aiEl.innerText = `$${Math.floor(fin.activeIncome)}/m`;
+        const incTotalEl = document.getElementById('income-total');
+        if (incTotalEl) incTotalEl.innerText = `+$${Math.floor(totalInc).toLocaleString()}`;
+
+        const expTotalEl = document.getElementById('expense-total');
+        if (expTotalEl) expTotalEl.innerText = `-$${Math.floor(fin.expenses).toLocaleString()}`;
+
+        // Update Job UI Title override
+        if (state.currJobId === 'custom_partner') {
+            const jobTitle = document.getElementById('job-title-display');
+            if (jobTitle) jobTitle.innerText = "Socio Empresarial";
+        }
+
+        const flowEl = document.getElementById('net-flow');
+        if (flowEl) {
+            flowEl.innerText = `${netFlow >= 0 ? '+' : ''}$${Math.floor(netFlow).toLocaleString()}/m`;
+            flowEl.style.color = netFlow >= 0 ? '#39FF14' : '#ff4d4d';
+        }
 
         // Bars
         const safeNet = Math.max(1, fin.netWorth); // Avoid /0
@@ -101,7 +154,7 @@ const UI = {
         bar.children[2].style.width = `${rePct}%`;
 
         // Achievement Check
-        if (fin.passiveIncome >= fin.expenses && !state.financialFreedom) {
+        if (fin.passiveIncome >= fin.expenses && !state.financialFreedom && state.age >= 18) {
             state.financialFreedom = true;
             this.showAlert("¡LIBERTAD FINANCIERA! 🚀", "Tus ingresos pasivos superan tus gastos. ¡Eres libre!");
         }
@@ -503,6 +556,22 @@ const UI = {
         };
     },
 
+    openModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) {
+            modal.classList.add('active');
+            // If it's activity modal, maybe default to first tab if not specified?
+            // For now just open.
+        } else {
+            console.error(`Modal ${id} not found.`);
+        }
+    },
+
+    closeModal(id) {
+        const modal = document.getElementById(id);
+        if (modal) modal.classList.remove('active');
+    },
+
     switchLifestyleTab(tab) {
         const housingTab = document.getElementById('lifestyle-tab-housing');
         const vehiclesTab = document.getElementById('lifestyle-tab-vehicles');
@@ -531,6 +600,27 @@ const UI = {
         }
     },
 
+    renderCoursesContent() {
+        const container = document.getElementById('act-tab-courses');
+        container.innerHTML = '';
+
+        COURSES.forEach(course => {
+            const hasDegree = state.education.includes(course.id);
+            const el = document.createElement('div');
+            el.className = 'job-item';
+            el.innerHTML = `
+                <div class="job-details">
+                    <h4>${course.title} ${hasDegree ? '✅' : ''}</h4>
+                    <p>Costo: $${course.cost.toLocaleString()} | Duración: ${course.duration}m</p>
+                    <div class="job-req">${course.degree}</div>
+                </div>
+                ${hasDegree ? '<span class="owned-tag">COMPLETADO</span>' :
+                    `<button class="btn-buy" onclick="Game.enrollCourse('${course.id}')">Inscribirse</button>`}
+            `;
+            container.appendChild(el);
+        });
+    },
+
     switchActTab(tab) {
         const courses = document.getElementById('act-tab-courses');
         const projects = document.getElementById('act-tab-projects');
@@ -547,7 +637,7 @@ const UI = {
         if (tab === 'courses') {
             courses.classList.remove('hidden');
             actBtns[0].classList.add('active');
-            Game.renderCourses(); // Helper to re-render courses
+            this.renderCoursesContent(); // Fixed: render content, don't call Game.renderCourses
         } else if (tab === 'projects') {
             projects.classList.remove('hidden');
             actBtns[1].classList.add('active');
@@ -777,9 +867,12 @@ const UI = {
         if (phase && phase.actions) {
             phase.actions.forEach(act => {
                 const btn = document.createElement('button');
+                btn.className = 'act-btn'; // Fix: Apply CSS class!
                 btn.id = act.id;
-                btn.style.borderBottom = '3px solid ' + (act.color || '#444');
-                btn.innerHTML = '<div style="font-weight:bold;">' + act.label + '</div>';
+                // Reduced border width for mobile (visual preference)
+                btn.style.borderBottom = '2px solid ' + (act.color || '#444');
+                // Removed inner div for better flex behavior
+                btn.innerText = act.label;
 
                 btn.onclick = () => {
                     act.onClick();
@@ -1211,6 +1304,11 @@ const UI = {
         list.innerHTML = '';
 
         JOBS.forEach(job => {
+            // FILTER: Students can only see Part-Time jobs
+            if (state.isStudent) {
+                if (job.type !== 'part_time' && job.id !== 'unemployed') return;
+            }
+
             // Check requirements logic for display
             const hasInt = state.intelligence >= (job.req.int || 0);
             const hasHealth = state.physicalHealth >= (job.req.health || 0);

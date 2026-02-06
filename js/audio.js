@@ -40,21 +40,21 @@ const AudioSys = {
 
 const Haptics = {
     pulse() {
-        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10);
+        try { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(10); } catch (e) { }
     },
     success() {
-        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]);
+        try { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([10, 50, 10]); } catch (e) { }
     },
     error() {
-        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([50, 50, 50]);
+        try { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([50, 50, 50]); } catch (e) { }
     },
     medium() {
-        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(30);
+        try { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(30); } catch (e) { }
     },
     heavy() {
-        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(80);
+        try { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate(80); } catch (e) { }
     },
     double() {
-        if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([20, 30, 20]);
+        try { if (window.navigator && window.navigator.vibrate) window.navigator.vibrate([20, 30, 20]); } catch (e) { }
     }
 };

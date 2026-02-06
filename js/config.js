@@ -27,6 +27,7 @@ const TRAITS = [
 ];
 
 const TROPHIES = [
+    { id: 'nerd_king', name: 'Rey de los Nerds', desc: 'Gana una competencia académica.', icon: '🤓', condition: (s) => false },
     { id: 'first_million', name: 'Primer Millón', desc: 'Acumula $1,000,000 en efectivo.', icon: '💰', condition: (s) => s.money >= 1000000 },
     { id: 'marathon', name: 'Maratonista', desc: 'Completa una maratón.', icon: '🏃', condition: (s) => false }, // Manually triggers
     { id: 'ceo', name: 'CEO', desc: 'Alcanza el puesto de CEO.', icon: '📈', condition: (s) => s.currJobId === 'tech_cto' || s.currJobId === 'corp_ceo' },
@@ -43,6 +44,11 @@ const RARE_ITEMS = [
 const JOBS = [
     // None
     { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {} },
+
+    // Student / Part-Time
+    { id: 'pt_barista', title: 'Barista (Part-Time)', salary: 600, career: 'service', type: 'part_time', req: { energy: 30 } },
+    { id: 'pt_tutor', title: 'Tutor Académico', salary: 900, career: 'education', type: 'part_time', req: { int: 60 } },
+    { id: 'pt_delivery', title: 'Repartidor', salary: 700, career: 'service', type: 'part_time', req: { health: 50 } },
 
     // Tech Path (Inteligence Focus)
     { id: 'tech_trainee', title: 'Trainee IT', salary: 800, career: 'tech', req: { int: 20 } },

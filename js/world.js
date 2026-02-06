@@ -125,6 +125,7 @@ const World = {
     },
 
     spawnOpp() {
+        if (state.age < 18) return; // Logic Fix: No investments for kids
         const o = this.opportunities[Math.floor(Math.random() * this.opportunities.length)];
         // Check if already active
         if (state.world.activeOpps.find(x => x.id === o.id)) return;
