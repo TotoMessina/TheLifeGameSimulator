@@ -1,23 +1,18 @@
 
 // --- EVENT LISTENERS ---
 
-// Main Buttons
-UI.els.btns.work.onclick = () => Game.work();
+// Main Buttons - Actions are now dynamic via PhaseManager
 
-UI.els.btns.study.onclick = () => {
-    // Show Courses/Activities Modal
-    UI.els.modals.act.classList.add('active');
-    UI.switchActTab('courses');
-};
-
-UI.els.btns.rest.onclick = () => Game.rest();
 
 UI.els.btns.next.onmousedown = () => {
     // Hold to fast forward? For now just click
     Game.nextMonth();
 };
 // prevent double fire on touch
-UI.els.btns.next.ontouchstart = (e) => { e.preventDefault(); Game.nextMonth(); };
+UI.els.btns.next.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    Game.nextMonth();
+}, { passive: false });
 
 // Modal Close Buttons
 UI.els.modals.closeJob.onclick = () => UI.els.modals.job.classList.remove('active');
@@ -114,6 +109,69 @@ UI.els.auth.loginBtn.onclick = () => {
 UI.els.auth.logoutBtn.onclick = () => DB.logout();
 UI.els.auth.saveBtn.onclick = () => DB.saveGame();
 UI.els.auth.loadBtn.onclick = () => DB.loadGame();
+
+// Business Trigger
+document.getElementById('business-trigger').onclick = () => {
+    document.getElementById('business-modal').classList.add('active');
+    UI.renderBusiness();
+};
+document.getElementById('close-business').onclick = () => {
+    document.getElementById('business-modal').classList.remove('active');
+};
+
+// Athletics Trigger
+document.getElementById('athletics-trigger').onclick = () => {
+    document.getElementById('athletics-modal').classList.add('active');
+    UI.renderAthletics();
+};
+document.getElementById('close-athletics').onclick = () => {
+    document.getElementById('athletics-modal').classList.remove('active');
+};
+
+// Routine Trigger
+document.getElementById('routine-trigger').onclick = () => {
+    document.getElementById('routine-modal').classList.add('active');
+    UI.renderRoutine();
+};
+document.getElementById('close-routine').onclick = () => {
+    document.getElementById('routine-modal').classList.remove('active');
+};
+
+// Profile Trigger
+document.getElementById('profile-trigger').onclick = () => {
+    document.getElementById('profile-modal').classList.add('active');
+    UI.renderProfile();
+};
+document.getElementById('close-profile').onclick = () => {
+    document.getElementById('profile-modal').classList.remove('active');
+};
+
+// School Trigger
+document.getElementById('school-trigger').onclick = () => {
+    document.getElementById('school-modal').classList.add('active');
+    UI.renderSchool();
+};
+document.getElementById('close-school').onclick = () => {
+    document.getElementById('school-modal').classList.remove('active');
+};
+
+// Check Teen Mode in render loop or updateUI
+setInterval(() => {
+    if (state.age < 18) {
+        document.getElementById('school-trigger').style.display = 'inline-block';
+        document.getElementById('gpa-box').style.display = 'inline';
+        // Hide adult stuff
+        document.getElementById('job-trigger').style.display = 'none';
+        document.getElementById('business-trigger').style.display = 'none';
+    } else {
+        document.getElementById('school-trigger').style.display = 'none';
+        document.getElementById('gpa-box').style.display = 'none';
+
+        document.getElementById('job-trigger').style.display = 'inline-block';
+        document.getElementById('business-trigger').style.display = 'inline-block';
+    }
+}, 1000);
+
 
 // Lifestyle Tabs
 document.getElementById('home-trigger').onclick = () => {

@@ -21,9 +21,6 @@ const UI = {
         },
         log: document.getElementById('event-log'),
         btns: {
-            work: document.getElementById('btn-work'),
-            study: document.getElementById('btn-study'),
-            rest: document.getElementById('btn-rest'),
             next: document.getElementById('btn-next'),
             settings: document.getElementById('settings-trigger'),
             trophy: document.getElementById('trophy-trigger')
@@ -69,7 +66,11 @@ const UI = {
 
     render() {
         // Date
-        const totalM = (CONFIG.startAge * 12) + state.totalMonths;
+        // Start age is 12 (144 months). But wait, state.totalMonths IS the age in months?
+        // Or is it elapsed months?
+        // Let's assume state.totalMonths = Age in Months. 
+        // If state starts at 144, then Math.floor(144/12) = 12 years. Correct.
+        const totalM = state.totalMonths;
         const yrs = Math.floor(totalM / 12);
         const mos = (totalM % 12) + 1;
         this.els.date.innerText = `Año ${yrs} - Mes ${mos}`;
@@ -111,9 +112,7 @@ const UI = {
         // XP Bar
         document.getElementById('job-xp-bar').style.width = `${state.jobXP}%`;
 
-        // Calculate Energy Cost for display (optional, but good for UX)
-        let energyCost = Math.max(10, 30 - (state.promotions * 2));
-        const workBtnIcon = this.els.btns.work.querySelector('.btn-icon');
+        // XP Bar
 
         // Diploma Display
         const diploContainer = document.getElementById('diploma-display');
@@ -142,20 +141,27 @@ const UI = {
         setBar('energy', state.energy);
         setBar('intel', state.intelligence, 100);
 
-        // Button States (Energy Check)
-        const hasEnergy = state.energy >= 20;
-        const isSick = state.sickDuration > 0;
+        // Button States (Energy Check) - Moved to dynamic renderActions logic
+        // const hasEnergy = state.energy >= 20;
+        // const isSick = state.sickDuration > 0;
 
-        this.els.btns.work.disabled = !hasEnergy || isSick;
-        this.els.btns.study.disabled = !hasEnergy; // This is now 'Mejorar' btn
-        this.els.btns.rest.disabled = state.energy >= 100;
+    },
 
-        if (isSick) {
-            this.els.btns.work.innerHTML = '<span class="btn-icon">🤒</span>Enfermo';
-        } else {
-            this.els.btns.work.innerHTML = '<span class="btn-icon">💼</span>Trabajar';
+    updateTheme(baseTheme) {
+        // preserve base theme if passed, otherwise check body class
+        let currentTheme = baseTheme || document.body.className;
+
+        // If Adulthood, check wealth for dynamic overrides
+        if (state.phase === 'adulthood') {
+            const netWorth = Game.calculateFinancials().netWorth;
+            if (netWorth > 1000000) {
+                document.body.className = 'theme-adult theme-rich';
+            } else if (netWorth < 0) {
+                document.body.className = 'theme-adult theme-poor';
+            } else {
+                document.body.className = 'theme-adult';
+            }
         }
-
     },
 
     renderNews(headline, type, desc) {
@@ -172,6 +178,197 @@ const UI = {
         setTimeout(() => {
             this.els.log.scrollTop = this.els.log.scrollHeight;
         }, 60);
+    },
+
+    renderAthletics() {
+        const container = document.getElementById('athletics-container');
+        if (!container) return; // safety
+
+        const ath = state.athletics;
+
+        let html = `
+            <div class="stats-row">
+                <h3>🏃 Carrera Atlética</h3>
+                <span class="money-display ${ath.stamina > 50 ? 'gain' : 'loss'}">Resistencia: ${ath.stamina}/150</span>
+            </div>
+            
+            <div style="margin-bottom:20px; text-align:center;">
+                <h4 style="color:#aaa; font-size:0.9rem;">ENTRENAMIENTO MENSUAL</h4>
+                <div style="display:flex; justify-content:center; gap:5px;">
+                    <button class="choice-btn ${ath.training === 'none' ? 'active-job' : ''}" onclick="Athletics.setTraining('none'); UI.renderAthletics()">Nada</button>
+                    <button class="choice-btn ${ath.training === 'low' ? 'active-job' : ''}" onclick="Athletics.setTraining('low'); UI.renderAthletics()">Suave</button>
+                    <button class="choice-btn ${ath.training === 'med' ? 'active-job' : ''}" onclick="Athletics.setTraining('med'); UI.renderAthletics()">Medio</button>
+                    <button class="choice-btn ${ath.training === 'high' ? 'active-job' : ''}" onclick="Athletics.setTraining('high'); UI.renderAthletics()">Intenso</button>
+                </div>
+                <div style="font-size:0.8rem; margin-top:5px; color:#888;">
+                    ${ath.training === 'none' ? 'Descanso total.' :
+                ath.training === 'low' ? '+2 Stamina, -10 Energía' :
+                    ath.training === 'med' ? '+5 Stamina, -20 Energía (Riesgo Bajo)' :
+                        '+10 Stamina, -40 Energía (Riesgo Alto)'}
+                </div>
+            </div>
+
+            <div style="background:#252525; padding:10px; border-radius:6px; margin-bottom:15px;">
+                 <h4 style="margin:0 0 10px 0; border-bottom:1px solid #444; padding-bottom:5px;">📅 Próxima Carrera</h4>
+                 ${ath.race ?
+                `<div>
+                        <div style="font-size:1.1rem; color:#4dffea">${ath.race.name}</div>
+                        <div style="font-size:0.9rem;">Faltan: ${ath.race.monthsLeft} meses</div>
+                    </div>` :
+                `<div style="font-size:0.9rem; color:#888;">No estás inscrito.</div>`}
+            </div>
+
+            <h4 style="margin-bottom:10px;">🏆 Inscripciones</h4>
+        `;
+
+        Object.keys(Athletics.RACES).forEach(key => {
+            const race = Athletics.RACES[key];
+            const completed = ath.medals.includes(key);
+            html += `
+                <div class="job-item ${completed ? 'completed-item' : ''}">
+                    <div class="job-details">
+                        <h4>${race.name} ${completed ? '✅' : ''}</h4>
+                        <div class="job-req">Dist: ${race.dist}km | Req: ${race.reqStam} Stam</div>
+                    </div>
+                    ${!ath.race && !completed ?
+                    `<button class="btn-buy" onclick="if(Athletics.registerRace('${key}')) UI.renderAthletics()">Inscribir</button>` :
+                    ''
+                }
+                </div>
+            `;
+        });
+
+        html += `<h4 style="margin-top:20px;">👟 Equipamiento</h4>`;
+
+        // Shop
+        Object.keys(Athletics.GEAR).forEach(key => {
+            const item = Athletics.GEAR[key];
+            const owned = ath.gear[key];
+            html += `
+                <div class="job-item">
+                     <div class="job-details">
+                        <h4>${item.name}</h4>
+                        <div class="job-req">$${item.cost} - ${item.effect}</div>
+                    </div>
+                    ${owned ? '<span style="color:#4dffea; fontSize:0.8rem">ADQUIRIDO</span>' :
+                    `<button class="btn-buy" onclick="Athletics.buyGear('${key}')">Comprar</button>`}
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    },
+
+    renderBusiness() {
+        const container = document.getElementById('business-container');
+        container.innerHTML = '';
+
+        if (!state.business || !state.business.active) {
+            // Founding Screen
+            container.innerHTML = `<h3>Fundar Startup</h3>
+            <p>Inicia tu propio camino emprendedor.</p>`;
+
+            Object.keys(Business.TYPES).forEach(key => {
+                const type = Business.TYPES[key];
+                const btn = document.createElement('div');
+                btn.className = 'job-item';
+                btn.innerHTML = `
+                    <div class="job-details">
+                        <h4>${type.name}</h4>
+                        <p>Costo: <span style="color:#ff6b6b">$${type.cost}</span></p>
+                        <div class="job-req">Potencial: ${type.pot}x | Dif: ${type.diff}/5</div>
+                    </div>
+                `;
+
+                const startBtn = document.createElement('button');
+                startBtn.className = 'btn-buy';
+                startBtn.innerText = 'Iniciar';
+                if (state.money < type.cost) startBtn.disabled = true;
+
+                startBtn.onclick = () => {
+                    if (Business.startCompany(key, `My ${type.name}`)) {
+                        this.renderBusiness();
+                        this.render(); // update money
+                    }
+                };
+
+                btn.appendChild(startBtn);
+                container.appendChild(btn);
+            });
+            return;
+        }
+
+        // Dashboard
+        const biz = state.business;
+        const html = `
+            <div class="stats-row">
+                <h3>${biz.name}</h3>
+                <span class="money-display ${biz.cash < 0 ? 'loss' : 'gain'}">Based: $${Math.floor(biz.cash)}</span>
+            </div>
+            
+            <div class="stat-grid" style="margin-bottom:15px; background:#252525; padding:10px; border-radius:6px;">
+                <div style="text-align:center">
+                    <div style="font-size:0.8rem; color:#aaa">Revenue (MRR)</div>
+                    <div style="font-size:1.2rem; color:#4dffea">$${biz.revenue}</div>
+                    <div style="font-size:0.7rem; color:${biz.growth >= 0 ? '#39FF14' : '#ff4d4d'}">${biz.growth.toFixed(1)}% MoM</div>
+                </div>
+                <div style="text-align:center">
+                    <div style="font-size:0.8rem; color:#aaa">Users</div>
+                    <div style="font-size:1.2rem;">${biz.users.toLocaleString()}</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom:15px;">
+                <h4 style="margin:0 0 5px 0; color:#aaa; font-size:0.9rem;">Asignación de Esfuerzo (Total: 10)</h4>
+                
+                <div class="bar-group">
+                   <div class="bar-label">Producto (Calidad) <span id="val-prod">${biz.alloc.prod}</span></div>
+                   <input type="range" min="0" max="10" value="${biz.alloc.prod}" class="slider" 
+                        onchange="UI.updateBizAlloc('prod', this.value)">
+                </div>
+                
+                <div class="bar-group">
+                   <div class="bar-label">Marketing (Crecimiento) <span id="val-mkt">${biz.alloc.mkt}</span></div>
+                   <input type="range" min="0" max="10" value="${biz.alloc.mkt}" class="slider" 
+                        onchange="UI.updateBizAlloc('mkt', this.value)">
+                </div>
+
+                <div class="bar-group">
+                   <div class="bar-label">Ventas (Monetización) <span id="val-sales">${biz.alloc.sales}</span></div>
+                   <input type="range" min="0" max="10" value="${biz.alloc.sales}" class="slider" 
+                        onchange="UI.updateBizAlloc('sales', this.value)">
+                </div>
+            </div>
+            
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button class="choice-btn" onclick="UI.raiseFunds()">
+                    <span class="choice-text">💸 Buscar Inversión</span>
+                    <span class="choice-sub">Vender 10% Equity</span>
+                </button>
+                 <button class="choice-btn" style="background:#442222;" onclick="if(confirm('¿Cerrar empresa?')) { state.business.active=false; UI.renderBusiness(); }">
+                    <span class="choice-text">🔒 Cerrar</span>
+                </button>
+            </div>
+        `;
+        container.innerHTML = html;
+    },
+
+    updateBizAlloc(type, val) {
+        // Simple logic: allow any setting, update state directly
+        // Better logic would be to cap total at 10, but let's keep it simple for MVP or enforce total in Business logic validation?
+        // Let's rely on user to be honest? No, let's enforce sum logic conceptually or just let them max out corresponding to cost?
+        // Business logic uses them to calculate Burn Rate. So high stats = High Cost. Perfectly balanced.
+        state.business.alloc[type] = parseInt(val);
+        document.getElementById(`val-${type}`).innerText = val;
+    },
+
+    raiseFunds() {
+        if (Math.random() > 0.7) {
+            Business.injectCash(10000 + (state.business.users * 2), 10);
+        } else {
+            UI.log('Los inversores no están interesados por ahora.', 'info');
+        }
+        this.renderBusiness();
     },
 
     log(msg, type = 'info') {
@@ -463,6 +660,200 @@ const UI = {
         }
     },
 
+    renderRoutine() {
+        const container = document.getElementById('routine-container');
+        if (!container) return;
+
+        const r = state.routine;
+        const total = Routine.calculateTotal();
+        const valid = total === 24;
+
+        // Helper to create slider
+        const mkSlider = (key, label, emoji) => `
+            <div class="bar-group">
+                <div class="bar-label">${emoji} ${label} <span id="val-${key}">${r[key]}h</span></div>
+                <input type="range" min="0" max="24" value="${r[key]}" class="slider" 
+                    oninput="Routine.setHours('${key}', this.value); UI.renderRoutine()">
+            </div>
+        `;
+
+        let html = `
+            <div style="text-align:center; margin-bottom:20px;">
+                <h3>⏰ Distribución del Día</h3>
+                <div style="font-size:2rem; color:${valid ? '#4dffea' : '#ff4d4d'}; font-weight:bold;" id="routine-total-hours">${total}h</div>
+                <div style="font-size:0.8rem; color:#aaa;">Debe sumar exactamente 24h</div>
+            </div>
+
+            ${mkSlider('work', 'Trabajo', '💼')}
+            ${mkSlider('sleep', 'Sueño', '💤')}
+            ${mkSlider('study', 'Estudio', '📚')}
+            ${mkSlider('exercise', 'Ejercicio', '💪')}
+            ${mkSlider('leisure', 'Ocio', '🎮')}
+
+            <h4 style="margin-top:20px;">⚡ Mejoras de Hogar</h4>
+            <div class="job-list">
+        `;
+
+        Object.keys(Routine.UPGRADES).forEach(key => {
+            const up = Routine.UPGRADES[key];
+            const owned = state.upgrades && state.upgrades[key];
+
+            html += `
+                <div class="job-item">
+                    <div class="job-details">
+                        <h4>${up.name}</h4>
+                        <p>${up.desc}</p>
+                        <div class="job-req">$${up.cost}</div>
+                    </div>
+                    ${owned ? '<span style="color:#4dffea; fontSize:0.8rem">ADQUIRIDO</span>' :
+                    `<button class="btn-buy" onclick="Routine.buyUpgrade('${key}')">Comprar</button>`}
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
+    },
+
+    renderSchool() {
+        const container = document.getElementById('school-container');
+        if (!container) return; // Need to add to index.html if not present, or reuse an existing modal
+
+        const s = state.school;
+
+        let focusHtml = '';
+        Object.keys(School.FOCUS).forEach(key => {
+            const f = School.FOCUS[key];
+            const active = s.focus === key ? 'active' : '';
+            focusHtml += `
+                <button class="choice-btn ${active}" onclick="School.setFocus('${key}')">
+                    <div style="font-weight:bold;">${f.name}</div>
+                    <div style="font-size:0.8rem; opacity:0.8;">${f.desc}</div>
+                </button>
+            `;
+        });
+
+        const html = `
+            <div style="text-align:center; margin-bottom:20px;">
+                <div style="font-size:3rem;">🎒</div>
+                <h3>Ciclo Escolar (Edad: ${state.age})</h3>
+                <p>Gestiona tu tiempo hasta los 18 años.</p>
+            </div>
+
+            <div class="stats-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px;">
+                <div class="stat-box">
+                    <div class="label">Notas (Promedio)</div>
+                    <div class="value" style="color:${s.grades > 60 ? '#4dffea' : '#ff4d4d'}">${s.grades.toFixed(1)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Popularidad</div>
+                    <div class="value">${s.popularity.toFixed(0)}</div>
+                </div>
+                <div class="stat-box">
+                    <div class="label">Presión Parental</div>
+                    <div class="value" style="color:${s.pressure > 50 ? '#ff4d4d' : '#aaa'}">${s.pressure.toFixed(0)}%</div>
+                </div>
+            </div>
+
+            <h4>📅 Enfoque Mensual</h4>
+            <div class="choices-list">
+                ${focusHtml}
+            </div>`;
+        container.innerHTML = html;
+        // Update Dashboard GPA if element exists
+        const gpaEl = document.getElementById('gpa-display');
+        if (gpaEl) gpaEl.innerText = s.grades.toFixed(1);
+    },
+
+    renderActions() {
+        const container = document.getElementById('actions-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        if (typeof PhaseManager === 'undefined') return;
+
+        const phase = PhaseManager.getCurrentPhase();
+
+        if (phase && phase.actions) {
+            phase.actions.forEach(act => {
+                const btn = document.createElement('button');
+                btn.id = act.id;
+                btn.style.borderBottom = '3px solid ' + (act.color || '#444');
+                btn.innerHTML = '<div style="font-weight:bold;">' + act.label + '</div>';
+
+                btn.onclick = () => {
+                    act.onClick();
+                };
+
+                container.appendChild(btn);
+            });
+        }
+    },
+
+    renderProfile() {
+        const container = document.getElementById('profile-container');
+        if (!container) return;
+
+        // Avatar
+        let avatar = "👶";
+        if (state.age > 4) avatar = "👦";
+        if (state.age > 18) avatar = "👨";
+        if (state.age > 60) avatar = "👴";
+        if (state.gender === 'female') {
+            if (state.age > 4) avatar = "👧";
+            if (state.age > 18) avatar = "👩";
+            if (state.age > 60) avatar = "👵";
+        }
+
+        // Traits
+        let traitsHtml = '<span style="color:#777;">Sin rasgos especiales</span>';
+        if (state.traits && state.traits.length > 0) {
+            traitsHtml = state.traits.map(function (t) {
+                return '<span class="badge" style="background:#555; margin:2px;">' + t + '</span>';
+            }).join('');
+        }
+
+        // Financials
+        const fin = Game.calculateFinancials();
+        const nw = Math.floor(fin.netWorth).toLocaleString();
+
+        let statusDesc = "Clase Baja";
+        if (state.money > 10000) statusDesc = "Clase Media";
+        if (state.money > 100000) statusDesc = "Rico";
+        if (state.money > 1000000) statusDesc = "Multimillonario";
+
+        const html =
+            '<div style="font-size:4rem; margin-bottom:10px;">' + avatar + '</div>' +
+            '<h2 style="margin:0; color:var(--primary-color)">' + (state.name || 'Jugador') + '</h2>' +
+            '<p style="color:#aaa; margin-top:5px;">Edad: ' + state.age + ' años</p>' +
+
+            '<div style="background:var(--card-bg); padding:15px; border-radius:8px; margin:20px 0; border:1px solid #333;">' +
+            '<div style="display:flex; justify-content:space-around; margin-bottom:10px;">' +
+            '<div>' +
+            '<div style="font-size:0.8rem; color:#888;">Patrimonio</div>' +
+            '<div style="font-size:1.2rem; font-weight:bold; color:var(--accent-color)">$' + nw + '</div>' +
+            '</div>' +
+            '<div>' +
+            '<div style="font-size:0.8rem; color:#888;">Estatus</div>' +
+            '<div style="font-size:1.2rem; font-weight:bold;">' + statusDesc + '</div>' +
+            '</div>' +
+            '</div>' +
+            '<hr style="border:0; border-top:1px solid #333; margin:10px 0;">' +
+            '<div style="text-align:left;">' +
+            '<div style="font-size:0.9rem; color:#ccc; margin-bottom:5px;">Rasgos:</div>' +
+            '<div>' + traitsHtml + '</div>' +
+            '</div>' +
+            '</div>' +
+
+            '<div style="text-align:left; font-size:0.9rem; color:#aaa;">' +
+            '<p>🎓 Educación: ' + (state.education.length > 0 ? state.education.map(e => e.degree).join(', ') : 'Ninguna') + '</p>' +
+            '<p>💼 Trabajo Actual: ' + (state.currJobId !== 'unemployed' ? state.currJobId : 'Desempleado') + '</p>' +
+            '<p>🏠 Vivienda: ' + (state.housing || 'Sofá de un amigo') + '</p>' +
+            '</div>';
+
+        container.innerHTML = html;
+    },
+
     renderSocialTab() {
         const list = document.getElementById('friends-list');
         list.innerHTML = '';
@@ -472,67 +863,64 @@ const UI = {
         pSection.style.cssText = "border-bottom: 1px solid #444; margin-bottom: 15px; padding-bottom: 10px;";
 
         if (!state.partner) {
-            pSection.innerHTML = `
-                <h4 style="color:#aaa; margin-top:0;">Situación Sentimental</h4>
-                <div class="market-card" style="justify-content:center; padding: 20px;">
-                    <button class="act-btn" style="width:100%;" onclick="Game.findLove()">
-                        Buscar Pareja ♥ ($100)
-                    </button>
-                </div>
-            `;
+            pSection.innerHTML =
+                '<h4 style="color:#aaa; margin-top:0;">Situación Sentimental</h4>' +
+                '<div class="market-card" style="justify-content:center; padding: 20px;">' +
+                '<button class="act-btn" style="width:100%;" onclick="Game.findLove()">' +
+                'Buscar Pareja ♥ ($100)' +
+                '</button>' +
+                '</div>';
         } else {
             const p = state.partner;
             const statusLabels = { 'dating': 'Saliendo', 'living': 'Conviviendo', 'married': 'Casados' };
             let nextStepBtn = '';
 
             if (p.status === 'dating' && p.relation > 60) {
-                nextStepBtn = `<button class="act-btn" style="flex:1; background:#00bcd4;" onclick="Game.advanceRel()">Mudarse Juntos</button>`;
+                nextStepBtn = '<button class="act-btn" style="flex:1; background:#00bcd4;" onclick="Game.advanceRel()">Mudarse Juntos</button>';
             } else if (p.status === 'living' && p.relation > 90) {
-                nextStepBtn = `<button class="act-btn" style="flex:1; background:#ff9800;" onclick="Game.advanceRel()">Proponer Matrimonio ($2k)</button>`;
+                nextStepBtn = '<button class="act-btn" style="flex:1; background:#ff9800;" onclick="Game.advanceRel()">Proponer Matrimonio ($2k)</button>';
             }
 
-            pSection.innerHTML = `
-                <h4 style="color:#aaa; margin-top:0;">💕 Pareja: ${statusLabels[p.status]}</h4>
-                <div class="market-card" style="display:block;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <div>
-                            <div style="font-weight:bold; color:#ff69b4;">${p.name}</div>
-                            <div style="font-size:0.8rem; color:#aaa;">${p.jobTitle} ($${p.salary}/m)</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <div style="font-size:0.9rem;">Relación: ${p.relation}%</div>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="act-btn" style="flex:1;" onclick="Game.datePartner()">Cita ($80)</button>
-                        ${nextStepBtn}
-                        <button class="act-btn" style="flex:1; background:#552222;" onclick="Game.breakup()">Romper</button>
-                    </div>
-                </div>
-            `;
+            pSection.innerHTML =
+                '<h4 style="color:#aaa; margin-top:0;">💕 Pareja: ' + statusLabels[p.status] + '</h4>' +
+                '<div class="market-card" style="display:block;">' +
+                '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
+                '<div>' +
+                '<div style="font-weight:bold; color:#ff69b4;">' + p.name + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">' + p.jobTitle + ' ($' + p.salary + '/m)</div>' +
+                '</div>' +
+                '<div style="text-align:right;">' +
+                '<div style="font-size:0.9rem;">Relación: ' + p.relation + '%</div>' +
+                '</div>' +
+                '</div>' +
+                '<div style="display:flex; gap:10px;">' +
+                '<button class="act-btn" style="flex:1;" onclick="Game.datePartner()">Cita ($80)</button>' +
+                nextStepBtn +
+                '<button class="act-btn" style="flex:1; background:#552222;" onclick="Game.breakup()">Romper</button>' +
+                '</div>' +
+                '</div>';
         }
         list.appendChild(pSection);
 
         // --- CHARITY ---
         const charity = document.createElement('div');
         charity.style.marginTop = "20px";
-        charity.innerHTML = `
-            <h4 style="color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Filantropía</h4>
-             <button class="act-btn" onclick="Game.donateCharity(100)">
-                <div class="act-info">
-                    <h4>Donar $100</h4>
-                    <p>Ayuda a los necesitados.</p>
-                </div>
-                <div class="act-cost">+1 Karma</div>
-            </button>
-            <button class="act-btn" onclick="Game.donateCharity(1000)">
-                <div class="act-info">
-                    <h4>Donar $1,000</h4>
-                    <p>Haz una gran diferencia.</p>
-                </div>
-                <div class="act-cost">+10 Karma</div>
-            </button>
-        `;
+        charity.innerHTML =
+            '<h4 style="color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Filantropía</h4>' +
+            '<button class="act-btn" onclick="Game.donateCharity(100)">' +
+            '<div class="act-info">' +
+            '<h4>Donar $100</h4>' +
+            '<p>Ayuda a los necesitados.</p>' +
+            '</div>' +
+            '<div class="act-cost">+1 Karma</div>' +
+            '</button>' +
+            '<button class="act-btn" onclick="Game.donateCharity(1000)">' +
+            '<div class="act-info">' +
+            '<h4>Donar $1,000</h4>' +
+            '<p>Haz una gran diferencia.</p>' +
+            '</div>' +
+            '<div class="act-cost">+10 Karma</div>' +
+            '</button>';
         list.appendChild(charity);
 
         // --- FRIENDS SECTION ---
@@ -552,16 +940,15 @@ const UI = {
 
                 const el = document.createElement('div');
                 el.className = 'market-card';
-                el.innerHTML = `
-               <div>
-                   <div style="font-weight:bold; color:#fff;">${f.name} ${isNet ? '⭐' : ''}</div>
-                   <div style="font-size:0.8rem; color:#aaa;">${f.jobTitle}</div>
-                   <div style="font-size:0.75rem; color:${isNet ? '#4dffea' : '#888'};">Relación: ${f.relation}/100</div>
-               </div>
-               <button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" onclick="Game.maintainFriend('${f.id}')">
-                   Llamar ($50)
-               </button>
-            `;
+                el.innerHTML =
+                    '<div>' +
+                    '<div style="font-weight:bold; color:#fff;">' + f.name + ' ' + (isNet ? '⭐' : '') + '</div>' +
+                    '<div style="font-size:0.8rem; color:#aaa;">' + f.jobTitle + '</div>' +
+                    '<div style="font-size:0.75rem; color:' + (isNet ? '#4dffea' : '#888') + ';">Relación: ' + f.relation + '/100</div>' +
+                    '</div>' +
+                    '<button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" onclick="Game.maintainFriend(\'' + f.id + '\')">' +
+                    'Llamar ($50)' +
+                    '</button>';
                 list.appendChild(el);
             });
         }
@@ -582,23 +969,25 @@ const UI = {
             el.className = 'market-card';
             el.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; margin-bottom:10px; padding:10px; background:#1e1e1e; border:1px solid #444; border-radius:6px;";
 
-            el.innerHTML = `
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:5px;">
-                    <span style="font-weight:bold; color:#fff; font-size:1rem;">${prop.name}</span>
-                    <span style="color:var(--accent-color); font-weight:bold;">$${currentPrice.toLocaleString()}</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem; color:#aaa; margin-bottom:8px;">
-                    <span>Renta: $${prop.rent} | Mant: $${prop.maint}</span>
-                    <span>Neto: <span style="color:#${net > 0 ? '4dffea' : 'ff3939'}">+$${net}/mes</span></span>
-                </div>
-                <div style="display:flex; justify-content:space-between; width:100%; align-items:center;">
-                    <span style="font-size:0.8rem; color:#888;">Propiedad: ${ownedCount}</span>
-                    <div style="display:flex; gap:5px;">
-                        <button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" onclick="Game.buyRealEstate('${prop.id}')">Comprar</button>
-                        ${ownedCount > 0 ? `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" onclick="Game.sellRealEstate('${prop.id}')">Vender</button>` : ''}
-                    </div>
-                </div>
-            `;
+            const buyBtn = '<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" onclick="Game.buyRealEstate(\'' + prop.id + '\')">Comprar</button>';
+            const sellBtn = ownedCount > 0 ? '<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" onclick="Game.sellRealEstate(\'' + prop.id + '\')">Vender</button>' : '';
+
+            el.innerHTML =
+                '<div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:5px;">' +
+                '<span style="font-weight:bold; color:#fff; font-size:1rem;">' + prop.name + '</span>' +
+                '<span style="color:var(--accent-color); font-weight:bold;">$' + currentPrice.toLocaleString() + '</span>' +
+                '</div>' +
+                '<div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem; color:#aaa; margin-bottom:8px;">' +
+                '<span>Renta: $' + prop.rent + ' | Mant: $' + prop.maint + '</span>' +
+                '<span>Neto: <span style="color:#' + (net > 0 ? '4dffea' : 'ff3939') + '">+$' + net + '/mes</span></span>' +
+                '</div>' +
+                '<div style="display:flex; justify-content:space-between; width:100%; align-items:center;">' +
+                '<span style="font-size:0.8rem; color:#888;">Propiedad: ' + ownedCount + '</span>' +
+                '<div style="display:flex; gap:5px;">' +
+                buyBtn +
+                sellBtn +
+                '</div>' +
+                '</div>';
             container.appendChild(el);
         });
     },
@@ -612,28 +1001,27 @@ const UI = {
             const holding = state.portfolio[asset.id];
             const profit = (price - holding.avg) * holding.qty;
             const profitClass = profit >= 0 ? 'good' : 'bad';
-            const profitTxt = profit !== 0 ? `<br><span class="${profitClass}">P/L: $${profit.toFixed(0)}</span>` : '';
+            const profitTxt = profit !== 0 ? '<br><span class="' + profitClass + '">P/L: $' + profit.toFixed(0) + '</span>' : '';
 
             const el = document.createElement('div');
             el.className = 'market-card';
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:#fff;">${asset.name}</div>
-                    <div style="font-size:0.8rem; color:#aaa;">Precio: $${price.toFixed(2)}</div>
-                    <div style="font-size:0.8rem;">Posees: ${holding.qty} (Media: $${holding.avg.toFixed(0)})${profitTxt}</div>
-                </div>
-                <div style="display:flex; flex-direction:column; gap:5px;">
-                     <button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" onclick="Game.trade('${asset.id}', 'buy')">Comprar</button>
-                     <button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" onclick="Game.trade('${asset.id}', 'sell')">Vender</button>
-                </div>
-            `;
+            el.innerHTML =
+                '<div>' +
+                '<div style="font-weight:bold; color:#fff;">' + asset.name + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">Precio: $' + price.toFixed(2) + '</div>' +
+                '<div style="font-size:0.8rem;">Posees: ' + holding.qty + ' (Media: $' + holding.avg.toFixed(0) + ')' + profitTxt + '</div>' +
+                '</div>' +
+                '<div style="display:flex; flex-direction:column; gap:5px;">' +
+                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" onclick="Game.trade(\'' + asset.id + '\', \'buy\')">Comprar</button>' +
+                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" onclick="Game.trade(\'' + asset.id + '\', \'sell\')">Vender</button>' +
+                '</div>';
             container.appendChild(el);
         });
     },
 
     renderShop() {
         const list = this.els.modals.shopList;
-        list.innerHTML = ''; // Start fresh
+        list.innerHTML = '';
 
         // If tab is Invest, re-render invest
         const investTab = document.getElementById('shop-tab-invest');
@@ -654,16 +1042,15 @@ const UI = {
                 const el = document.createElement('div');
                 el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:linear-gradient(45deg, #332a00, #1a1a1a); padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #FFD700;";
 
-                el.innerHTML = `
-                    <div>
-                        <div style="font-weight:bold; color:#FFD700;">${item.icon} ${item.name}</div>
-                        <div style="font-size:0.8rem; color:#aaa;">${item.desc}</div>
-                        <div style="font-size:0.8rem; color:#aaa;">Mant: $${item.maint}/mes</div>
-                    </div>
-                    <button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ${owned ? 'disabled' : ''} onclick="Game.buyRareItem('${item.id}')">
-                        ${owned ? 'Comprado' : '$' + item.price.toLocaleString()}
-                    </button>
-                `;
+                el.innerHTML =
+                    '<div>' +
+                    '<div style="font-weight:bold; color:#FFD700;">' + item.icon + ' ' + item.name + '</div>' +
+                    '<div style="font-size:0.8rem; color:#aaa;">' + item.desc + '</div>' +
+                    '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
+                    '</div>' +
+                    '<button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ' + (owned ? 'disabled' : '') + ' onclick="Game.buyRareItem(\'' + item.id + '\')">' +
+                    (owned ? 'Comprado' : '$' + item.price.toLocaleString()) +
+                    '</button>';
                 list.appendChild(el);
             });
         }
@@ -672,19 +1059,17 @@ const UI = {
         SHOP_ITEMS.forEach(item => {
             const owned = state.inventory.includes(item.id);
             const el = document.createElement('div');
-            // Style inline for simplicity as requested
             el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #333;";
 
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:var(--text-color);">${item.name}</div>
-                    <div style="font-size:0.8rem; color:#888;">${item.desc}</div>
-                    <div style="font-size:0.8rem; color:#aaa;">Mant: $${item.maint}/mes</div>
-                </div>
-                <button class="btn-select-job" ${owned ? 'disabled' : ''} onclick="Game.buyItem('${item.id}')">
-                    ${owned ? 'Comprado' : '$' + item.price}
-                </button>
-            `;
+            el.innerHTML =
+                '<div>' +
+                '<div style="font-weight:bold; color:var(--text-color);">' + item.name + '</div>' +
+                '<div style="font-size:0.8rem; color:#888;">' + item.desc + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
+                '</div>' +
+                '<button class="btn-select-job" ' + (owned ? 'disabled' : '') + ' onclick="Game.buyItem(\'' + item.id + '\')">' +
+                (owned ? 'Comprado' : '$' + item.price) +
+                '</button>';
             list.appendChild(el);
         });
     },
@@ -696,20 +1081,19 @@ const UI = {
         // Summary of expenses
         const fins = Game.calculateFinancials();
         const totalFam = (fins.breakdown.pets || 0) + (fins.breakdown.children || 0);
-        document.getElementById('home-total-expenses').innerText = `-$${totalFam}/mes`;
+        document.getElementById('home-total-expenses').innerText = '- $' + totalFam + '/mes';
 
         // Partner
         if (state.partner && (state.partner.status === 'living' || state.partner.status === 'married')) {
             const p = state.partner;
             const el = document.createElement('div');
             el.className = 'family-card';
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:#ff69b4;">${p.name} (Pareja)</div>
-                    <div style="font-size:0.8rem; color:#aaa;">Ingreso: +$${p.salary}</div>
-                </div>
-                <div style="font-size:1.2rem;">❤️</div>
-            `;
+            el.innerHTML =
+                '<div>' +
+                '<div style="font-weight:bold; color:#ff69b4;">' + p.name + ' (Pareja)</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">Ingreso: +$' + p.salary + '</div>' +
+                '</div>' +
+                '<div style="font-size:1.2rem;">❤️</div>';
             list.appendChild(el);
         }
 
@@ -719,13 +1103,12 @@ const UI = {
             const el = document.createElement('div');
             el.className = 'family-card';
             el.style.borderLeftColor = isIndep ? '#aaa' : '#39FF14';
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:#fff;">${child.name} (${Math.floor(child.ageMonths / 12)} años)</div>
-                    <div style="font-size:0.8rem; color:#aaa;">${isIndep ? 'Independiente' : `Costo: -$${CHILD_COST}/mes`}</div>
-                </div>
-                <div style="font-size:1.2rem;">${isIndep ? '🎓' : '👶'}</div>
-            `;
+            el.innerHTML =
+                '<div>' +
+                '<div style="font-weight:bold; color:#fff;">' + child.name + ' (' + Math.floor(child.ageMonths / 12) + ' años)</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">' + (isIndep ? 'Independiente' : 'Costo: -$' + CHILD_COST + '/mes') + '</div>' +
+                '</div>' +
+                '<div style="font-size:1.2rem;">' + (isIndep ? '🎓' : '👶') + '</div>';
             list.appendChild(el);
         });
 
@@ -734,13 +1117,13 @@ const UI = {
             const el = document.createElement('div');
             el.className = 'family-card';
             el.style.borderLeftColor = '#FFA500';
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:#fff;">${pet.name}</div>
-                    <div style="font-size:0.8rem; color:#aaa;">${PETS.find(p => p.id === pet.id)?.desc || ''}</div>
-                </div>
-                <div style="font-size:1.2rem;">🐾</div>
-            `;
+            const petDesc = PETS.find(p => p.id === pet.id)?.desc || '';
+            el.innerHTML =
+                '<div>' +
+                '<div style="font-weight:bold; color:#fff;">' + pet.name + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">' + petDesc + '</div>' +
+                '</div>' +
+                '<div style="font-size:1.2rem;">🐾</div>';
             list.appendChild(el);
         });
 
@@ -749,27 +1132,6 @@ const UI = {
         }
     },
 
-    // Additional missing methods from the gap read? 
-    // Checking lines 4550-4595 from view 1163 which are UI methods.
-    // Ah, lines 4550+ in View 1163 seem to be inside `renderVehicleCards` or similar?
-    // Let's check view 1163 again.
-    // Line 4550 is `const card ...`. It's inside a loop.
-    // Line 4583 is `buyHousingFromModal`.
-    // Line 4590 is `buyVehicleFromModal`.
-    // Line 4597 is `renderCourses`.
-    // Line 4601 is `calculateFinancials`. THIS IS GAME LOGIC.
-    // Wait, `calculateFinancials` is usually on `Game`.
-    // Let's check if it is `UI` or `Game`.
-    // In view 1163, line 4601 is `calculateFinancials() {`.
-    // Is it inside `UI` or `Game`?
-    // `Game` started at 2978. `DB` starts at 4697.
-    // So `calculateFinancials` is inside `Game`.
-
-    // What about `renderVehicleCards`?
-    // I need to find where `populateHousingCards` and `populateVehicleCards` act.
-    // They are likely in `UI`.
-    // I need to ensure I include all UI methods.
-
     populateHousingCards() {
         const grid = document.getElementById('housing-grid');
         if (!grid) return;
@@ -777,25 +1139,23 @@ const UI = {
         HOUSING.forEach(house => {
             const isCurrent = state.housing === house.id;
             const card = document.createElement('div');
-            card.className = `lifestyle-card ${isCurrent ? 'current' : ''}`;
-            card.innerHTML = `
-                 <div class="lifestyle-card-title">${house.name}</div>
-                 <div class="lifestyle-card-desc">${house.desc}</div>
-                 <div class="lifestyle-card-stats">
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$${house.cost.toLocaleString()}</span></div>
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$${house.maint.toLocaleString()}</span></div>
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Felicidad:</span><span class="lifestyle-card-stat-value positive">+${house.happiness}</span></div>
-                 </div>
-                 <button class="lifestyle-card-btn" ${isCurrent ? 'disabled' : ''} onclick="Game.buyHousingFromModal('${house.id}')">
-                     ${isCurrent ? '✓ Actual' : (state.money >= house.cost ? 'Comprar/Mudar' : 'Sin Fondos')}
-                 </button>
-             `;
+            card.className = 'lifestyle-card ' + (isCurrent ? 'current' : '');
+            card.innerHTML =
+                '<div class="lifestyle-card-title">' + house.name + '</div>' +
+                '<div class="lifestyle-card-desc">' + house.desc + '</div>' +
+                '<div class="lifestyle-card-stats">' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + house.cost.toLocaleString() + '</span></div>' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + house.maint.toLocaleString() + '</span></div>' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Felicidad:</span><span class="lifestyle-card-stat-value positive">+' + house.happiness + '</span></div>' +
+                '</div>' +
+                '<button class="lifestyle-card-btn" ' + (isCurrent ? 'disabled' : '') + ' onclick="Game.buyHousingFromModal(\'' + house.id + '\')">' +
+                (isCurrent ? '✓ Actual' : (state.money >= house.cost ? 'Comprar/Mudar' : 'Sin Fondos')) +
+                '</button>';
             grid.appendChild(card);
         });
     },
 
     populateVehicleCards() {
-        // ... (existing vehicle logic) ...
         const grid = document.getElementById('vehicles-grid');
         if (!grid) return;
         grid.innerHTML = '';
@@ -803,19 +1163,18 @@ const UI = {
             const isCurrent = state.vehicle === vehicle.id;
             const canAfford = state.money >= vehicle.cost;
             const card = document.createElement('div');
-            card.className = `lifestyle-card ${isCurrent ? 'current' : ''}`;
-            card.innerHTML = `
-                 <div class="lifestyle-card-title">${vehicle.name}</div>
-                 <div class="lifestyle-card-desc">${vehicle.desc}</div>
-                 <div class="lifestyle-card-stats">
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">${vehicle.cost === 0 ? 'Gratis' : '$' + vehicle.cost.toLocaleString()}</span></div>
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$${vehicle.maint.toLocaleString()}</span></div>
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Estatus:</span><span class="lifestyle-card-stat-value positive">+${vehicle.status}</span></div>
-                 </div>
-                 <button class="lifestyle-card-btn" ${isCurrent || !canAfford ? 'disabled' : ''} onclick="Game.buyVehicleFromModal('${vehicle.id}')">
-                     ${isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')}
-                 </button>
-             `;
+            card.className = 'lifestyle-card ' + (isCurrent ? 'current' : '');
+            card.innerHTML =
+                '<div class="lifestyle-card-title">' + vehicle.name + '</div>' +
+                '<div class="lifestyle-card-desc">' + vehicle.desc + '</div>' +
+                '<div class="lifestyle-card-stats">' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">' + (vehicle.cost === 0 ? 'Gratis' : '$' + vehicle.cost.toLocaleString()) + '</span></div>' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + vehicle.maint.toLocaleString() + '</span></div>' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Estatus:</span><span class="lifestyle-card-stat-value positive">+' + vehicle.status + '</span></div>' +
+                '</div>' +
+                '<button class="lifestyle-card-btn" ' + (isCurrent || !canAfford ? 'disabled' : '') + ' onclick="Game.buyVehicleFromModal(\'' + vehicle.id + '\')">' +
+                (isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')) +
+                '</button>';
             grid.appendChild(card);
         });
     },
@@ -828,18 +1187,17 @@ const UI = {
             const owned = state.pets.some(p => p.id === pet.id);
             const canAfford = state.money >= pet.cost;
             const card = document.createElement('div');
-            card.className = `lifestyle-card ${owned ? 'current' : ''}`;
-            card.innerHTML = `
-                 <div class="lifestyle-card-title">${pet.name}</div>
-                 <div class="lifestyle-card-desc">${pet.desc}</div>
-                 <div class="lifestyle-card-stats">
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$${pet.cost}</span></div>
-                     <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$${pet.maint}/m</span></div>
-                 </div>
-                 <button class="lifestyle-card-btn" ${owned || !canAfford ? 'disabled' : ''} onclick="Game.buyPet('${pet.id}')">
-                     ${owned ? 'Adoptado' : (canAfford ? 'Adoptar' : 'Sin Fondos')}
-                 </button>
-             `;
+            card.className = 'lifestyle-card ' + (owned ? 'current' : '');
+            card.innerHTML =
+                '<div class="lifestyle-card-title">' + pet.name + '</div>' +
+                '<div class="lifestyle-card-desc">' + pet.desc + '</div>' +
+                '<div class="lifestyle-card-stats">' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + pet.cost + '</span></div>' +
+                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + pet.maint + '/m</span></div>' +
+                '</div>' +
+                '<button class="lifestyle-card-btn" ' + (owned || !canAfford ? 'disabled' : '') + ' onclick="Game.buyPet(\'' + pet.id + '\')">' +
+                (owned ? 'Adoptado' : (canAfford ? 'Adoptar' : 'Sin Fondos')) +
+                '</button>';
             grid.appendChild(card);
         });
     },
@@ -866,22 +1224,19 @@ const UI = {
             if (isCurrent) el.style.borderColor = '#4dffea';
 
             let reqText = [];
-            if (job.req.int) reqText.push(`Int: ${job.req.int}`);
-            if (job.req.health) reqText.push(`Salud: ${job.req.health}`);
-            if (job.req.deg) reqText.push(`Título: ${job.req.deg}`);
+            if (job.req.int) reqText.push('Int: ' + job.req.int);
+            if (job.req.health) reqText.push('Salud: ' + job.req.health);
+            if (job.req.deg) reqText.push('Título: ' + job.req.deg);
 
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:#fff;">${job.title} ${isCurrent ? '(Actual)' : ''}</div>
-                    <div style="font-size:0.8rem; color:#aaa;">Salario: $${job.salary}/mes</div>
-                    <div style="font-size:0.75rem; color:#888;">Req: ${reqText.join(', ') || 'Ninguno'}</div>
-                </div>
-                <button class="act-btn" style="min-height:30px; width:auto; font-size:0.8rem; padding: 5px 10px;" 
-                    ${isCurrent ? 'disabled' : ''} 
-                    onclick="Game.applyJob('${job.id}')">
-                    ${isCurrent ? 'Tuy' : 'Aplicar'}
-                </button>
-            `;
+            el.innerHTML =
+                '<div>' +
+                '<div style="font-weight:bold; color:#fff;">' + job.title + (isCurrent ? ' (Actual)' : '') + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">Salario: $' + job.salary + '/mes</div>' +
+                '<div style="font-size:0.75rem; color:#888;">Req: ' + (reqText.join(', ') || 'Ninguno') + '</div>' +
+                '</div>' +
+                '<button class="act-btn" style="min-height:30px; width:auto; font-size:0.8rem; padding: 5px 10px;" ' + (isCurrent ? 'disabled' : '') + ' onclick="Game.applyJob(\'' + job.id + '\')">' +
+                (isCurrent ? 'Tuy' : 'Aplicar') +
+                '</button>';
             list.appendChild(el);
         });
     },
@@ -909,12 +1264,11 @@ const UI = {
             TROPHIES.forEach(t => {
                 const unlocked = state.unlockedTrophies.includes(t.id);
                 const el = document.createElement('div');
-                el.style.cssText = `background:${unlocked ? '#222' : '#111'}; padding:10px; border:1px solid ${unlocked ? '#FFD700' : '#333'}; opacity:${unlocked ? 1 : 0.5}; border-radius:6px;`;
-                el.innerHTML = `
-                    <div style="font-size:1.5rem;">${t.icon}</div>
-                    <div style="font-weight:bold; color:${unlocked ? '#FFD700' : '#888'}; font-size:0.9rem;">${t.name}</div>
-                    <div style="font-size:0.75rem; color:#aaa;">${t.desc}</div>
-                `;
+                el.style.cssText = 'background: ' + (unlocked ? '#222' : '#111') + '; padding: 10px; border: 1px solid ' + (unlocked ? '#FFD700' : '#333') + '; opacity:' + (unlocked ? 1 : 0.5) + '; border-radius: 6px;';
+                el.innerHTML =
+                    '<div style="font-size:1.5rem;">' + t.icon + '</div>' +
+                    '<div style="font-weight:bold; color:' + (unlocked ? '#FFD700' : '#888') + '; font-size:0.9rem;">' + t.name + '</div>' +
+                    '<div style="font-size:0.75rem; color:#aaa;">' + t.desc + '</div>';
                 grid.appendChild(el);
             });
         }

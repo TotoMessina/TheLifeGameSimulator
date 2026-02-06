@@ -1,3 +1,5 @@
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Courier+Prime:wght@400;700&family=Inter:wght@300;400;600&family=Playfair+Display:wght@400;700&display=swap');
+
         :root {
             --bg-color: #121212;
             --card-bg: #1E1E1E;
@@ -7,7 +9,63 @@
             --danger-color: #FF3939;
             --info-color: #4da6ff;
             --secondary-text: #A0A0A0;
-            --font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-family: 'Inter', sans-serif;
+            --font-header: 'Inter', sans-serif;
+            --primary-color: #00e5ff;
+        }
+
+        /* --- POOR THEME (<4k) --- */
+        body.theme-poor {
+            --bg-color: #0a0a0a;
+            --text-color: #a0a0a0;
+            --primary-color: #555;
+            --accent-color: #8b0000;
+            --card-bg: #111;
+            --font-family: 'Courier Prime', monospace;
+            --font-header: 'Courier Prime', monospace;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
+        }
+
+        body.theme-poor .metric-card {
+            border: 1px dashed #333;
+            box-shadow: none;
+            transform: rotate(0.5deg);
+        }
+
+        /* --- RICH THEME (>100k) --- */
+        body.theme-rich {
+            --bg-color: #0f1215;
+            --text-color: #f0f0f0;
+            --primary-color: #d4af37;
+            --accent-color: #c0c0c0;
+            --card-bg: #181a1e;
+            --font-family: 'Inter', sans-serif;
+            --font-header: 'Playfair Display', serif;
+            background: radial-gradient(circle at top, #1a202c, #0f1215);
+        }
+
+        body.theme-rich .metric-card,
+        body.theme-rich .modal-content {
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        body.theme-rich h1,
+        body.theme-rich h2,
+        body.theme-rich h3 {
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: linear-gradient(45deg, #d4af37, #f2d06b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        body.theme-rich .settings-btn {
+            background: linear-gradient(45deg, #d4af37, #b48811);
+            color: #000;
+            box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+            border: none;
         }
 
         * {

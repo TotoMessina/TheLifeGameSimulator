@@ -176,6 +176,76 @@ const Game = {
         localStorage.setItem('lifeSim_legacy', JSON.stringify(legacy));
     },
 
+    claimLegacy(type) {
+        const legacyData = JSON.parse(localStorage.getItem('lifeSim_legacy'));
+        if (!legacyData) return UI.log("No tienes herencia disponible.", "info");
+
+        if (type === 'money' && legacyData.type === 'money') {
+            this.updateStat('money', legacyData.val);
+            UI.log(`¡Herencia reclamada! +$${legacyData.val}`, 'good');
+        } else if (type === 'genetics' && legacyData.type === 'genetics') {
+            this.updateStat('intelligence', legacyData.val);
+            UI.log(`¡Genética activada! +${legacyData.val} Inteligencia`, 'good');
+        } else {
+            UI.log("Ese tipo de legado no está disponible.", "bad");
+            return;
+        }
+
+        // Clear legacy after claim? Or allow one claim per new game?
+        // Let's clear it to prevent abuse
+        localStorage.removeItem('lifeSim_legacy');
+
+        // Hide modal if open (end game modal might not be open if this is new game)
+        // Actually, where is this button? It's in the END GAME modal of the PREVIOUS game?
+        // No, typically you claim legacy at START of NEW game.
+        // But the user code shows it inside 'end-game-modal'.
+        // Wait, if it's in end-game modal, it means you claim it right away? That doesn't make sense for "Next Life".
+        // Ah, maybe the user wants to "Bank" it for the next life.
+        // "Elige qué dejarle a tu próxima vida" -> Choose what to leave.
+        // So clicking it SETS the legacy.
+        // Re-reading logic:
+
+        // The buttons say: "Hereda el 10% de tu dinero".
+        // So clicking this should SET the localStorage for the NEXT run.
+        // My previous logic in `showEndGame` ALREADY sets it based on logic.
+        // Maybe the user wants a CHOICE.
+
+        // Let's change this to "chooseLegacy".
+        // But wait, the error says "claimLegacy".
+        // Let's implement it as "Set Legacy Preference".
+
+        // Actually, looking at `showEndGame`:
+        /*
+        const legacy = {
+            val: Math.floor(state.money * 0.1), 
+            type: 'money'
+        };
+        if (state.intelligence > 90) ...
+        localStorage.setItem...
+        */
+        // It's automatic right now.
+        // The UI buttons suggest the player should CHOOSE.
+
+        // Implementation: Overwrite the automatic legacy with the user choice.
+    },
+
+    // Correcting Implementation based on UI context:
+    // User clicks button at end of game -> calls claimLegacy -> sets localStorage -> Reloads?
+
+    claimLegacy(choice) {
+        let legacy = {};
+        if (choice === 'money') {
+            legacy = { type: 'money', val: Math.floor(state.money * 0.1) };
+            UI.log("Legado Guardado: Dinero", "good");
+        } else if (choice === 'genetics') {
+            legacy = { type: 'genetics', val: Math.floor(state.intelligence * 0.2) };
+            UI.log("Legado Guardado: Genética", "good");
+        }
+
+        localStorage.setItem('lifeSim_legacy', JSON.stringify(legacy));
+        UI.showAlert("Legado Confirmado", "Tu próxima vida comenzará con esta bonificación.\nRecarga la página para empezar de nuevo.");
+    },
+
     updateStat(key, amount) {
         // Trait modifiers
         if (state.traits) {
@@ -219,31 +289,56 @@ const Game = {
                 AudioSys.playMoney();
                 Haptics.success();
             }
+        } else {
+            // Stat Changes Visuals
+            const valEl = UI.els.vals[key === 'physicalHealth' ? 'health' :
+                key === 'happiness' ? 'happy' :
+                    key === 'mentalHealth' ? 'mhealth' :
+                        key === 'intelligence' ? 'intel' : 'energy'];
+
+            if (valEl && amount !== 0) {
+                // Simple color flash or float text?
+                // Let's use log for significant changes
+                if (amount <= -5) {
+                    const names = { physicalHealth: 'Salud', mentalHealth: 'Salud Mental', happiness: 'Felicidad', energy: 'Energía', intelligence: 'Inteligencia' };
+                    UI.log(`${names[key] || key}: ${amount}`, 'bad');
+                }
+
+                // Maybe float text relative to the bar? 
+                // We don't have screen coords easily here without passing element.
+            }
         }
         this.checkAchievements();
     },
 
+
+
     // --- Actions ---
 
     commitCrime(type) {
+        // Penalty for even trying: Stress/Guilt
+        this.updateStat('mentalHealth', -5);
+
         if (type === 'shoplift') {
-            if (Math.random() > 0.8) { // 20% fail
-                this.goToPrison(3);
-                UI.log("Te atraparon robando. Fuiste a prisión.", "bad");
+            if (Math.random() > 0.7) { // 30% fail (increased risk)
+                this.goToPrison(4);
+                UI.log("❌ Te atraparon robando. Fuiste a prisión.", "bad");
             } else {
-                this.updateStat('money', 50);
+                this.updateStat('money', 80);
                 this.updateStat('happiness', 5);
-                UI.log("Robaste algo pequeño. +$50", "good");
+                UI.log("🥷 Robaste algo sin que te vieran. +$80", "good");
             }
         } else if (type === 'hack') {
-            if (Math.random() > 0.6) { // 40% fail
+            if (Math.random() > 0.5) { // 50% fail
                 this.goToPrison(12);
-                UI.log("El FBI te atrapó. Prisión federal.", "bad");
+                UI.log("🚔 El FBI te rastreó. Prisión Federal.", "bad");
             } else {
-                this.updateStat('money', 2000);
-                UI.log("Hackeo exitoso. +$2000", "good");
+                this.updateStat('money', 3500);
+                this.updateStat('intelligence', 1); // Learn from hacking
+                UI.log("💻 Hackeo exitoso. Transferencia completada. +$3500", "good");
             }
         }
+        // Add more crimes here...
         UI.render();
     },
 
@@ -538,47 +633,62 @@ const Game = {
         UI.render();
     },
 
+    // MERGED nextMonth
     nextMonth() {
         if (this.checkGameOver()) return;
+
         state.totalMonths++;
+        state.age = Math.floor(state.totalMonths / 12);
         state.consecutiveWork = 0;
 
-        // World Update
-        World.tick(); // Triggers new trends/news
+        // 1. BASE STAT DECAY (Fixed: This was missing!)
+        this.updateStat('physicalHealth', -1);
+        this.updateStat('mentalHealth', -2); // Crime stress? Life is hard.
+        this.updateStat('happiness', -1);
+        this.updateStat('energy', 10); // Passive rest
 
-        // Health/Sick Logic
-        // ... (existing sick logic) ...
-        // Apply Global Health Decay if active
-        const effects = World.getEffects();
+        // Age Decay
+        if (state.age > 40) this.updateStat('physicalHealth', -1);
+        if (state.age > 60) this.updateStat('intelligence', -1);
+
+        // 2. Systems Tick
+        World.tick();
+        if (state.business && state.business.active) {
+            Business.tick();
+        }
+
+        // Athletics Tick
+        if (typeof Athletics !== 'undefined') Athletics.tick();
+
+        // Routine Tick
+        if (typeof Routine !== 'undefined') Routine.tick();
+
+        // School Tick (Under 18)
+        if (state.age < 18 && typeof School !== 'undefined') {
+            School.tick();
+        }
+
+        // Phase Transition Check
+        if (typeof PhaseManager !== 'undefined') {
+            PhaseManager.checkTransition();
+        }
+
+        // 3. Health & Sickness
+        const effects = World.getEffects ? World.getEffects() : {};
         if (effects.healthDecay) {
-            state.physicalHealth -= effects.healthDecay;
-            // UI.log? Maybe too spammy.
+            this.updateStat('physicalHealth', -effects.healthDecay);
         }
 
         if (state.sickDuration > 0) {
             state.sickDuration--;
-            UI.log("Sigues enfermo (-Salud Física).", "bad");
+            UI.log("Sigues enfermo... (-5 Salud)", "bad");
             this.updateStat('physicalHealth', -5);
-        } else if (state.physicalHealth < 30) {
+        } else if (state.physicalHealth < 20) {
+            // Risk of getting sick if low health
             if (Math.random() < 0.3) {
-                state.sickDuration = 2;
-                UI.log("¡Te has enfermado gravemente!", "bad");
-                this.updateStat('happiness', -20);
-            } else {
-                UI.log("Tu cuerpo se siente débil. Cuidate.", "info");
-            }
-        }
-
-        // Active Course
-        if (state.activeCourse) {
-            const c = COURSES.find(x => x.id === state.activeCourse.id);
-            state.activeCourse.monthsLeft--;
-            this.updateStat('energy', -c.penalty);
-            if (state.activeCourse.monthsLeft <= 0) {
-                state.education.push(c.id);
-                state.activeCourse = null;
-                UI.showAlert("¡GRADUADO!", `Has completado: ${c.title}.`);
-                AudioSys.playSuccess();
+                state.sickDuration = 3;
+                UI.log("¡Te has enfermado por defensas bajas!", "bad");
+                Haptics.error();
             }
         }
 
@@ -965,7 +1075,10 @@ const Game = {
     },
 
     // UI Wrappers
-    renderCourses() { UI.els.btns.study.click(); },
+    renderCourses() {
+        UI.els.modals.act.classList.add('active');
+        UI.switchActTab('courses');
+    },
 
     // Social Logic (Simplified)
     findLove() {

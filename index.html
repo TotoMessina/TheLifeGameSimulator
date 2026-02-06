@@ -24,11 +24,17 @@
     <div id="main-ui">
         <header>
             <div class="header-top">
-                <div class="date-display" id="date-display">Año 18 - Mes 1</div>
+                <div class="date-display" id="date-display">Cargando...</div>
                 <div>
+                    <button class="settings-btn" id="school-trigger"
+                        style="margin-right:10px; display:none;">🎒</button>
                     <button class="settings-btn" id="shop-trigger" style="margin-right:10px;">🛒</button>
                     <button class="settings-btn" id="home-trigger" style="margin-right:10px;">🏠</button>
+                    <button class="settings-btn" id="profile-trigger" style="margin-right:10px;">👤</button>
+                    <button class="settings-btn" id="athletics-trigger" style="margin-right:10px;">🏃</button>
+                    <button class="settings-btn" id="routine-trigger" style="margin-right:10px;">⏰</button>
                     <button class="settings-btn" id="trophy-trigger" style="margin-right:10px;">🏆</button>
+                    <button class="settings-btn" id="business-trigger" style="margin-right:10px;">🏢</button>
                     <button class="settings-btn" id="settings-trigger">⚙️</button>
                 </div>
             </div>
@@ -37,6 +43,8 @@
                 <div class="fin-row">
                     <span>Efectivo: <span class="money-display" id="money-display">$0</span></span>
                     <span>Neto: <span id="networth-val">$0</span></span>
+                    <span id="gpa-box" style="margin-left:10px; display:none;">GPA: <span id="gpa-display"
+                            style="color:var(--primary-color); font-weight:bold;">0.0</span></span>
                 </div>
                 <div class="fin-row" style="font-size:0.8rem;">
                     <span>Activo: <span id="income-active" style="color:var(--accent-color)">$0/m</span></span>
@@ -105,15 +113,9 @@
         </main>
 
         <footer>
-            <button id="btn-work">
-                <span class="btn-icon">💼</span>Trabajar
-            </button>
-            <button id="btn-study">
-                <span class="btn-icon">⚡</span>Mejorar
-            </button>
-            <button id="btn-rest">
-                <span class="btn-icon">💤</span>Descansar
-            </button>
+            <div id="actions-container" class="actions-row">
+                <!-- Filled dynamically by UI.renderActions() based on Phase -->
+            </div>
             <button id="btn-next" class="primary">
                 <span class="btn-icon">📅</span>Sig. Mes
             </button>
@@ -159,6 +161,71 @@
                 <div id="event-choices">
                     <!-- Choices injected here -->
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Athletics Modal -->
+    <div class="modal-overlay" id="athletics-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>🏃 Atletismo</span>
+                <button class="close-btn" id="close-athletics">×</button>
+            </div>
+            <div class="modal-body" id="athletics-container">
+                <!-- Content injected by UI.renderAthletics() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Routine Modal -->
+    <div class="modal-overlay" id="routine-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>⏰ Rutina Diaria</span>
+                <button class="close-btn" id="close-routine">×</button>
+            </div>
+            <div class="modal-body" id="routine-container">
+                <!-- Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Modal -->
+    <div class="modal-overlay" id="profile-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>👤 Perfil del Personaje</span>
+                <button class="close-btn" id="close-profile">×</button>
+            </div>
+            <div class="modal-body" id="profile-container" style="text-align:center;">
+                <!-- Filled by UI.renderProfile -->
+            </div>
+        </div>
+    </div>
+
+    <!-- School Modal -->
+    <div class="modal-overlay" id="school-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>🏫 Escuela</span>
+                <button class="close-btn" id="close-school">×</button>
+            </div>
+            <div class="modal-body" id="school-container">
+                <!-- Content -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Business Modal -->
+    <div class="modal-overlay" id="business-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>🏢 Mi Empresa</span>
+                <button class="close-btn" id="close-business">×</button>
+            </div>
+            <div class="modal-body" id="business-container">
+                <!-- Content injected by UI.renderBusiness() -->
             </div>
         </div>
     </div>
@@ -604,6 +671,11 @@
                         <script src="js/db.js"></script>
                         <script src="js/world.js"></script> <!-- NEW -->
                         <script src="js/ui.js"></script>
+                        <script src="js/business.js"></script>
+                        <script src="js/athletics.js"></script>
+                        <script src="js/routine.js"></script>
+                        <script src="js/school.js"></script>
+                        <script src="js/phases.js"></script>
                         <script src="js/game.js"></script>
                         <script src="js/dev.js"></script>
                         <script src="js/app.js"></script>

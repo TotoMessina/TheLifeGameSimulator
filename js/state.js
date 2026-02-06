@@ -1,17 +1,37 @@
 
 // --- GAME STATE ---
-let state = {
-    totalMonths: 0,
-    money: 600,
+const state = {
+    totalMonths: 144, // Start at 12 years old
+    money: 100, // Less money for a kid
     physicalHealth: 100,
     mentalHealth: 100,
     happiness: 100,
-    diet: 'balanced', // fast_food, balanced, chef
+    diet: 'balanced',
     intelligence: 10,
     energy: 100,
     experience: 0,
     jobXP: 0,
-    promotions: 0,
+    // School
+    school: {
+        grades: 70, // 0-100
+        popularity: 50,
+        pressure: 0,
+        focus: 'study' // study, social, hobby
+    },
+    // Business
+    business: null,
+    athletics: {
+        stamina: 0,
+        training: 'none', // none, low, med, high
+        gear: { shoes_pro: false, coach: false },
+        race: null,
+        medals: []
+    },
+    // Routine
+    routine: { work: 8, sleep: 8, study: 0, exercise: 1, leisure: 7 },
+    upgrades: {},
+
+    // Collections: 0,
     currJobId: 'unemployed', // Current job ID
     education: [],
     activeCourse: null,
