@@ -1,114 +1,146 @@
-
 // --- EVENT LISTENERS ---
 
-// Main Buttons - Actions are now dynamic via PhaseManager
-
-
-UI.els.btns.next.onmousedown = () => {
-    // Hold to fast forward? For now just click
-    Game.nextMonth();
-};
-// prevent double fire on touch
-UI.els.btns.next.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    Game.nextMonth();
-}, { passive: false });
-
-// Modal Close Buttons
-UI.els.modals.closeJob.onclick = () => UI.els.modals.job.classList.remove('active');
-UI.els.modals.closeSettings.onclick = () => UI.els.modals.settings.classList.remove('active');
-UI.els.modals.closeShop.onclick = () => UI.els.modals.shop.classList.remove('active');
-UI.els.modals.closeAct.onclick = () => UI.els.modals.act.classList.remove('active');
-
-// Modal Triggers
-UI.els.jobTrigger.onclick = () => {
-    UI.els.modals.job.classList.add('active');
-    const container = UI.els.modals.jobList;
-    container.innerHTML = '';
-
-    // Career Tracks
-    const careers = ['none', 'tech', 'corp', 'sport'];
-    const careerNames = { 'none': 'Trabajos Básicos', 'tech': 'Tecnología', 'corp': 'Corporativo', 'sport': 'Deportes' };
-
-    careers.forEach(c => {
-        if (c === 'none') return;
-
-        const header = document.createElement('h4');
-        header.innerText = careerNames[c];
-        header.style.cssText = "color:#aaa; border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px;";
-        container.appendChild(header);
-
-        const jobs = JOBS.filter(j => j.career === c).sort((a, b) => a.salary - b.salary);
-        jobs.forEach(j => {
-            const isQual = state.intelligence >= (j.req.int || 0) &&
-                state.experience >= (j.req.exp || 0) &&
-                state.physicalHealth >= (j.req.health || 0); // Simplified check
-
-            // Check degree
-            const hasDeg = !j.req.deg || state.education.includes(j.req.deg);
-
-            const isCurr = state.currJobId === j.id;
-
-            const el = document.createElement('div');
-            el.className = 'job-card';
-            if (isCurr) el.classList.add('active');
-
-            el.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:#fff;">${j.title}</div>
-                    <div style="font-size:0.8rem; color:#aaa;">Salario: $${j.salary}</div>
-                    <div style="font-size:0.8rem; color:#888;">Req: ${j.req.int ? 'Int ' + j.req.int : ''} ${j.req.exp ? 'Exp ' + j.req.exp : ''} ${j.req.deg ? '🎓' : ''}</div>
-                </div>
-                <button class="btn-select-job" ${(isQual && hasDeg) ? '' : 'disabled'} onclick="Game.promote('${j.id}')">
-                    ${isCurr ? 'Actual' : (isQual && hasDeg ? 'Aplicar' : 'No Calificado')}
-                </button>
-             `;
-            container.appendChild(el);
-        });
-    });
-};
-
-// Settings
-if (UI.els.btns.settings) {
-    UI.els.btns.settings.addEventListener('click', () => {
-        if (UI.els.modals.settings) {
-            UI.renderTrophies(); // Populate trophies when opening settings
-            UI.els.modals.settings.classList.add('active');
-            DB.init(); // Retry init if needed
+const App = {
+    setupEventListeners() {
+        // Main Buttons
+        if (UI.els.btns.next) {
+            UI.els.btns.next.onmousedown = () => {
+                Game.nextMonth();
+            };
+            UI.els.btns.next.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                Game.nextMonth();
+            }, { passive: false });
         }
-    });
-}
 
-// Trophy Trigger (Opens Settings > Trophies)
-if (UI.els.btns.trophy) {
-    UI.els.btns.trophy.addEventListener('click', () => {
-        if (UI.els.modals.settings) {
-            UI.renderTrophies();
-            UI.els.modals.settings.classList.add('active');
-            // Optionally scroll to trophies?
-            setTimeout(() => {
-                const tSection = document.getElementById('trophies-section');
-                if (tSection) tSection.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
+        // Modal Close Buttons
+        if (UI.els.modals.closeJob) UI.els.modals.closeJob.onclick = () => UI.els.modals.job.classList.remove('active');
+        // New Dashboard Close
+        const closeJd = document.getElementById('close-job-dashboard');
+        if (closeJd) closeJd.onclick = () => document.getElementById('job-dashboard-modal').classList.remove('active');
+
+        // New Dashboard Open (Static Button)
+        const openJd = document.getElementById('btn-job-dashboard');
+        if (openJd) {
+            openJd.onclick = () => {
+                UI.renderJobDashboard();
+                document.getElementById('job-dashboard-modal').classList.add('active');
+            };
         }
-    });
-}
 
-// Shop Trigger
-UI.els.modals.shopBtn.onclick = () => {
-    UI.els.modals.shop.classList.add('active');
-    UI.renderShop();
+        if (UI.els.modals.closeSettings) UI.els.modals.closeSettings.onclick = () => UI.els.modals.settings.classList.remove('active');
+        if (UI.els.modals.closeShop) UI.els.modals.closeShop.onclick = () => UI.els.modals.shop.classList.remove('active');
+        if (UI.els.modals.closeAct) UI.els.modals.closeAct.classList.remove('active') ? UI.els.modals.closeAct.onclick = () => UI.els.modals.act.classList.remove('active') : null;
+        // Fix for closeAct null check if needed
+        if (UI.els.modals.closeAct) UI.els.modals.closeAct.onclick = () => UI.els.modals.act.classList.remove('active');
+
+
+        // Modal Triggers
+        if (UI.els.jobTrigger) {
+            UI.els.jobTrigger.onclick = () => {
+                UI.els.modals.job.classList.add('active');
+                const container = UI.els.modals.jobList;
+                if (!container) return;
+                container.innerHTML = '';
+
+                // Career Tracks
+                const careers = ['none', 'tech', 'corp', 'sport'];
+                const careerNames = { 'none': 'Trabajos Básicos', 'tech': 'Tecnología', 'corp': 'Corporativo', 'sport': 'Deportes' };
+
+                careers.forEach(c => {
+                    if (c === 'none') return;
+
+                    const header = document.createElement('h4');
+                    header.innerText = careerNames[c];
+                    header.style.cssText = "color:#aaa; border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px;";
+                    container.appendChild(header);
+
+                    const jobs = JOBS.filter(j => j.career === c).sort((a, b) => a.salary - b.salary);
+                    jobs.forEach(j => {
+                        const isQual = state.intelligence >= (j.req.int || 0) &&
+                            state.experience >= (j.req.exp || 0) &&
+                            state.physicalHealth >= (j.req.health || 0);
+
+                        const hasDeg = !j.req.deg || state.education.includes(j.req.deg);
+                        const isCurr = state.currJobId === j.id;
+
+                        const el = document.createElement('div');
+                        el.className = 'job-card';
+                        if (isCurr) el.classList.add('active');
+
+                        el.innerHTML = `
+                            <div>
+                                <div style="font-weight:bold; color:#fff;">${j.title}</div>
+                                <div style="font-size:0.8rem; color:#aaa;">Salario: $${j.salary}</div>
+                                <div style="font-size:0.8rem; color:#888;">Req: ${j.req.int ? 'Int ' + j.req.int : ''} ${j.req.exp ? 'Exp ' + j.req.exp : ''} ${j.req.deg ? '🎓' : ''}</div>
+                            </div>
+                            <button class="btn-select-job" ${(isQual && hasDeg) ? '' : 'disabled'} onclick="Game.promote('${j.id}')">
+                                ${isCurr ? 'Actual' : (isQual && hasDeg ? 'Aplicar' : 'No Calificado')}
+                            </button>
+                         `;
+                        container.appendChild(el);
+                    });
+                });
+            };
+        }
+
+        // Settings
+        if (UI.els.btns.settings) {
+            UI.els.btns.settings.addEventListener('click', () => {
+                if (UI.els.modals.settings) {
+                    UI.renderTrophies();
+                    UI.els.modals.settings.classList.add('active');
+                    DB.init();
+                }
+            });
+        }
+
+        // Trophy Trigger
+        if (UI.els.btns.trophy) {
+            UI.els.btns.trophy.addEventListener('click', () => {
+                if (UI.els.modals.settings) {
+                    UI.renderTrophies();
+                    UI.els.modals.settings.classList.add('active');
+                    setTimeout(() => {
+                        const tSection = document.getElementById('trophies-section');
+                        if (tSection) tSection.scrollIntoView({ behavior: 'smooth' });
+                    }, 100);
+                }
+            });
+        }
+
+        // Shop Trigger
+        if (UI.els.modals.shopBtn) {
+            UI.els.modals.shopBtn.onclick = () => {
+                UI.els.modals.shop.classList.add('active');
+                UI.renderShop();
+            };
+        }
+
+        // Auth Buttons
+        if (UI.els.auth.loginBtn) {
+            UI.els.auth.loginBtn.onclick = () => {
+                const e = UI.els.auth.emailInput.value;
+                const p = UI.els.auth.passInput.value;
+                if (e && p) DB.login(e, p);
+            };
+        }
+        if (UI.els.auth.logoutBtn) UI.els.auth.logoutBtn.onclick = () => DB.logout();
+        if (UI.els.auth.saveBtn) UI.els.auth.saveBtn.onclick = () => DB.saveGame();
+        if (UI.els.auth.loadBtn) UI.els.auth.loadBtn.onclick = () => DB.loadGame();
+    }
 };
 
-// Auth Buttons
-UI.els.auth.loginBtn.onclick = () => {
-    const e = UI.els.auth.emailInput.value;
-    const p = UI.els.auth.passInput.value;
-    if (e && p) DB.login(e, p);
-};
-UI.els.auth.logoutBtn.onclick = () => DB.logout();
-UI.els.auth.saveBtn.onclick = () => DB.saveGame();
-UI.els.auth.loadBtn.onclick = () => DB.loadGame();
+// ... existing triggers ...
+// Business Trigger
+// Note: These ID-based triggers below are safe IF the DOM is ready, but for consistency we should move them?
+// Leaving them as they rely on document.getElementById directly, not UI.els.
+// However, the script runs before onload. So document.getElementById is SAFE? 
+// Yes, app.js is at the end of body.
+// The ERROR was accessing UI.els properties which were empty.
+
+// ... (Keep existing ID-based listeners below if they don't use UI.els) ...
+
 
 // Business Trigger
 document.getElementById('business-trigger').onclick = () => {
@@ -142,6 +174,15 @@ document.getElementById('profile-trigger').onclick = () => {
     document.getElementById('profile-modal').classList.add('active');
     UI.renderProfile();
 };
+
+// Social Trigger
+const socialBtn = document.getElementById('social-trigger');
+if (socialBtn) {
+    socialBtn.onclick = () => {
+        UI.openModal('activity-modal');
+        UI.switchActTab('social');
+    };
+}
 document.getElementById('close-profile').onclick = () => {
     document.getElementById('profile-modal').classList.remove('active');
 };
@@ -212,7 +253,12 @@ window.onload = async () => {
             console.warn("Supabase Init Warning (Offline?):", e);
         }
 
-        Game.init();
+        UI.init(); // Initialize UI first (cache elements)
+        Game.init(); // Then initialize Game logic (which calls UI.render)
+        // UI.render() is called by Game.init, which calls UI.init, which caches elements.
+        // So UI.els should be populated now.
+        App.setupEventListeners();
+
         UI.render();
 
         // Dev Mode

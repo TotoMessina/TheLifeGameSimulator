@@ -12,7 +12,8 @@ const CHILD_COST = 400; // Monthly cost per child
 const PETS = [
     { id: 'dog', name: 'Perro 🐶', cost: 200, maint: 50, desc: 'Fiel amigo. Evita tristeza extrema.' },
     { id: 'cat', name: 'Gato 🐱', cost: 150, maint: 40, desc: 'Independiente. Compañía tranquila.' },
-    { id: 'hamster', name: 'Hamster 🐹', cost: 50, maint: 10, desc: 'Pequeño y fácil de cuidar.' }
+    { id: 'hamster', name: 'Hamster 🐹', cost: 50, maint: 10, desc: 'Pequeño y fácil de cuidar.' },
+    { id: 'cat_stray', name: 'Gato Callejero 🐈', cost: 0, maint: 50, desc: 'Rescatado.', canBuy: false }
 ];
 
 const TRAITS = [
@@ -43,7 +44,7 @@ const RARE_ITEMS = [
 
 const JOBS = [
     // None
-    { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {} },
+    { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {}, stress: 2 }, // Poverty stress
 
     // Student / Part-Time
     { id: 'pt_barista', title: 'Barista (Part-Time)', salary: 600, career: 'service', type: 'part_time', req: { energy: 30 } },
@@ -51,22 +52,46 @@ const JOBS = [
     { id: 'pt_delivery', title: 'Repartidor', salary: 700, career: 'service', type: 'part_time', req: { health: 50 } },
 
     // Tech Path (Inteligence Focus)
-    { id: 'tech_trainee', title: 'Trainee IT', salary: 800, career: 'tech', req: { int: 20 } },
-    { id: 'tech_jr', title: 'Junior Dev', salary: 1500, career: 'tech', req: { int: 40, exp: 5 } },
-    { id: 'tech_sr', title: 'Senior Dev', salary: 3500, career: 'tech', req: { int: 70, exp: 20, deg: 'dev_bootcamp' } },
-    { id: 'tech_cto', title: 'CTO', salary: 8000, career: 'tech', req: { int: 90, exp: 50, deg: 'dev_bootcamp' } },
+    { id: 'tech_trainee', title: 'Trainee IT', salary: 800, career: 'tech', req: { int: 20 }, stress: 3 },
+    { id: 'tech_jr', title: 'Junior Dev', salary: 1500, career: 'tech', req: { int: 40, exp: 5 }, stress: 5 },
+    { id: 'tech_sr', title: 'Senior Dev', salary: 3500, career: 'tech', req: { int: 70, exp: 20, deg: 'dev_bootcamp' }, stress: 8 },
+    { id: 'tech_cto', title: 'CTO', salary: 8000, career: 'tech', req: { int: 90, exp: 50, deg: 'dev_bootcamp' }, stress: 15 },
 
     // Corporate Path (Balanced)
-    { id: 'corp_assist', title: 'Asistente', salary: 1000, career: 'corp', req: { int: 15, happy: 50 } },
-    { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 } },
-    { id: 'corp_manager', title: 'Gerente', salary: 4000, career: 'corp', req: { int: 60, exp: 30 } },
-    { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70, deg: 'mba_biz' } },
+    { id: 'corp_assist', title: 'Asistente', salary: 1000, career: 'corp', req: { int: 15, happy: 50 }, stress: 4 },
+    { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 }, stress: 10 }, // Specially high
+    { id: 'corp_manager', title: 'Gerente', salary: 4000, career: 'corp', req: { int: 60, exp: 30 }, stress: 12 },
+    { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70, deg: 'mba_biz' }, stress: 20 },
 
     // Sports Path (Health/Energy Focus)
-    { id: 'sport_amateur', title: 'Amateur Deport.', salary: 500, career: 'sport', req: { health: 60, energy: 50 } },
-    { id: 'sport_pro', title: 'Deportista Pro', salary: 3000, career: 'sport', req: { health: 80, exp: 10 } },
-    { id: 'sport_star', title: 'Estrella Mundial', salary: 15000, career: 'sport', req: { health: 95, exp: 40, happy: 70, deg: 'sport_cert' } },
-    { id: 'sport_legend', title: 'Leyenda', salary: 25000, career: 'sport', req: { health: 100, exp: 80, deg: 'sport_cert' } }
+    { id: 'sport_amateur', title: 'Amateur Deport.', salary: 500, career: 'sport', req: { health: 60, energy: 50 }, stress: 5 },
+    { id: 'sport_pro', title: 'Deportista Pro', salary: 3000, career: 'sport', req: { health: 80, exp: 10 }, stress: 8 },
+    { id: 'sport_star', title: 'Estrella Mundial', salary: 15000, career: 'sport', req: { health: 95, exp: 40, happy: 70, deg: 'sport_cert' }, stress: 12 },
+    { id: 'sport_legend', title: 'Leyenda', salary: 25000, career: 'sport', req: { health: 100, exp: 80, deg: 'sport_cert' }, stress: 10 }
+];
+
+const FREELANCE_GIGS = [
+    // Tech / Dev
+    { id: 'gig_debug', title: 'Bugar Código Legacy', type: 'tech', reward: 100, energy: 15, dif: 10, time: 'quick' },
+    { id: 'gig_script', title: 'Script de Automatización', type: 'tech', reward: 250, energy: 30, dif: 30, time: 'medium' },
+    { id: 'gig_website', title: 'Landing Page Sencilla', type: 'tech', reward: 500, energy: 50, dif: 50, time: 'long' },
+
+    // Creative / Design
+    { id: 'gig_logo', title: 'Diseñar Logo Vectorial', type: 'creative', reward: 150, energy: 20, dif: 20, time: 'quick' },
+    { id: 'gig_banner', title: 'Banner Redes Sociales', type: 'creative', reward: 100, energy: 15, dif: 10, time: 'quick' },
+    { id: 'gig_video', title: 'Edición Video YouTube', type: 'creative', reward: 400, energy: 45, dif: 40, time: 'long' },
+
+    // Services / Admin
+    { id: 'gig_transcribe', title: 'Transcribir Audio', type: 'service', reward: 80, energy: 25, dif: 5, time: 'medium' },
+    { id: 'gig_data', title: 'Entrada de Datos Excel', type: 'service', reward: 120, energy: 35, dif: 10, time: 'medium' },
+    { id: 'gig_repair', title: 'Reparar PC Vecino', type: 'service', reward: 200, energy: 30, dif: 25, time: 'medium' }
+];
+
+const SCHOOL_GIGS = [
+    { id: 'sch_candy', title: 'Vender Dulces', type: 'service', reward: 20, energy: 10, dif: 5, time: 'quick' },
+    { id: 'sch_homework', title: 'Hacer Tarea Ajena', type: 'tech', reward: 40, energy: 20, dif: 15, time: 'medium' },
+    { id: 'sch_lawn', title: 'Cortar Pasto', type: 'service', reward: 50, energy: 30, dif: 10, time: 'long' },
+    { id: 'sch_tutoring', title: 'Tutoría Escolar', type: 'tech', reward: 60, energy: 25, dif: 20, time: 'medium' }
 ];
 
 const COURSES = [

@@ -6,6 +6,7 @@ const state = {
     physicalHealth: 100,
     mentalHealth: 100,
     happiness: 100,
+    stress: 0,
     diet: 'balanced',
     intelligence: 10,
     energy: 100,

@@ -12,9 +12,9 @@ const Athletics = {
 
     tick() {
         if (!state.athletics) return;
-
-        // 1. Training Effects
         const intensity = state.athletics.training;
+        if (intensity === 'none') return;
+
         let gain = 0;
         let drain = 0;
         let healthRisk = 0;

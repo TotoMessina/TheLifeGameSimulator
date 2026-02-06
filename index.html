@@ -31,6 +31,7 @@
                     <button class="settings-btn" id="home-trigger" style="margin-right:10px;">🏠</button>
                     <button class="settings-btn" id="profile-trigger" style="margin-right:10px;">👤</button>
                     <button class="settings-btn" id="athletics-trigger" style="margin-right:10px;">🏃</button>
+                    <button class="settings-btn" id="social-trigger" style="margin-right:10px;">👥</button>
                     <button class="settings-btn" id="routine-trigger" style="margin-right:10px;">⏰</button>
                     <button class="settings-btn" id="trophy-trigger" style="margin-right:10px;">🏆</button>
                     <button class="settings-btn" id="business-trigger" style="margin-right:10px;">🏢</button>
@@ -62,7 +63,9 @@
             <div class="job-display" id="job-trigger">
                 <div class="job-row-top">
                     <span id="job-title-display">Mendigo ($0/mes)</span>
-                    <span>ℹ️ Cambiar</span>
+                    <button id="btn-job-dashboard"
+                        style="background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:10px;">📊</button>
+                    <span style="font-size: 0.8rem; color: #888; margin-left: auto;">ℹ️ Cambiar</span>
                 </div>
                 <div class="job-xp-bg">
                     <div class="job-xp-fill" id="job-xp-bar"></div>
@@ -102,6 +105,13 @@
                     <div class="bar-label"><span>Inteligencia</span> <span id="intel-val">10</span></div>
                     <div class="progress-bg">
                         <div class="progress-fill intelligence-fill" id="intel-bar" style="width: 10%;"></div>
+                    </div>
+                </div>
+                <div class="bar-group">
+                    <div class="bar-label"><span>Estrés</span> <span id="stress-val">0%</span></div>
+                    <div class="progress-bg">
+                        <div class="progress-fill stress-fill" id="stress-bar" style="width: 0%; background: #ff4757;">
+                        </div>
                     </div>
                 </div>
             </div>
@@ -366,20 +376,6 @@
                         </div>
                         <div class="act-cost">-$40<br>-20 E</div>
                     </button>
-                    <button class="act-btn" onclick="Game.doActivity('meditate')">
-                        <div class="act-info">
-                            <h4>🧘 Meditación</h4>
-                            <p>Calma tu mente y reduce el estrés.</p>
-                        </div>
-                        <div class="act-cost">Gratis<br>-10 E</div>
-                    </button>
-                    <button class="act-btn" onclick="Game.doActivity('therapy')">
-                        <div class="act-info">
-                            <h4>🛋️ Terapia</h4>
-                            <p>Sesión profesional para tu salud mental.</p>
-                        </div>
-                        <div class="act-cost">-$100<br>-5 E</div>
-                    </button>
                     <button class="act-btn" onclick="Game.doActivity('marathon')">
                         <div class="act-info">
                             <h4>Maratón</h4>
@@ -427,6 +423,32 @@
                 </div>
 
                 <div id="act-tab-social" class="hidden">
+                    <h4 style="margin-top:0; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Relajación &
+                        Bienestar</h4>
+                    <button class="act-btn" onclick="Game.doActivity('meditate')">
+                        <div class="act-info">
+                            <h4>🧘 Meditación</h4>
+                            <p>Calma tu mente. (-10 Estrés)</p>
+                        </div>
+                        <div class="act-cost">Gratis<br>-10 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.doActivity('park')">
+                        <div class="act-info">
+                            <h4>🌳 Paseo en Parque</h4>
+                            <p>Aire fresco. (-8 Estrés)</p>
+                        </div>
+                        <div class="act-cost">Gratis<br>-15 E</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.doActivity('therapy')">
+                        <div class="act-info">
+                            <h4>🛋️ Terapia</h4>
+                            <p>Sesión profesional para tu salud mental.</p>
+                        </div>
+                        <div class="act-cost">-$100<br>-5 E</div>
+                    </button>
+
+                    <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Vida
+                        Social</h4>
                     <button class="act-btn" onclick="Game.party()">
                         <div class="act-info">
                             <h4>Salir de Fiesta 🎉</h4>
@@ -442,9 +464,37 @@
                         </div>
                         <div class="act-cost">Estatus: <span id="status-display-btn">0</span></div>
                     </button>
+                    <h4 style="margin-top:20px; color:#4dffea; border-bottom:1px solid #333; padding-bottom:5px;">🌴
+                        Vacaciones y Desconexión</h4>
+                    <button class="act-btn" onclick="Game.takeVacation('relax')">
+                        <div class="act-info">
+                            <h4>Escapada Fin de Semana</h4>
+                            <p>Relax en las afueras. (-15 Estrés)</p>
+                        </div>
+                        <div class="act-cost">-$200</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.takeVacation('trip')">
+                        <div class="act-info">
+                            <h4>Viaje a la Playa 🏖️</h4>
+                            <p>Sol y arena. (-40 Estrés)</p>
+                        </div>
+                        <div class="act-cost">-$1,000</div>
+                    </button>
+                    <button class="act-btn" onclick="Game.takeVacation('luxury')">
+                        <div class="act-info">
+                            <h4>Vuelta al Mundo 🌍</h4>
+                            <p>La experiencia definitiva. (-100 Estrés)</p>
+                        </div>
+                        <div class="act-cost">-$5,000</div>
+                    </button>
+
                     <h4 style="margin-top:20px; color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Mis
                         Contactos</h4>
                     <div id="friends-list"></div>
+                </div>
+
+                <div id="act-tab-projects" class="hidden">
+                    <!-- Projects / Freelancer Dashboard injected here -->
                 </div>
             </div>
         </div>
@@ -619,6 +669,42 @@
         </div>
     </div>
 
+    <!-- Job Dashboard Modal -->
+    <div class="modal-overlay" id="job-dashboard-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>📊 Panel Profesional</h2>
+                <button class="close-btn" id="close-job-dashboard">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="job-header"
+                    style="text-align:center; padding:20px; background:#222; border-radius:10px; margin-bottom:20px;">
+                    <div id="jd-role" style="font-size:1.5rem; font-weight:bold; color:#fff;">-</div>
+                    <div id="jd-salary" style="font-size:1.2rem; color:#4dffea; margin-top:5px;">$0/mes</div>
+                </div>
+
+                <div class="stats-row" style="margin-bottom:20px;">
+                    <div
+                        style="flex:1; text-align:center; padding:10px; background:#2a2a3e; margin-right:5px; border-radius:5px;">
+                        <div style="font-size:0.8rem; color:#aaa;">Rendimiento</div>
+                        <div id="jd-performance" style="font-size:1.2rem; font-weight:bold;">50%</div>
+                    </div>
+                    <div
+                        style="flex:1; text-align:center; padding:10px; background:#2a2a3e; margin-left:5px; border-radius:5px;">
+                        <div style="font-size:0.8rem; color:#aaa;">Nivel de Estrés</div>
+                        <div id="jd-stress" style="font-size:1.2rem; font-weight:bold;">0%</div>
+                    </div>
+                </div>
+
+                <h4 style="border-bottom:1px solid #444; padding-bottom:5px; margin-bottom:15px;">Beneficios Laborales
+                </h4>
+                <div id="jd-benefits-list" class="lifestyle-grid" style="grid-template-columns: 1fr 1fr;">
+                    <!-- Benefits injected here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================ -->
     <!-- DEV MODE PANEL (REMOVE IN PRODUCTION) -->
     <!-- ============================================ -->
@@ -675,6 +761,7 @@
                         <script src="js/ui.js"></script>
                         <script src="js/business.js"></script>
                         <script src="js/athletics.js"></script>
+                        <script src="js/freelancer.js"></script>
                         <script src="js/routine.js"></script>
                         <script src="js/school.js"></script>
                         <script src="js/phases.js"></script>

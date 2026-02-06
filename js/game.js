@@ -20,9 +20,16 @@ const Game = {
                 document.getElementById('char-gen-screen').style.display = 'flex';
                 this.generateCharacter();
             } else {
-                console.log("Assigning default traits for existing save");
+                console.log("Assigning random traits for existing save");
+                // Random fallback
                 const pool = [...TRAITS];
-                state.traits = [pool[0].id, pool[1].id, pool[2].id];
+                state.traits = [];
+                for (let i = 0; i < 3; i++) {
+                    if (pool.length === 0) break;
+                    const idx = Math.floor(Math.random() * pool.length);
+                    state.traits.push(pool[idx].id);
+                    pool.splice(idx, 1);
+                }
                 document.getElementById('main-ui').classList.remove('hidden');
             }
         } else {
@@ -43,6 +50,11 @@ const Game = {
         }
         if (!state.work_relations) {
             state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
+        }
+
+        // Init Freelancer State
+        if (typeof Freelancer !== 'undefined') {
+            Freelancer.init();
         }
 
         UI.render();
@@ -351,6 +363,9 @@ const Game = {
             if (state[key] < 0) state[key] = 0;
         } else if (key === 'intelligence') {
             if (state[key] > 100) state[key] = 100; // Cap int at 100 for now
+        } else if (key === 'stress') {
+            if (state[key] > 100) state[key] = 100;
+            if (state[key] < 0) state[key] = 0;
         }
 
         if (state[key] < 0 && key !== 'money') state[key] = 0;
@@ -408,6 +423,27 @@ const Game = {
         state.currJobId = 'unemployed';
         state.jobXP = 0;
         UI.showAlert("PRISIÓN", `Pasaste ${months} meses en la cárcel. Perdiste tu empleo.`);
+    },
+
+    takeVacationDays(days) {
+        if (!state.vacationDays || state.vacationDays < days) {
+            return UI.log("No tienes suficientes días de vacaciones.", "warning");
+        }
+
+        state.vacationDays -= days;
+
+        // Effects
+        // 7 days = -15 stress, +10 happy
+        const stressRed = days * 2.5; // 7 days ~ 17 stress
+        const happyGain = days * 1.5;
+
+        this.updateStat('stress', -stressRed);
+        this.updateStat('happiness', happyGain);
+        this.updateStat('energy', 100); // Fully rested
+
+        UI.log(`Disfrutaste de ${days} días libres.`, "good");
+        UI.render(); // Refreshes dashboard if open
+        UI.renderJobDashboard();
     },
 
     work() {
@@ -471,6 +507,16 @@ const Game = {
         if (state.jobXP >= 100) {
             this.applyPerformanceReview();
         }
+
+        // Update Real Performance
+        if (!state.work_relations) state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
+
+        // Working increases performance but adds stress
+        const perfGain = 2 + (state.intelligence * 0.05); // Smarter = efficient
+        state.work_relations.performance = Math.min(100, state.work_relations.performance + perfGain);
+
+        // Decay logic is handled in nextMonth (neglect)
+
         UI.render();
     },
 
@@ -555,6 +601,11 @@ const Game = {
         state.jobXP = 0;
         state.promotions = 0;
         state.consecutiveWork = 0;
+
+        // Vacation Days Init
+        const tier = job.salary > 5000 ? 30 : job.salary > 2000 ? 14 : 7;
+        state.vacationDays = tier;
+
         UI.log(`¡Contratado! Ahora eres ${job.title}.`, "good");
         UI.showAlert("¡Felicidades!", `Has conseguido el puesto de ${job.title}.`);
 
@@ -607,9 +658,15 @@ const Game = {
             msg = "Leíste en la biblioteca. +Inteligencia";
         } else if (type === 'meditate') {
             this.updateStat('mentalHealth', 3);
+            this.updateStat('stress', -10); // Updated: Stress relief
             this.updateStat('energy', -5);
-            this.updateStat('happiness', 1);
-            msg = "Meditaste un rato. +Salud Mental";
+            this.updateStat('happiness', 2);
+            msg = "Meditaste un rato. +Salud Mental, -Estrés";
+        } else if (type === 'park') {
+            this.updateStat('stress', -8);
+            this.updateStat('happiness', 2);
+            this.updateStat('energy', -15);
+            msg = "Un paseo refrescante. -Estrés";
         }
 
         UI.log(msg, "normal");
@@ -749,6 +806,51 @@ const Game = {
             isColleague: true,
             jobTitle: 'Colega'
         });
+    },
+
+    triggerBurnoutCollapse() {
+        UI.showAlert("🔥 COLAPSO POR BURNOUT 🔥", "Tu cuerpo y mente no pueden más. Has colapsado y has estado en recuperación durante 3 meses.");
+
+        // Skip 3 months (Visual + Logic)
+        // We simulate the passage of time without full interactivity
+        state.totalMonths += 3;
+        state.age = Math.floor(state.totalMonths / 12);
+
+        // Penalties
+        this.updateStat('physicalHealth', -30);
+        this.updateStat('mentalHealth', -30);
+        this.updateStat('happiness', -20);
+        this.updateStat('money', -1000); // Medical bills
+
+        // Reset Stress
+        state.stress = 50; // Not 0, you're still recovering
+
+        UI.render();
+        Haptics.error();
+    },
+
+    takeVacation(type) {
+        let cost = 0;
+        let stressRelief = 0;
+        let msg = "";
+
+        if (type === 'relax') {
+            cost = 200; stressRelief = 15; msg = "Fin de semana de relax.";
+        } else if (type === 'trip') {
+            cost = 1000; stressRelief = 40; msg = "Viaje a la playa.";
+        } else if (type === 'luxury') {
+            cost = 5000; stressRelief = 100; msg = "Vuelta al mundo de lujo.";
+        }
+
+        if (state.money < cost) return UI.log("No tienes suficiente dinero.", "bad");
+
+        this.updateStat('money', -cost);
+        this.updateStat('stress', -stressRelief);
+        this.updateStat('happiness', 10);
+        this.updateStat('energy', 100); // Recharged
+
+        UI.showAlert("✈️ Vacaciones", `${msg} Te sientes renovado.`);
+        UI.render();
     },
 
     evolveFriends() {
@@ -892,6 +994,30 @@ const Game = {
         // Routine Tick
         if (typeof Routine !== 'undefined') Routine.tick();
 
+        // Freelancer Tick (Monthly Gigs)
+        if (typeof Freelancer !== 'undefined') {
+            Freelancer.generateMonthlyGigs();
+            // Refresh logic handled by view switch or manual refresh, 
+            // but if we want live update if tab is open:
+            if (document.getElementById('act-tab-projects') && !document.getElementById('act-tab-projects').classList.contains('hidden')) {
+                UI.renderProjects();
+            }
+        }
+
+        // Aguinaldo (Re-implemented Fix)
+        // 0=Jan, 11=Dec. So 5=June, 11=Dec.
+        const monthIdx = state.totalMonths % 12;
+        if ((monthIdx === 5 || monthIdx === 11) && state.currJobId !== 'unemployed') {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job) {
+                const bonus = Math.floor(job.salary * 0.5);
+                this.updateStat('money', bonus);
+                UI.log(`¡Aguinaldo! Recibiste un bono de medio sueldo: +$${bonus}`, 'money');
+                // Use a toast instead of alert to not block flow, or just allow the alert
+                UI.showAlert("¡AGUINALDO!", `Has recibido tu bono semestral de $${bonus}.`);
+            }
+        }
+
         // School Tick (Under 18 OR University Student)
         if ((state.age < 18 || state.isStudent) && typeof School !== 'undefined') {
             School.tick();
@@ -985,9 +1111,42 @@ const Game = {
         // Income Logic:
         // Passive Income: Always added
         // Active Income (Job): Now AUTOMATICALLY added per month (User Request)
-        const netCashFlow = (fin.activeIncome + fin.passiveIncome) - fin.expenses;
+        // BURNOUT CHECK: If stress > 80, productivity drops 50%
+        let activeInc = fin.activeIncome;
+        if (state.stress > 80) {
+            activeInc *= 0.5;
+            // Only notify once per month to avoid spam, or finding a subtle way
+            // We'll rely on the visual bar mostly, but maybe a log entry?
+        }
+
+        const netCashFlow = (activeInc + fin.passiveIncome) - fin.expenses;
 
         this.updateStat('money', netCashFlow);
+
+        // --- BURNOUT & STRESS SYSTEM ---
+
+        // 1. Apply Job Stress
+        if (state.currJobId && state.currJobId !== 'unemployed') {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job && job.stress) {
+                this.updateStat('stress', job.stress);
+            }
+        }
+        // Unemployed stress (financial anxiety)
+        if (state.currJobId === 'unemployed' && state.money < 1000) {
+            this.updateStat('stress', 2);
+        }
+
+        // 2. Burnout Collapse Check
+        if (state.stress >= 100) {
+            this.triggerBurnoutCollapse();
+            return; // Stop further processing for this month's loop if we want to be strict, but collapse handles skip
+        }
+
+        // Warning for high stress
+        if (state.stress > 80) {
+            UI.log("⚠️ ¡ESTRÉS CRÍTICO! Tu productividad ha caído 50%.", "bad");
+        }
 
         if (netCashFlow !== 0) {
             // Optional: Don't spam log every month unless significant changes? 
@@ -1065,6 +1224,17 @@ const Game = {
             // logic in updateStat logs if <= -6. Since delta is >= -2, it won't trigger BAD logs.
             this.updateStat(key, delta);
         });
+
+        // Property Value Fluctuations
+        if (state.realEstate && state.realEstate.length > 0) {
+            state.realEstate.forEach(id => {
+                // +/- 2% change
+                const changePct = 1 + ((Math.random() * 0.04) - 0.02);
+                if (state.rePrices[id]) {
+                    state.rePrices[id] = Math.floor(state.rePrices[id] * changePct);
+                }
+            });
+        }
     },
 
     randomEvent() {

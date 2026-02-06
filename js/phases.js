@@ -12,35 +12,45 @@ const PhaseManager = {
                     label: '📚 Estudiar',
                     desc: 'Mejora notas e inteligencia',
                     color: '#4da6ff',
-                    onClick: () => School.studyNow()
+                    onClick: () => { School.studyNow(); Game.updateStat('stress', 5); }
                 },
                 {
                     id: 'act-school-play',
                     label: '🎮 Jugar',
                     desc: 'Aumenta felicidad, baja notas',
                     color: '#ff9800',
-                    onClick: () => School.playNow()
+                    onClick: () => { School.playNow(); Game.updateStat('stress', -10); }
                 },
                 {
                     id: 'act-school-social',
                     label: '👫 Socializar',
                     desc: 'Aumenta popularidad',
                     color: '#e91e63',
-                    onClick: () => School.socializeNow()
+                    onClick: () => { School.socializeNow(); Game.updateStat('stress', -5); }
                 },
                 {
                     id: 'act-school-help',
                     label: '🤝 Ayudar',
                     desc: 'Ayuda a compañeros (Prodigio)',
                     color: '#8BC34A',
-                    onClick: () => School.helpClassmates()
+                    onClick: () => { School.helpClassmates(); Game.updateStat('stress', 5); }
                 },
                 {
                     id: 'act-rest',
                     label: '😴 Siesta',
                     desc: 'Recupera energía',
                     color: '#9E9E9E',
-                    onClick: () => Game.rest()
+                    onClick: () => { Game.rest(); Game.updateStat('stress', -15); }
+                },
+                {
+                    id: 'act-projects',
+                    label: '🚀 Proyectos',
+                    desc: 'Trabajos Escolares y Freelance',
+                    color: '#FFD700',
+                    onClick: () => {
+                        UI.openModal('activity-modal');
+                        UI.switchActTab('projects');
+                    }
                 }
             ]
         },
@@ -56,7 +66,7 @@ const PhaseManager = {
                     label: '📚 Estudiar',
                     desc: 'Mejora Notas (-20 E)',
                     color: '#673AB7',
-                    onClick: () => School.studyNow()
+                    onClick: () => { School.studyNow(); Game.updateStat('stress', 8); }
                 },
                 {
                     id: 'act-uni-work',
@@ -66,6 +76,7 @@ const PhaseManager = {
                     onClick: () => {
                         if (state.currJobId === 'unemployed') Game.applyJob('pt_barista');
                         else UI.log("Ya tienes empleo.", "info");
+                        Game.updateStat('stress', 5);
                     }
                 },
                 {
@@ -83,7 +94,34 @@ const PhaseManager = {
                     label: '🎉 Fiesta',
                     desc: 'Socializa (-Energy)',
                     color: '#E91E63',
-                    onClick: () => School.socializeNow()
+                    onClick: () => { School.socializeNow(); Game.updateStat('stress', -10); }
+                },
+                {
+                    id: 'act-rest',
+                    label: '😴 Descansar',
+                    desc: 'Recupera energía y baja estrés',
+                    color: '#9E9E9E',
+                    onClick: () => { Game.rest(); Game.updateStat('stress', -15); }
+                },
+                {
+                    id: 'act-social-menu',
+                    label: '👥 Social & Ocio',
+                    desc: 'Amigos, Viajes, Mascotas',
+                    color: '#E91E63',
+                    onClick: () => {
+                        UI.openModal('activity-modal');
+                        UI.switchActTab('social');
+                    }
+                },
+                {
+                    id: 'act-projects',
+                    label: '🚀 Proyectos',
+                    desc: 'Freelancer / Emprender',
+                    color: '#FFC107',
+                    onClick: () => {
+                        UI.openModal('activity-modal');
+                        UI.switchActTab('projects');
+                    }
                 }
             ]
         },
@@ -99,21 +137,21 @@ const PhaseManager = {
                     label: '🔥 Trabajar Duro',
                     desc: '++Rendimiento --Energía',
                     color: '#FF5722',
-                    onClick: () => Game.workHard()
+                    onClick: () => { Game.workHard(); Game.updateStat('stress', 10); }
                 },
                 {
                     id: 'act-flatter-boss',
                     label: '👑 Adular Jefe',
                     desc: '++Jefe --Colegas',
                     color: '#9C27B0',
-                    onClick: () => Game.flatterBoss()
+                    onClick: () => { Game.flatterBoss(); Game.updateStat('stress', 5); }
                 },
                 {
                     id: 'act-social-work',
                     label: '☕ Café con Colegas',
                     desc: '++Colegas --Rendimiento',
                     color: '#795548',
-                    onClick: () => Game.socializeColleagues()
+                    onClick: () => { Game.socializeColleagues(); Game.updateStat('stress', -5); }
                 },
                 {
                     id: 'act-study',
@@ -138,6 +176,16 @@ const PhaseManager = {
                     desc: 'Recupera energía (+40)',
                     color: '#607D8B',
                     onClick: () => Game.rest()
+                },
+                {
+                    id: 'act-social-menu',
+                    label: '👥 Social & Ocio',
+                    desc: 'Amigos, Viajes, Mascotas',
+                    color: '#E91E63',
+                    onClick: () => {
+                        UI.openModal('activity-modal');
+                        UI.switchActTab('social');
+                    }
                 }
             ]
         },
