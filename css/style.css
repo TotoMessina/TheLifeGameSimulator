@@ -787,6 +787,24 @@
             pointer-events: auto;
         }
 
+        /* Modal class for gig-modal and similar */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
         .modal-content {
             background: #1E1E1E;
             width: 90%;
