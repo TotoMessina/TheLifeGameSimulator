@@ -140,13 +140,23 @@ document.getElementById('close-lifestyle').onclick = () => {
 
 
 // Initialization sequence
+// Initialization sequence
 window.onload = () => {
     AudioSys.init();
 
     // Init Logic
     setTimeout(() => {
         DB.init();
-        Game.init(); // Game.init handles char gen check
+        Game.init();
+
+        // Splash Screen Removal
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+            setTimeout(() => {
+                splash.classList.add('hidden');
+                setTimeout(() => splash.remove(), 1000);
+            }, 1500);
+        }
     }, 500);
 
     // Initial render
@@ -154,13 +164,11 @@ window.onload = () => {
 
     // Dev Mode
     DevMode.init();
-    console.log('🔧 Dev Mode initialized. Press "d+e+v" or long-press money to activate.');
+    console.log('🔧 Dev Mode initialized.');
 
     // PWA
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/sw.js').then(reg => {
-            console.log('SW Registered!', reg);
-        }).catch(err => console.log('SW Fail', err));
+        navigator.serviceWorker.register('/sw.js').catch(console.error);
     }
 };
 
