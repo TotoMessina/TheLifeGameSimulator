@@ -55,6 +55,11 @@ const UI = {
             mhealth: document.getElementById('mhealth-bar'),
             stress: document.getElementById('stress-bar')
         };
+        console.log("UI Caching Debug:", {
+            health: this.els.bars.health,
+            stress: this.els.bars.stress,
+            domStress: document.getElementById('stress-bar')
+        });
 
         this.els.vals = {
             health: document.getElementById('health-val'),
@@ -590,6 +595,114 @@ const UI = {
         if (modal) modal.classList.remove('active');
     },
 
+    renderJobMarket(filter = 'all') {
+        const modal = document.getElementById('job-modal');
+        const container = document.getElementById('job-list-container');
+        if (!modal || !container) return;
+
+        container.innerHTML = '';
+
+        // --- 1. TABS ---
+        const cats = [
+            { id: 'all', name: 'Todos' },
+            { id: 'service', name: 'Servicios' },
+            { id: 'trade', name: 'Oficios' },
+            { id: 'corp', name: 'Corporativo' },
+            { id: 'tech', name: 'Tech' },
+            { id: 'creative', name: 'Creativo' },
+            { id: 'medical', name: 'Salud' },
+            { id: 'law', name: 'Leyes' },
+            { id: 'sport', name: 'Deportes' }
+        ];
+
+        const tabContainer = document.createElement('div');
+        tabContainer.style.cssText = "display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:15px; border-bottom:1px solid #333;";
+
+        cats.forEach(c => {
+            const btn = document.createElement('button');
+            btn.innerText = c.name;
+            btn.className = `filter-btn ${filter === c.id ? 'active' : ''}`;
+            // Inline style for filter button (since we might not have CSS class yet)
+            btn.style.cssText = `
+                padding: 6px 12px;
+                border: 1px solid ${filter === c.id ? '#4dffea' : '#444'};
+                background: ${filter === c.id ? 'rgba(77, 255, 234, 0.1)' : '#222'};
+                color: ${filter === c.id ? '#4dffea' : '#888'};
+                border-radius: 20px;
+                cursor: pointer;
+                white-space: nowrap;
+                font-size: 0.85rem;
+            `;
+            btn.onclick = () => this.renderJobMarket(c.id);
+            tabContainer.appendChild(btn);
+        });
+        container.appendChild(tabContainer);
+
+        // --- 2. JOBS LIST ---
+        let jobs = JOBS.filter(j => j.id !== 'unemployed');
+        if (filter !== 'all') {
+            jobs = jobs.filter(j => j.career === filter);
+        }
+
+        // Sort: Salary Ascending
+        jobs.sort((a, b) => a.salary - b.salary);
+
+        jobs.forEach(j => {
+            const isQual = state.intelligence >= (j.req.int || 0) &&
+                state.physicalHealth >= (j.req.health || 0) &&
+                (!j.req.deg || state.education.includes(j.req.deg)); // Simple match
+
+            const isCurr = state.currJobId === j.id;
+
+            const card = document.createElement('div');
+            card.className = 'job-card';
+            // Inline style for improved card
+            card.style.cssText = `
+                display:flex; justify-content:space-between; align-items:center;
+                background: ${isCurr ? 'rgba(0, 255, 204, 0.1)' : '#1a1a1a'};
+                border: 1px solid ${isCurr ? '#00ffcc' : '#333'};
+                padding: 12px; margin-bottom: 10px; border-radius: 8px;
+                opacity: ${isQual ? 1 : 0.6};
+            `;
+
+            const qualText = isQual ? '' : '🔒';
+            const reqText = [];
+            if (j.req.int) reqText.push(`🧠 ${j.req.int}`);
+            if (j.req.health) reqText.push(`💪 ${j.req.health}`);
+            if (j.req.deg) reqText.push(`🎓 Título`);
+
+            card.innerHTML = `
+                <div>
+                    <div style="font-weight:bold; color:${isCurr ? '#00ffcc' : '#fff'}; font-size:1rem;">${j.title} ${isCurr ? '(Actual)' : ''}</div>
+                    <div style="color:#aaa; font-size:0.85rem;">$${j.salary}/mes • <span style="color:${j.stress > 10 ? '#ff5555' : '#888'}">Estrés: ${j.stress || 'Bajo'}</span></div>
+                    <div style="color:#666; font-size:0.75rem; margin-top:4px;">${reqText.join(' • ')}</div>
+                </div>
+            `;
+
+            const btn = document.createElement('button');
+            btn.innerText = isCurr ? 'Trabajando' : (isQual ? 'Aplicar' : 'No Calificado');
+            btn.disabled = isCurr || !isQual;
+            btn.style.cssText = `
+                background: ${isCurr ? '#222' : (isQual ? '#007bff' : '#444')};
+                color: ${isQual ? '#fff' : '#888'};
+                border:none; padding: 8px 16px; border-radius:4px; cursor: ${isQual ? 'pointer' : 'not-allowed'};
+            `;
+            if (isQual && !isCurr) {
+                btn.onclick = () => {
+                    Game.applyJob(j.id);
+                    this.renderJobMarket(filter); // Refresh to showing Working
+                };
+            }
+
+            card.appendChild(btn);
+            container.appendChild(card);
+        });
+
+        if (jobs.length === 0) {
+            container.innerHTML += `<div style="text-align:center; color:#666; padding:20px;">No hay trabajos disponibles en esta categoría.</div>`;
+        }
+    },
+
     renderJobDashboard() {
         const modal = document.getElementById('job-dashboard-modal');
         if (!modal) return;
@@ -598,8 +711,16 @@ const UI = {
         const isUnemployed = job.id === 'unemployed';
 
         // 1. Header Stats
+        // 1. Header Stats
         document.getElementById('jd-role').innerText = job.title;
-        document.getElementById('jd-salary').innerText = `$${job.salary}/mes`;
+
+        // Net Salary Calc (Assuming 15% Tax for now)
+        const netSalary = Math.floor(job.salary * 0.85);
+        const boredomVal = job.boredom || 0;
+
+        document.getElementById('jd-salary').innerHTML = `$${job.salary}/mes <span style="font-size:0.8rem; color:#aaa;">(Neto: ~$${netSalary})</span><br>
+            <span style="font-size:0.8rem; color:${boredomVal > 50 ? '#ff4d4d' : '#8BC34A'}">Aburrimiento: ${boredomVal}%</span>`;
+
         document.getElementById('jd-performance').innerText = isUnemployed ? '-' : `${state.work_relations?.performance || 50}%`;
         document.getElementById('jd-stress').innerText = `${state.stress}%`;
 

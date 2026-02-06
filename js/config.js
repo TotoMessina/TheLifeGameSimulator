@@ -47,6 +47,40 @@ const JOBS = [
     { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {}, stress: 2 }, // Poverty stress
 
     // Student / Part-Time
+    // --- MEDICAL ---
+    { id: 'med_student', title: 'Residente Médico', salary: 1200, career: 'medical', req: { int: 70, deg: 'med_school' }, stress: 15, onCall: true },
+    { id: 'med_nurse', title: 'Enfermero/a', salary: 2500, career: 'medical', req: { int: 60, deg: 'nursing' }, stress: 10 },
+    { id: 'med_doctor', title: 'Médico General', salary: 5000, career: 'medical', req: { int: 85, deg: 'med_school' }, stress: 18 },
+    { id: 'med_surgeon', title: 'Cirujano Plástico', salary: 15000, career: 'medical', req: { int: 95, deg: 'med_school', exp: 40 }, stress: 25 },
+
+    // --- LAW ---
+    { id: 'law_paralegal', title: 'Paralegal', salary: 2000, career: 'law', req: { int: 60 }, stress: 8 },
+    { id: 'law_associate', title: 'Abogado Jr.', salary: 4000, career: 'law', req: { int: 80, deg: 'law_school' }, stress: 15 },
+    { id: 'law_partner', title: 'Socio de Firma', salary: 12000, career: 'law', req: { int: 90, exp: 50, deg: 'law_school' }, stress: 20 },
+    { id: 'law_judge', title: 'Juez de la Corte', salary: 10000, career: 'law', req: { int: 85, exp: 80, happy: 60 }, stress: 10 }, // Prestige
+
+    // --- TRADES (Oficios) ---
+    { id: 'trade_plumber', title: 'Plomero', salary: 2500, career: 'trade', type: 'full_time', req: { health: 50, energy: 60 }, stress: 5 },
+    { id: 'trade_electrician', title: 'Electricista', salary: 3000, career: 'trade', type: 'full_time', req: { int: 50, health: 40 }, stress: 6 },
+    { id: 'trade_carpenter', title: 'Carpintero Artesano', salary: 2200, career: 'trade', type: 'full_time', req: { health: 60 }, stress: 4 },
+    { id: 'trade_mechanic', title: 'Mecánico', salary: 2800, career: 'trade', type: 'full_time', req: { health: 50, int: 40 }, stress: 7 },
+
+    // --- CREATIVE ---
+    { id: 'creat_writer', title: 'Escritor Freelance', salary: 1500, career: 'creative', req: { int: 60, happy: 50 }, stress: 3 },
+    { id: 'creat_designer', title: 'Diseñador Gráfico', salary: 2500, career: 'creative', req: { int: 50, creativity: 40 }, stress: 5 }, // creativity trait?
+    { id: 'creat_director', title: 'Director de Arte', salary: 6000, career: 'creative', req: { int: 70, exp: 30 }, stress: 10 },
+
+    // --- SERVICE EXPANSION ---
+    { id: 'svc_security', title: 'Guardia de Seguridad', salary: 1100, career: 'service', req: { health: 60 }, stress: 6, boredom: 80 },
+    { id: 'svc_warehouse', title: 'Operario de Depósito', salary: 1300, career: 'service', req: { health: 70 }, stress: 8, boredom: 60 },
+    { id: 'svc_driver', title: 'Chofer de Colectivo', salary: 1800, career: 'service', req: { health: 40 }, stress: 12 },
+    { id: 'svc_chef', title: 'Cocinero de Línea', salary: 2000, career: 'service', req: { health: 60, energy: 70 }, stress: 15 },
+
+    // --- TECH EXPANSION ---
+    { id: 'tech_qa', title: 'QA Tester', salary: 2000, career: 'tech', req: { int: 40 }, stress: 4, boredom: 70 },
+    { id: 'tech_admin', title: 'SysAdmin', salary: 4000, career: 'tech', req: { int: 65, exp: 10 }, stress: 10 },
+
+    // --- EXISTING ---
     { id: 'pt_barista', title: 'Barista (Part-Time)', salary: 600, career: 'service', type: 'part_time', req: { energy: 30 } },
     { id: 'pt_tutor', title: 'Tutor Académico', salary: 900, career: 'education', type: 'part_time', req: { int: 60 } },
     { id: 'pt_delivery', title: 'Repartidor', salary: 700, career: 'service', type: 'part_time', req: { health: 50 } },
@@ -59,7 +93,7 @@ const JOBS = [
 
     // Corporate Path (Balanced)
     { id: 'corp_assist', title: 'Asistente', salary: 1000, career: 'corp', req: { int: 15, happy: 50 }, stress: 4 },
-    { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 }, stress: 10 }, // Specially high
+    { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 }, stress: 10 },
     { id: 'corp_manager', title: 'Gerente', salary: 4000, career: 'corp', req: { int: 60, exp: 30 }, stress: 12 },
     { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70, deg: 'mba_biz' }, stress: 20 },
 

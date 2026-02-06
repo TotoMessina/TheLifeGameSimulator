@@ -139,6 +139,10 @@ const DevMode = {
                         <label>Energy: <span id="dev-val-energy">${state.energy}</span></label>
                         <input type="range" min="0" max="100" value="${state.energy}" oninput="DevMode.setStat('energy', this.value)">
                     </div>
+                     <div class="stat-slider">
+                        <label>Stress: <span id="dev-val-stress">${state.stress}</span></label>
+                        <input type="range" min="0" max="100" value="${state.stress}" oninput="DevMode.setStat('stress', this.value)">
+                    </div>
                     <div class="btn-group" style="margin-top:5px">
                         <button onclick="DevMode.addMoney(10000)">+$10k</button>
                         <button onclick="DevMode.addMoney(1000000)">+$1M</button>
@@ -149,8 +153,31 @@ const DevMode = {
                 <div class="dev-section">
                     <h4>💼 Career & Assets</h4>
                     <select onchange="DevMode.forceJob(this.value)">${jobOpts}</select>
+                    
+                    <div class="stat-slider" style="margin-top:10px">
+                        <label>Job XP: <span id="dev-val-xp">${state.jobXP}</span></label>
+                        <input type="range" min="0" max="200" value="${state.jobXP}" oninput="DevMode.setJobStat('jobXP', this.value)">
+                    </div>
+                    <div class="stat-slider">
+                        <label>Performance: <span id="dev-val-perf">${state.work_relations?.performance || 50}</span></label>
+                        <input type="range" min="0" max="100" value="${state.work_relations?.performance || 50}" oninput="DevMode.setJobStat('performance', this.value)">
+                    </div>
+                     <div class="stat-slider">
+                        <label>Vacation Days: <span id="dev-val-vac">${state.vacationDays || 0}</span></label>
+                        <input type="range" min="0" max="30" value="${state.vacationDays || 0}" oninput="DevMode.setJobStat('vacationDays', this.value)">
+                    </div>
+                    
                     <select onchange="DevMode.giveAsset('housing', this.value)" style="margin-top:5px">${houseOpts}</select>
                     <select onchange="DevMode.giveAsset('vehicle', this.value)" style="margin-top:5px">${carOpts}</select>
+                </div>
+
+                <!-- Triggers -->
+                <div class="dev-section">
+                    <h4>⚡ Event Triggers</h4>
+                    <div class="btn-group">
+                        <button onclick="DevMode.triggerEvent('firing')">🔥 Test Firing</button>
+                        <button onclick="DevMode.triggerEvent('aguinaldo')">💰 Force Aguinaldo</button>
+                    </div>
                 </div>
 
                 <!-- Traits -->
@@ -220,6 +247,45 @@ const DevMode = {
         const job = JOBS.find(j => j.id === id);
         UI.showAlert("GOD MODE", `Job Set to: ${job.title}`);
         UI.render();
+    },
+
+    setJobStat(key, val) {
+        val = parseInt(val);
+        if (key === 'jobXP') {
+            state.jobXP = val;
+            const el = document.getElementById('dev-val-xp');
+            if (el) el.innerText = val;
+        } else if (key === 'performance') {
+            if (!state.work_relations) state.work_relations = { performance: 50 };
+            state.work_relations.performance = val;
+            const el = document.getElementById('dev-val-perf');
+            if (el) el.innerText = val;
+        } else if (key === 'vacationDays') {
+            state.vacationDays = val;
+            const el = document.getElementById('dev-val-vac');
+            if (el) el.innerText = val;
+        }
+        UI.render();
+    },
+
+    triggerEvent(type) {
+        if (type === 'firing') {
+            if (state.currJobId === 'unemployed') return UI.log("[DEV] Can't fire unemployed.", "bad");
+            UI.showAlert("DEV TRIGGER", "Simulating Firing Check (100% Chance)");
+            // Simulate Fired
+            UI.log(`[DEV] Has perdido tu empleo de ${state.currJobId} por orden divina.`, "bad");
+            state.currJobId = 'unemployed';
+            state.jobXP = 0;
+            state.happiness -= 20;
+            UI.render();
+        } else if (type === 'aguinaldo') {
+            if (state.currJobId === 'unemployed') return UI.log("[DEV] No Job for Aguinaldo.", "bad");
+            const job = JOBS.find(j => j.id === state.currJobId);
+            const bonus = Math.floor(job.salary * 0.5);
+            state.money += bonus;
+            UI.showAlert("DEV TRIGGER", `¡AGUINALDO FORZADO! +$${bonus}`);
+            UI.render();
+        }
     },
 
     giveAsset(type, id) {

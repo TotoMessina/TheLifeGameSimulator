@@ -488,13 +488,17 @@ const Game = {
         this.updateStat('money', wage);
         this.updateStat('energy', -20);
 
-        let xpGain = 2;
-        if (state.traits.includes('ambitious')) xpGain = 4;
+        // Track Attendance
+        state.workedThisMonth = true;
 
-        // World XP Effect?
-        // if (effects.jobXp) xpGain *= effects.jobXp;
-
-        state.jobXP += xpGain;
+        // XP Gain (Dead-end check)
+        if (!job.deadEnd) {
+            let xpGain = 2;
+            if (state.traits.includes('ambitious')) xpGain = 4;
+            state.jobXP += xpGain;
+        } else {
+            UI.log("Este trabajo no ofrece oportunidades de crecimiento.", "normal");
+        }
 
         state.consecutiveWork++;
 
@@ -504,7 +508,7 @@ const Game = {
         this.checkAchievements();
 
         // Promotion check
-        if (state.jobXP >= 100) {
+        if (!job.deadEnd && state.jobXP >= 100) {
             this.applyPerformanceReview();
         }
 
@@ -970,6 +974,33 @@ const Game = {
         state.totalMonths++;
         state.age = Math.floor(state.totalMonths / 12);
         state.consecutiveWork = 0;
+
+        // --- FIRING LOGIC ---
+        if (state.currJobId !== 'unemployed') {
+            const lowMental = state.mentalHealth < 20;
+            const skippedWork = !state.workedThisMonth && !state.onVacation; // onVacation flag if we used official days? 
+            // Simplified: if skipped work check
+
+            if (skippedWork || lowMental) {
+                if (Math.random() < 0.15) {
+                    const reason = skippedWork ? "por ausentismo" : "por inestabilidad mental";
+                    UI.showAlert("¡DESPEDIDO!", `Te han despedido ${reason}.`);
+                    UI.log(`Has perdido tu empleo de ${state.currJobId} ${reason}.`, "bad");
+                    state.currJobId = 'unemployed';
+                    state.jobXP = 0;
+                    this.updateStat('happiness', -20);
+                }
+            }
+
+            // --- BOREDOM LOGIC ---
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job && job.boredom && job.boredom > 50) {
+                const borePenalty = Math.floor((job.boredom - 40) / 10);
+                this.updateStat('happiness', -borePenalty);
+                if (Math.random() < 0.2) UI.log("Tu trabajo es realmente aburrido...", "normal");
+            }
+        }
+        state.workedThisMonth = false; // Reset for new month
 
         // 1. BASE STAT DECAY & FLUCTUATIONS
         // Replaces static decay with randomized "Realism" logic

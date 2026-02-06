@@ -39,48 +39,7 @@ const App = {
         if (UI.els.jobTrigger) {
             UI.els.jobTrigger.onclick = () => {
                 UI.els.modals.job.classList.add('active');
-                const container = UI.els.modals.jobList;
-                if (!container) return;
-                container.innerHTML = '';
-
-                // Career Tracks
-                const careers = ['none', 'tech', 'corp', 'sport'];
-                const careerNames = { 'none': 'Trabajos Básicos', 'tech': 'Tecnología', 'corp': 'Corporativo', 'sport': 'Deportes' };
-
-                careers.forEach(c => {
-                    if (c === 'none') return;
-
-                    const header = document.createElement('h4');
-                    header.innerText = careerNames[c];
-                    header.style.cssText = "color:#aaa; border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px;";
-                    container.appendChild(header);
-
-                    const jobs = JOBS.filter(j => j.career === c).sort((a, b) => a.salary - b.salary);
-                    jobs.forEach(j => {
-                        const isQual = state.intelligence >= (j.req.int || 0) &&
-                            state.experience >= (j.req.exp || 0) &&
-                            state.physicalHealth >= (j.req.health || 0);
-
-                        const hasDeg = !j.req.deg || state.education.includes(j.req.deg);
-                        const isCurr = state.currJobId === j.id;
-
-                        const el = document.createElement('div');
-                        el.className = 'job-card';
-                        if (isCurr) el.classList.add('active');
-
-                        el.innerHTML = `
-                            <div>
-                                <div style="font-weight:bold; color:#fff;">${j.title}</div>
-                                <div style="font-size:0.8rem; color:#aaa;">Salario: $${j.salary}</div>
-                                <div style="font-size:0.8rem; color:#888;">Req: ${j.req.int ? 'Int ' + j.req.int : ''} ${j.req.exp ? 'Exp ' + j.req.exp : ''} ${j.req.deg ? '🎓' : ''}</div>
-                            </div>
-                            <button class="btn-select-job" ${(isQual && hasDeg) ? '' : 'disabled'} onclick="Game.promote('${j.id}')">
-                                ${isCurr ? 'Actual' : (isQual && hasDeg ? 'Aplicar' : 'No Calificado')}
-                            </button>
-                         `;
-                        container.appendChild(el);
-                    });
-                });
+                UI.renderJobMarket();
             };
         }
 
@@ -240,7 +199,7 @@ document.getElementById('close-lifestyle').onclick = () => {
 
 // Initialization sequence
 // Initialization sequence
-window.onload = async () => {
+App.init = async () => {
     try {
         AudioSys.init();
 
@@ -300,4 +259,9 @@ document.addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
         // AudioSys.playClick(); // Already handled in specific actions mostly
     }
+});
+
+// Init Game
+window.addEventListener('DOMContentLoaded', () => {
+    App.init();
 });
