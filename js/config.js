@@ -42,66 +42,676 @@ const RARE_ITEMS = [
     { id: 'limited_watch', name: 'Patek Philippe', price: 250000, desc: 'Edición limitada. (+20 Estatus)', icon: '⌚', maint: 100, effect: { type: 'status', val: 20 } }
 ];
 
+const CAREER_TRACKS = {
+    'service': { label: 'Servicios Básicos', icon: '🧹', desc: 'Empleos de entrada y servicios esenciales.' },
+    'trade': { label: 'Oficios', icon: '🛠️', desc: 'Trabajos manuales calificados.' },
+    'corp': { label: 'Corporativo', icon: '💼', desc: 'Escalafón empresarial y de negocios.' },
+    'tech': { label: 'Tecnología', icon: '💻', desc: 'Desarrollo de software y sistemas.' },
+    'creative': { label: 'Arte & Creatividad', icon: '🎨', desc: 'Diseño, escritura y dirección de arte.' },
+    'medical': { label: 'Salud & Medicina', icon: '🏥', desc: 'Cuidado de pacientes y cirugía.' },
+    'law': { label: 'Leyes & Justicia', icon: '⚖️', desc: 'Abogacía y sistema judicial.' },
+    'sport': { label: 'Deportes', icon: '⚽', desc: 'Carrera atlética profesional.' },
+    'education': { label: 'Educación', icon: '🎓', desc: 'Enseñanza y academia.' }
+};
+
 const JOBS = [
-    // None
-    { id: 'unemployed', title: 'Sin Empleo', salary: 0, career: 'none', req: {}, stress: 2 }, // Poverty stress
+    // === UNEMPLOYED ===
+    {
+        id: 'unemployed',
+        title: 'Sin Empleo',
+        salary: 0,
+        career: 'none',
+        req: {},
+        stress: 2,
+        boredom: 10,
+        xpGain: 0,
+        stressPerMonth: 5,
+        energyCost: 0
+    },
 
-    // Student / Part-Time
-    // --- MEDICAL ---
-    { id: 'med_student', title: 'Residente Médico', salary: 1200, career: 'medical', req: { int: 70, deg: 'med_school' }, stress: 15, onCall: true },
-    { id: 'med_nurse', title: 'Enfermero/a', salary: 2500, career: 'medical', req: { int: 60, deg: 'nursing' }, stress: 10 },
-    { id: 'med_doctor', title: 'Médico General', salary: 5000, career: 'medical', req: { int: 85, deg: 'med_school' }, stress: 18 },
-    { id: 'med_surgeon', title: 'Cirujano Plástico', salary: 15000, career: 'medical', req: { int: 95, deg: 'med_school', exp: 40 }, stress: 25 },
+    // === SURVIVAL JOBS (Bajo sueldo, altos requisitos de energía) ===
+    {
+        id: 'survival_delivery',
+        title: 'Repartidor de Comida',
+        salary: 1200,
+        career: 'service',
+        type: 'full_time',
+        req: { health: 40 },
+        stress: 8,
+        boredom: 7,
+        xpGain: 0.5,
+        stressPerMonth: 8,
+        energyCost: 35,
+        desc: 'Entregas en bici todo el día. Agotador pero flexible.'
+    },
+    {
+        id: 'survival_cashier',
+        title: 'Cajero de Supermercado',
+        salary: 1000,
+        career: 'service',
+        type: 'full_time',
+        req: { int: 10 },
+        stress: 6,
+        boredom: 9,
+        xpGain: 0.5,
+        stressPerMonth: 6,
+        energyCost: 30,
+        desc: 'Escanear productos 8 horas. Muy monótono.'
+    },
+    {
+        id: 'survival_janitor',
+        title: 'Operario de Limpieza',
+        salary: 900,
+        career: 'service',
+        type: 'full_time',
+        req: { health: 35 },
+        stress: 5,
+        boredom: 8,
+        xpGain: 0.5,
+        stressPerMonth: 5,
+        energyCost: 40,
+        desc: 'Trabajo duro físicamente. Poco reconocimiento.'
+    },
+    {
+        id: 'survival_security',
+        title: 'Sereno Nocturno',
+        salary: 1100,
+        career: 'service',
+        type: 'full_time',
+        req: { health: 30 },
+        stress: 10,
+        boredom: 10,
+        xpGain: 0.3,
+        stressPerMonth: 10,
+        energyCost: 25,
+        desc: 'Turnos nocturnos. Arruina tu ciclo de sueño.'
+    },
 
-    // --- LAW ---
-    { id: 'law_paralegal', title: 'Paralegal', salary: 2000, career: 'law', req: { int: 60 }, stress: 8 },
-    { id: 'law_associate', title: 'Abogado Jr.', salary: 4000, career: 'law', req: { int: 80, deg: 'law_school' }, stress: 15 },
-    { id: 'law_partner', title: 'Socio de Firma', salary: 12000, career: 'law', req: { int: 90, exp: 50, deg: 'law_school' }, stress: 20 },
-    { id: 'law_judge', title: 'Juez de la Corte', salary: 10000, career: 'law', req: { int: 85, exp: 80, happy: 60 }, stress: 10 }, // Prestige
+    // === DEAD-END JOBS (Buen sueldo, sin progresión, alto estrés) ===
+    {
+        id: 'deadend_telemarketer',
+        title: 'Vendedor Telefónico',
+        salary: 2500,
+        career: 'service',
+        type: 'full_time',
+        req: { int: 20 },
+        stress: 20,
+        boredom: 10,
+        xpGain: 0, // SIN EXPERIENCIA
+        stressPerMonth: 20,
+        energyCost: 30,
+        deadEnd: true,
+        desc: 'Comisiones variables. Te rechazan todo el día.'
+    },
+    {
+        id: 'deadend_callcenter',
+        title: 'Operador de Call Center',
+        salary: 2000,
+        career: 'service',
+        type: 'full_time',
+        req: { int: 15 },
+        stress: 18,
+        boredom: 9,
+        xpGain: 0,
+        stressPerMonth: 18,
+        energyCost: 25,
+        deadEnd: true,
+        desc: 'Clientes enojados. Scripts repetitivos.'
+    },
+    {
+        id: 'deadend_collector',
+        title: 'Cobrador de Deudas',
+        salary: 3000,
+        career: 'service',
+        type: 'full_time',
+        req: { int: 25 },
+        stress: 25,
+        boredom: 7,
+        xpGain: 0,
+        stressPerMonth: 25,
+        energyCost: 30,
+        deadEnd: true,
+        mentalHealthCost: 8,
+        desc: 'Presionas a gente desesperada. Moralmente agotador.'
+    },
 
-    // --- TRADES (Oficios) ---
-    { id: 'trade_plumber', title: 'Plomero', salary: 2500, career: 'trade', type: 'full_time', req: { health: 50, energy: 60 }, stress: 5 },
-    { id: 'trade_electrician', title: 'Electricista', salary: 3000, career: 'trade', type: 'full_time', req: { int: 50, health: 40 }, stress: 6 },
-    { id: 'trade_carpenter', title: 'Carpintero Artesano', salary: 2200, career: 'trade', type: 'full_time', req: { health: 60 }, stress: 4 },
-    { id: 'trade_mechanic', title: 'Mecánico', salary: 2800, career: 'trade', type: 'full_time', req: { health: 50, int: 40 }, stress: 7 },
+    // === PRODUCT MANAGEMENT CAREER TRACK ===
+    {
+        id: 'pm_intern',
+        title: 'Product Intern / Becario PM',
+        salary: 800,
+        career: 'product',
+        type: 'part_time',
+        req: { int: 40, isStudent: true },
+        stress: 3,
+        boredom: 3,
+        xpGain: 1.2,
+        stressPerMonth: 3,
+        energyCost: 20,
+        desc: 'Aprende los fundamentos del Product Management.'
+    },
+    {
+        id: 'pm_associate',
+        title: 'Associate Product Manager',
+        salary: 3500,
+        career: 'product',
+        type: 'full_time',
+        req: { int: 50, deg: 'university_degree' },
+        stress: 8,
+        boredom: 4,
+        xpGain: 1.0,
+        stressPerMonth: 8,
+        energyCost: 25,
+        bonusChance: 0.10,
+        bonusAmount: 500,
+        desc: 'Define requisitos y coordina con equipos.'
+    },
+    {
+        id: 'pm_junior',
+        title: 'Product Manager Jr.',
+        salary: 5500,
+        career: 'product',
+        type: 'full_time',
+        req: { int: 60, deg: 'university_degree', careerExp: { product: 24 } },
+        stress: 10,
+        boredom: 5,
+        xpGain: 1.0,
+        stressPerMonth: 10,
+        energyCost: 28,
+        bonusChance: 0.15,
+        bonusAmount: 1000,
+        desc: 'Lideras el roadmap de productos.'
+    },
+    {
+        id: 'pm_senior',
+        title: 'Senior Product Manager',
+        salary: 8500,
+        career: 'product',
+        type: 'full_time',
+        req: { int: 70, deg: 'university_degree', careerExp: { product: 48 } },
+        stress: 12,
+        boredom: 4,
+        xpGain: 0.8,
+        stressPerMonth: 12,
+        energyCost: 30,
+        bonusChance: 0.20,
+        bonusAmount: 2000,
+        desc: 'Estrategia de producto a nivel empresa.'
+    },
+    {
+        id: 'pm_director',
+        title: 'Director of Product',
+        salary: 15000,
+        career: 'product',
+        type: 'full_time',
+        req: { int: 80, deg: 'mba_biz', careerExp: { product: 72 } },
+        stress: 15,
+        boredom: 3,
+        xpGain: 0.5,
+        stressPerMonth: 15,
+        energyCost: 32,
+        bonusChance: 0.25,
+        bonusAmount: 5000,
+        desc: 'Diriges toda la organización de producto.'
+    },
 
-    // --- CREATIVE ---
-    { id: 'creat_writer', title: 'Escritor Freelance', salary: 1500, career: 'creative', req: { int: 60, happy: 50 }, stress: 3 },
-    { id: 'creat_designer', title: 'Diseñador Gráfico', salary: 2500, career: 'creative', req: { int: 50, creativity: 40 }, stress: 5 }, // creativity trait?
-    { id: 'creat_director', title: 'Director de Arte', salary: 6000, career: 'creative', req: { int: 70, exp: 30 }, stress: 10 },
+    // === STUDENT / PART-TIME ===
+    {
+        id: 'pt_barista',
+        title: 'Barista (Part-Time)',
+        salary: 600,
+        career: 'service',
+        type: 'part_time',
+        req: { energy: 30 },
+        stress: 4,
+        boredom: 6,
+        xpGain: 0.8,
+        stressPerMonth: 4,
+        energyCost: 15
+    },
+    {
+        id: 'pt_tutor',
+        title: 'Tutor Académico',
+        salary: 900,
+        career: 'education',
+        type: 'part_time',
+        req: { int: 60 },
+        stress: 3,
+        boredom: 4,
+        xpGain: 1.0,
+        stressPerMonth: 3,
+        energyCost: 18
+    },
+    {
+        id: 'pt_delivery',
+        title: 'Repartidor',
+        salary: 700,
+        career: 'service',
+        type: 'part_time',
+        req: { health: 50 },
+        stress: 5,
+        boredom: 7,
+        xpGain: 0.6,
+        stressPerMonth: 5,
+        energyCost: 20
+    },
 
-    // --- SERVICE EXPANSION ---
-    { id: 'svc_security', title: 'Guardia de Seguridad', salary: 1100, career: 'service', req: { health: 60 }, stress: 6, boredom: 80 },
-    { id: 'svc_warehouse', title: 'Operario de Depósito', salary: 1300, career: 'service', req: { health: 70 }, stress: 8, boredom: 60 },
-    { id: 'svc_driver', title: 'Chofer de Colectivo', salary: 1800, career: 'service', req: { health: 40 }, stress: 12 },
-    { id: 'svc_chef', title: 'Cocinero de Línea', salary: 2000, career: 'service', req: { health: 60, energy: 70 }, stress: 15 },
+    // === MEDICAL ===
+    {
+        id: 'med_student',
+        title: 'Residente Médico',
+        salary: 1200,
+        career: 'medical',
+        req: { int: 70, deg: 'med_school' },
+        stress: 15,
+        onCall: true,
+        boredom: 2,
+        xpGain: 1.5,
+        stressPerMonth: 15,
+        energyCost: 40
+    },
+    {
+        id: 'med_nurse',
+        title: 'Enfermero/a',
+        salary: 2500,
+        career: 'medical',
+        req: { int: 60, deg: 'nursing' },
+        stress: 10,
+        boredom: 4,
+        xpGain: 1.0,
+        stressPerMonth: 10,
+        energyCost: 30
+    },
+    {
+        id: 'med_doctor',
+        title: 'Médico General',
+        salary: 5000,
+        career: 'medical',
+        req: { int: 85, deg: 'med_school' },
+        stress: 18,
+        boredom: 3,
+        xpGain: 1.0,
+        stressPerMonth: 18,
+        energyCost: 35
+    },
+    {
+        id: 'med_surgeon',
+        title: 'Cirujano Plástico',
+        salary: 15000,
+        career: 'medical',
+        req: { int: 95, deg: 'med_school', exp: 40 },
+        stress: 25,
+        boredom: 2,
+        xpGain: 0.5,
+        stressPerMonth: 25,
+        energyCost: 40
+    },
 
-    // --- TECH EXPANSION ---
-    { id: 'tech_qa', title: 'QA Tester', salary: 2000, career: 'tech', req: { int: 40 }, stress: 4, boredom: 70 },
-    { id: 'tech_admin', title: 'SysAdmin', salary: 4000, career: 'tech', req: { int: 65, exp: 10 }, stress: 10 },
+    // === LAW ===
+    {
+        id: 'law_paralegal',
+        title: 'Paralegal',
+        salary: 2000,
+        career: 'law',
+        req: { int: 60 },
+        stress: 8,
+        boredom: 6,
+        xpGain: 1.0,
+        stressPerMonth: 8,
+        energyCost: 22
+    },
+    {
+        id: 'law_associate',
+        title: 'Abogado Jr.',
+        salary: 4000,
+        career: 'law',
+        req: { int: 80, deg: 'law_school' },
+        stress: 15,
+        boredom: 5,
+        xpGain: 1.0,
+        stressPerMonth: 15,
+        energyCost: 30
+    },
+    {
+        id: 'law_partner',
+        title: 'Socio de Firma',
+        salary: 12000,
+        career: 'law',
+        req: { int: 90, exp: 50, deg: 'law_school' },
+        stress: 20,
+        boredom: 4,
+        xpGain: 0.6,
+        stressPerMonth: 20,
+        energyCost: 32
+    },
+    {
+        id: 'law_judge',
+        title: 'Juez de la Corte',
+        salary: 10000,
+        career: 'law',
+        req: { int: 85, exp: 80, happy: 60 },
+        stress: 10,
+        boredom: 3,
+        xpGain: 0.3,
+        stressPerMonth: 10,
+        energyCost: 25
+    },
 
-    // --- EXISTING ---
-    { id: 'pt_barista', title: 'Barista (Part-Time)', salary: 600, career: 'service', type: 'part_time', req: { energy: 30 } },
-    { id: 'pt_tutor', title: 'Tutor Académico', salary: 900, career: 'education', type: 'part_time', req: { int: 60 } },
-    { id: 'pt_delivery', title: 'Repartidor', salary: 700, career: 'service', type: 'part_time', req: { health: 50 } },
+    // === TRADES (Oficios) ===
+    {
+        id: 'trade_plumber',
+        title: 'Plomero',
+        salary: 2500,
+        career: 'trade',
+        type: 'full_time',
+        req: { health: 50, energy: 60 },
+        stress: 5,
+        boredom: 5,
+        xpGain: 1.0,
+        stressPerMonth: 5,
+        energyCost: 28
+    },
+    {
+        id: 'trade_electrician',
+        title: 'Electricista',
+        salary: 3000,
+        career: 'trade',
+        type: 'full_time',
+        req: { int: 50, health: 40 },
+        stress: 6,
+        boredom: 4,
+        xpGain: 1.0,
+        stressPerMonth: 6,
+        energyCost: 26
+    },
+    {
+        id: 'trade_carpenter',
+        title: 'Carpintero Artesano',
+        salary: 2200,
+        career: 'trade',
+        type: 'full_time',
+        req: { health: 60 },
+        stress: 4,
+        boredom: 3,
+        xpGain: 1.0,
+        stressPerMonth: 4,
+        energyCost: 30
+    },
+    {
+        id: 'trade_mechanic',
+        title: 'Mecánico',
+        salary: 2800,
+        career: 'trade',
+        type: 'full_time',
+        req: { health: 50, int: 40 },
+        stress: 7,
+        boredom: 5,
+        xpGain: 1.0,
+        stressPerMonth: 7,
+        energyCost: 27
+    },
 
-    // Tech Path (Inteligence Focus)
-    { id: 'tech_trainee', title: 'Trainee IT', salary: 800, career: 'tech', req: { int: 20 }, stress: 3 },
-    { id: 'tech_jr', title: 'Junior Dev', salary: 1500, career: 'tech', req: { int: 40, exp: 5 }, stress: 5 },
-    { id: 'tech_sr', title: 'Senior Dev', salary: 3500, career: 'tech', req: { int: 70, exp: 20, deg: 'dev_bootcamp' }, stress: 8 },
-    { id: 'tech_cto', title: 'CTO', salary: 8000, career: 'tech', req: { int: 90, exp: 50, deg: 'dev_bootcamp' }, stress: 15 },
+    // === CREATIVE ===
+    {
+        id: 'creat_writer',
+        title: 'Escritor Freelance',
+        salary: 1500,
+        career: 'creative',
+        req: { int: 60, happy: 50 },
+        stress: 3,
+        boredom: 2,
+        xpGain: 1.0,
+        stressPerMonth: 3,
+        energyCost: 20
+    },
+    {
+        id: 'creat_designer',
+        title: 'Diseñador Gráfico',
+        salary: 2500,
+        career: 'creative',
+        req: { int: 50 },
+        stress: 5,
+        boredom: 3,
+        xpGain: 1.0,
+        stressPerMonth: 5,
+        energyCost: 22
+    },
+    {
+        id: 'creat_director',
+        title: 'Director de Arte',
+        salary: 6000,
+        career: 'creative',
+        req: { int: 70, exp: 30 },
+        stress: 10,
+        boredom: 2,
+        xpGain: 0.8,
+        stressPerMonth: 10,
+        energyCost: 28
+    },
 
-    // Corporate Path (Balanced)
-    { id: 'corp_assist', title: 'Asistente', salary: 1000, career: 'corp', req: { int: 15, happy: 50 }, stress: 4 },
-    { id: 'corp_analyst', title: 'Analista', salary: 2000, career: 'corp', req: { int: 40, exp: 10 }, stress: 10 },
-    { id: 'corp_manager', title: 'Gerente', salary: 4000, career: 'corp', req: { int: 60, exp: 30 }, stress: 12 },
-    { id: 'corp_ceo', title: 'CEO', salary: 12000, career: 'corp', req: { int: 85, exp: 70, deg: 'mba_biz' }, stress: 20 },
+    // === SERVICE EXPANSION ===
+    {
+        id: 'svc_security',
+        title: 'Guardia de Seguridad',
+        salary: 1100,
+        career: 'service',
+        req: { health: 60 },
+        stress: 6,
+        boredom: 9,
+        xpGain: 0.4,
+        stressPerMonth: 6,
+        energyCost: 20
+    },
+    {
+        id: 'svc_warehouse',
+        title: 'Operario de Depósito',
+        salary: 1300,
+        career: 'service',
+        req: { health: 70 },
+        stress: 8,
+        boredom: 8,
+        xpGain: 0.5,
+        stressPerMonth: 8,
+        energyCost: 35
+    },
+    {
+        id: 'svc_driver',
+        title: 'Chofer de Colectivo',
+        salary: 1800,
+        career: 'service',
+        req: { health: 40 },
+        stress: 12,
+        boredom: 7,
+        xpGain: 0.6,
+        stressPerMonth: 12,
+        energyCost: 25
+    },
+    {
+        id: 'svc_chef',
+        title: 'Cocinero de Línea',
+        salary: 2000,
+        career: 'service',
+        req: { health: 60, energy: 70 },
+        stress: 15,
+        boredom: 4,
+        xpGain: 1.0,
+        stressPerMonth: 15,
+        energyCost: 32
+    },
 
-    // Sports Path (Health/Energy Focus)
-    { id: 'sport_amateur', title: 'Amateur Deport.', salary: 500, career: 'sport', req: { health: 60, energy: 50 }, stress: 5 },
-    { id: 'sport_pro', title: 'Deportista Pro', salary: 3000, career: 'sport', req: { health: 80, exp: 10 }, stress: 8 },
-    { id: 'sport_star', title: 'Estrella Mundial', salary: 15000, career: 'sport', req: { health: 95, exp: 40, happy: 70, deg: 'sport_cert' }, stress: 12 },
-    { id: 'sport_legend', title: 'Leyenda', salary: 25000, career: 'sport', req: { health: 100, exp: 80, deg: 'sport_cert' }, stress: 10 }
+    // === TECH EXPANSION ===
+    {
+        id: 'tech_qa',
+        title: 'QA Tester',
+        salary: 2000,
+        career: 'tech',
+        req: { int: 40 },
+        stress: 4,
+        boredom: 8,
+        xpGain: 0.8,
+        stressPerMonth: 4,
+        energyCost: 20
+    },
+    {
+        id: 'tech_admin',
+        title: 'SysAdmin',
+        salary: 4000,
+        career: 'tech',
+        req: { int: 65, exp: 10 },
+        stress: 10,
+        boredom: 6,
+        xpGain: 1.0,
+        stressPerMonth: 10,
+        energyCost: 25
+    },
+    {
+        id: 'tech_trainee',
+        title: 'Trainee IT',
+        salary: 800,
+        career: 'tech',
+        req: { int: 20 },
+        stress: 3,
+        boredom: 5,
+        xpGain: 1.2,
+        stressPerMonth: 3,
+        energyCost: 18
+    },
+    {
+        id: 'tech_jr',
+        title: 'Junior Dev',
+        salary: 1500,
+        career: 'tech',
+        req: { int: 40, exp: 5 },
+        stress: 5,
+        boredom: 4,
+        xpGain: 1.1,
+        stressPerMonth: 5,
+        energyCost: 22
+    },
+    {
+        id: 'tech_sr',
+        title: 'Senior Dev',
+        salary: 3500,
+        career: 'tech',
+        req: { int: 70, exp: 20, deg: 'dev_bootcamp' },
+        stress: 8,
+        boredom: 3,
+        xpGain: 0.9,
+        stressPerMonth: 8,
+        energyCost: 26
+    },
+    {
+        id: 'tech_cto',
+        title: 'CTO',
+        salary: 8000,
+        career: 'tech',
+        req: { int: 90, exp: 50, deg: 'dev_bootcamp' },
+        stress: 15,
+        boredom: 2,
+        xpGain: 0.5,
+        stressPerMonth: 15,
+        energyCost: 30
+    },
+
+    // === CORPORATE PATH ===
+    {
+        id: 'corp_assist',
+        title: 'Asistente',
+        salary: 1000,
+        career: 'corp',
+        req: { int: 15, happy: 50 },
+        stress: 4,
+        boredom: 7,
+        xpGain: 1.0,
+        stressPerMonth: 4,
+        energyCost: 20
+    },
+    {
+        id: 'corp_analyst',
+        title: 'Analista',
+        salary: 2000,
+        career: 'corp',
+        req: { int: 40, exp: 10 },
+        stress: 10,
+        boredom: 6,
+        xpGain: 1.0,
+        stressPerMonth: 10,
+        energyCost: 25
+    },
+    {
+        id: 'corp_manager',
+        title: 'Gerente',
+        salary: 4000,
+        career: 'corp',
+        req: { int: 60, exp: 30 },
+        stress: 12,
+        boredom: 5,
+        xpGain: 0.8,
+        stressPerMonth: 12,
+        energyCost: 28
+    },
+    {
+        id: 'corp_ceo',
+        title: 'CEO',
+        salary: 12000,
+        career: 'corp',
+        req: { int: 85, exp: 70, deg: 'mba_biz' },
+        stress: 20,
+        boredom: 3,
+        xpGain: 0.4,
+        stressPerMonth: 20,
+        energyCost: 32
+    },
+
+    // === SPORTS PATH ===
+    {
+        id: 'sport_amateur',
+        title: 'Amateur Deport.',
+        salary: 500,
+        career: 'sport',
+        req: { health: 60, energy: 50 },
+        stress: 5,
+        boredom: 2,
+        xpGain: 1.2,
+        stressPerMonth: 5,
+        energyCost: 30
+    },
+    {
+        id: 'sport_pro',
+        title: 'Deportista Pro',
+        salary: 3000,
+        career: 'sport',
+        req: { health: 80, exp: 10 },
+        stress: 8,
+        boredom: 1,
+        xpGain: 1.0,
+        stressPerMonth: 8,
+        energyCost: 35
+    },
+    {
+        id: 'sport_star',
+        title: 'Estrella Mundial',
+        salary: 15000,
+        career: 'sport',
+        req: { health: 95, exp: 40, happy: 70, deg: 'sport_cert' },
+        stress: 12,
+        boredom: 1,
+        xpGain: 0.6,
+        stressPerMonth: 12,
+        energyCost: 38
+    },
+    {
+        id: 'sport_legend',
+        title: 'Leyenda',
+        salary: 25000,
+        career: 'sport',
+        req: { health: 100, exp: 80, deg: 'sport_cert' },
+        stress: 10,
+        boredom: 1,
+        xpGain: 0.3,
+        stressPerMonth: 10,
+        energyCost: 40
+    }
 ];
 
 const FREELANCE_GIGS = [

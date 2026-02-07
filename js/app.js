@@ -90,51 +90,10 @@ const App = {
     }
 };
 
-// ... existing triggers ...
-// Business Trigger
-// Note: These ID-based triggers below are safe IF the DOM is ready, but for consistency we should move them?
-// Leaving them as they rely on document.getElementById directly, not UI.els.
-// However, the script runs before onload. So document.getElementById is SAFE? 
-// Yes, app.js is at the end of body.
-// The ERROR was accessing UI.els properties which were empty.
 
 // ... (Keep existing ID-based listeners below if they don't use UI.els) ...
 
-
-// Business Trigger
-document.getElementById('business-trigger').onclick = () => {
-    document.getElementById('business-modal').classList.add('active');
-    UI.renderBusiness();
-};
-document.getElementById('close-business').onclick = () => {
-    document.getElementById('business-modal').classList.remove('active');
-};
-
-// Athletics Trigger
-document.getElementById('athletics-trigger').onclick = () => {
-    document.getElementById('athletics-modal').classList.add('active');
-    UI.renderAthletics();
-};
-document.getElementById('close-athletics').onclick = () => {
-    document.getElementById('athletics-modal').classList.remove('active');
-};
-
-// Routine Trigger
-document.getElementById('routine-trigger').onclick = () => {
-    document.getElementById('routine-modal').classList.add('active');
-    UI.renderRoutine();
-};
-document.getElementById('close-routine').onclick = () => {
-    document.getElementById('routine-modal').classList.remove('active');
-};
-
-// Profile Trigger
-document.getElementById('profile-trigger').onclick = () => {
-    document.getElementById('profile-modal').classList.add('active');
-    UI.renderProfile();
-};
-
-// Social Trigger
+// Social trigger (special case - opens activity modal with tab switch)
 const socialBtn = document.getElementById('social-trigger');
 if (socialBtn) {
     socialBtn.onclick = () => {
@@ -142,56 +101,7 @@ if (socialBtn) {
         UI.switchActTab('social');
     };
 }
-document.getElementById('close-profile').onclick = () => {
-    document.getElementById('profile-modal').classList.remove('active');
-};
 
-// School Trigger
-document.getElementById('school-trigger').onclick = () => {
-    document.getElementById('school-modal').classList.add('active');
-    UI.renderSchool();
-};
-document.getElementById('close-school').onclick = () => {
-    document.getElementById('school-modal').classList.remove('active');
-};
-
-// Check Teen Mode in render loop or updateUI
-setInterval(() => {
-    if (state.age < 18) {
-        document.getElementById('school-trigger').style.display = 'inline-block';
-        document.getElementById('gpa-box').style.display = 'inline';
-        // Hide adult stuff
-        document.getElementById('job-trigger').style.display = 'none';
-        document.getElementById('business-trigger').style.display = 'none';
-    } else {
-        document.getElementById('school-trigger').style.display = 'none';
-        document.getElementById('gpa-box').style.display = 'none';
-
-        document.getElementById('job-trigger').style.display = 'inline-block';
-        document.getElementById('business-trigger').style.display = 'inline-block';
-    }
-}, 1000);
-
-
-// Lifestyle Tabs
-document.getElementById('home-trigger').onclick = () => {
-    // We reuse Shop modal for lifestyle? Or create new one?
-    // Original code: There was a lifestyle modal. I missed getting its ID in UI?
-    // Let's check UI.els. It doesn't have 'lifestyle'.
-    // Wait, original HTML had `lifestyle-modal`. 
-    // I need to add this listener.
-    const modal = document.getElementById('lifestyle-modal');
-    if (modal) {
-        modal.classList.add('active');
-        UI.populateHousingCards();
-        UI.populateVehicleCards();
-        UI.renderMyHome();
-    }
-};
-
-document.getElementById('close-lifestyle').onclick = () => {
-    document.getElementById('lifestyle-modal').classList.remove('active');
-};
 
 // Tab switchers
 // Tab switchers removed to allow inline HTML handlers to work (GameUI.switch...)
@@ -213,10 +123,186 @@ App.init = async () => {
         }
 
         UI.init(); // Initialize UI first (cache elements)
+        EventManager.init(); // Initialize event system
+        PerformanceManager.init(); // Initialize performance optimizations
+        KeyboardManager.init(); // Initialize keyboard navigation
+        A11yManager.init(); // Initialize accessibility features
+        PWAManager.init(); // Initialize PWA features
+        AnalyticsManager.init(); // Initialize analytics
+        LeaderboardsManager.init(); // Initialize leaderboards
+
+        // Register all modals using EventManager
+        EventManager.registerModals([
+            { modalId: 'business-modal', triggerId: 'business-trigger', renderFn: UI.renderBusiness },
+            { modalId: 'athletics-modal', triggerId: 'athletics-trigger', renderFn: UI.renderAthletics },
+            { modalId: 'routine-modal', triggerId: 'routine-trigger', renderFn: UI.renderRoutine },
+            { modalId: 'profile-modal', triggerId: 'profile-trigger', renderFn: UI.renderProfile },
+            { modalId: 'school-modal', triggerId: 'school-trigger', renderFn: UI.renderSchool },
+            {
+                modalId: 'lifestyle-modal', triggerId: 'home-trigger', renderFn: () => {
+                    UI.populateHousingCards();
+                    UI.populateVehicleCards();
+                    UI.renderMyHome();
+                }
+            }
+        ]);
+
         Game.init(); // Then initialize Game logic (which calls UI.render)
         // UI.render() is called by Game.init, which calls UI.init, which caches elements.
         // So UI.els should be populated now.
         App.setupEventListeners();
+
+        // Welcome Modal & Character Creation
+        const welcomeModal = document.getElementById('welcome-modal');
+        const startLifeBtn = document.getElementById('start-life-btn');
+        const nameInput = document.getElementById('character-name-input');
+        const genderMaleBtn = document.getElementById('gender-male-btn');
+        const genderFemaleBtn = document.getElementById('gender-female-btn');
+        const formError = document.getElementById('form-error');
+        const mainUI = document.getElementById('main-ui');
+
+        let selectedGender = null;
+
+        // Check if character hasn't been created yet (first time playing)
+        // Show modal only if name is still default 'Jugador' and hasn't been customized
+        const isFirstTime = !localStorage.getItem('gameState') || state.characterName === 'Jugador';
+
+        if (isFirstTime) {
+            // Show welcome modal for new game
+            if (welcomeModal) {
+                welcomeModal.classList.add('active');
+                // Block main UI
+                if (mainUI) mainUI.style.pointerEvents = 'none';
+            }
+
+            // Gender button handlers
+            const genderButtons = [genderMaleBtn, genderFemaleBtn];
+            genderButtons.forEach(btn => {
+                if (btn) {
+                    btn.onclick = () => {
+                        selectedGender = btn.dataset.gender;
+
+                        // Update button styles
+                        genderButtons.forEach(b => {
+                            b.style.background = '#1a1a1a';
+                            b.style.borderColor = '#333';
+                            b.style.color = '#aaa';
+                        });
+
+                        btn.style.background = 'rgba(77, 255, 234, 0.15)';
+                        btn.style.borderColor = '#4dffea';
+                        btn.style.color = '#4dffea';
+
+                        validateForm();
+                    };
+                }
+            });
+
+            // Name input handler
+            if (nameInput) {
+                nameInput.oninput = () => {
+                    validateForm();
+                };
+
+                // Focus on name input
+                setTimeout(() => nameInput.focus(), 500);
+            }
+
+            // Form validation
+            function validateForm() {
+                const name = nameInput ? nameInput.value.trim() : '';
+                const hasName = name.length >= 2;
+                const hasGender = selectedGender !== null;
+
+                if (formError) {
+                    if (!hasName && name.length > 0) {
+                        formError.textContent = '⚠️ El nombre debe tener al menos 2 caracteres';
+                    } else if (hasName && !hasGender) {
+                        formError.textContent = '⚠️ Selecciona un sexo';
+                    } else {
+                        formError.textContent = '';
+                    }
+                }
+
+                // Enable button if form is valid
+                if (startLifeBtn) {
+                    if (hasName && hasGender) {
+                        startLifeBtn.disabled = false;
+                        startLifeBtn.style.background = 'linear-gradient(135deg, #4dffea, #00d4aa)';
+                        startLifeBtn.style.color = '#000';
+                        startLifeBtn.style.cursor = 'pointer';
+                        startLifeBtn.style.boxShadow = '0 4px 15px rgba(77, 255, 234, 0.4)';
+                    } else {
+                        startLifeBtn.disabled = true;
+                        startLifeBtn.style.background = 'linear-gradient(135deg, #666, #444)';
+                        startLifeBtn.style.color = '#888';
+                        startLifeBtn.style.cursor = 'not-allowed';
+                        startLifeBtn.style.boxShadow = '0 4px 15px rgba(0, 0, 0, 0.4)';
+                    }
+                }
+            }
+
+            // Start Life button handler
+            if (startLifeBtn) {
+                startLifeBtn.onclick = () => {
+                    const name = nameInput ? nameInput.value.trim() : '';
+
+                    if (name.length >= 2 && selectedGender) {
+                        // Save character data to state
+                        state.characterName = name;
+                        state.gender = selectedGender;
+
+                        // Close modal
+                        if (welcomeModal) {
+                            welcomeModal.classList.remove('active');
+                        }
+
+                        // Unblock main UI
+                        if (mainUI) mainUI.style.pointerEvents = 'auto';
+
+                        // Hide splash screen now that character is created
+                        const splash = document.getElementById('splash-screen');
+                        if (splash) {
+                            splash.style.opacity = '0';
+                            setTimeout(() => {
+                                splash.classList.add('hidden');
+                                setTimeout(() => splash.remove(), 500);
+                            }, 300);
+                        }
+
+                        // Save state
+                        DB.saveLocal();
+
+                        // Render UI elements (CRITICAL: ensures action buttons appear)
+                        UI.render();
+                        if (typeof UI.renderActions === 'function') {
+                            UI.renderActions();
+                        }
+
+                        // Show welcome message
+                        UI.log(`¡Bienvenido/a, ${name}! Tu vida comienza ahora.`, 'good');
+                        UI.showAlert('¡Naciste!', `Hola ${name}, acabas de nacer. ¡Buena suerte en tu vida!`);
+                    }
+                };
+                // Hover effects (only when enabled)
+                startLifeBtn.onmouseover = () => {
+                    if (!startLifeBtn.disabled) {
+                        startLifeBtn.style.transform = 'scale(1.05)';
+                        startLifeBtn.style.boxShadow = '0 6px 20px rgba(77, 255, 234, 0.6)';
+                    }
+                };
+                startLifeBtn.onmouseout = () => {
+                    if (!startLifeBtn.disabled) {
+                        startLifeBtn.style.transform = 'scale(1)';
+                        startLifeBtn.style.boxShadow = '0 4px 15px rgba(77, 255, 234, 0.4)';
+                    }
+                };
+            }
+        } else {
+            // Hide for existing games
+            if (welcomeModal) welcomeModal.classList.remove('active');
+            if (mainUI) mainUI.style.pointerEvents = 'auto';
+        }
 
         UI.render();
 
@@ -243,9 +329,12 @@ App.init = async () => {
             splash.appendChild(err);
         }
     } finally {
-        // Splash Screen Removal - Guaranteed
+        // Splash Screen - Only hide if not a new game
+        // For new games, it will be hidden when character creation completes
         const splash = document.getElementById('splash-screen');
-        if (splash) {
+        const isFirstTime = !localStorage.getItem('gameState') || state.characterName === 'Jugador';
+
+        if (splash && !isFirstTime) {
             setTimeout(() => {
                 splash.classList.add('hidden');
                 setTimeout(() => splash.remove(), 1000);

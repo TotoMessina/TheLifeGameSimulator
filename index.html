@@ -3,12 +3,13 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Simulador de Vida: Pobre a Rico</title>
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#1a1a1a">
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧬</text></svg>">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Life Game Simulator</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Simulador de vida completo - Experimenta diferentes caminos profesionales">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <!-- Import Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="css/style.css?v=4">
@@ -289,7 +290,113 @@
         </div>
     </div>
 
+    <!-- Welcome Modal (First Month) -->
+    <div class="modal-overlay" id="welcome-modal" style="z-index: 10000;">
+        <div class="modal-content" style="max-width: 650px; text-align: center;">
+            <div class="modal-body" style="padding: 40px 30px;">
+                <div style="font-size: 5rem; margin-bottom: 20px;">👶</div>
+                <h1 style="color: #4dffea; margin-bottom: 15px; font-size: 2rem;">¡Bienvenido a la Vida!</h1>
+                <p style="color: #aaa; font-size: 1.1rem; margin-bottom: 30px; line-height: 1.6;">
+                    Estás a punto de nacer. Primero, cuéntanos sobre ti.
+                </p>
+
+                <!-- Character Creation Form -->
+                <div
+                    style="background: rgba(77, 255, 234, 0.05); border: 2px solid #4dffea; border-radius: 12px; padding: 25px; margin-bottom: 25px; text-align: left;">
+                    <h3 style="color: #4dffea; margin-bottom: 20px; font-size: 1.3rem; text-align: center;">✨ Crea Tu
+                        Personaje</h3>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 8px; font-weight: bold;">📝
+                            Nombre:</label>
+                        <input type="text" id="character-name-input" placeholder="Ingresa tu nombre..." maxlength="20"
+                            style="
+                            width: 100%;
+                            padding: 12px;
+                            background: #1a1a1a;
+                            border: 2px solid #333;
+                            border-radius: 8px;
+                            color: #fff;
+                            font-size: 1rem;
+                            box-sizing: border-box;
+                        ">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; color: #ccc; margin-bottom: 12px; font-weight: bold;">⚧️
+                            Sexo:</label>
+                        <div style="display: flex; gap: 15px; justify-content: center;">
+                            <button type="button" id="gender-male-btn" class="gender-btn" data-gender="male" style="
+                                flex: 1;
+                                padding: 15px;
+                                background: #1a1a1a;
+                                border: 2px solid #333;
+                                border-radius: 10px;
+                                color: #aaa;
+                                font-size: 1.1rem;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                            ">
+                                👨 Masculino
+                            </button>
+                            <button type="button" id="gender-female-btn" class="gender-btn" data-gender="female" style="
+                                flex: 1;
+                                padding: 15px;
+                                background: #1a1a1a;
+                                border: 2px solid #333;
+                                border-radius: 10px;
+                                color: #aaa;
+                                font-size: 1.1rem;
+                                cursor: pointer;
+                                transition: all 0.3s;
+                            ">
+                                👩 Femenino
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div
+                    style="background: rgba(77, 255, 234, 0.1); border: 2px solid #4dffea; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: left;">
+                    <h3 style="color: #4dffea; margin-bottom: 15px; font-size: 1.1rem;">📋 Cómo Jugar:</h3>
+                    <ul style="color: #ccc; line-height: 1.8; list-style: none; padding: 0; font-size: 0.95rem;">
+                        <li>⏭️ <strong>Avanza meses</strong> con el botón "Siguiente Mes"</li>
+                        <li>📊 <strong>Gestiona tus estadísticas</strong>: Salud, Felicidad, Energía</li>
+                        <li>💼 <strong>Trabaja y estudia</strong> para progresar (desde los 18 años)</li>
+                        <li>💰 <strong>Administra tu dinero</strong> sabiamente</li>
+                        <li>🎯 <strong>Toma decisiones</strong> que afectarán tu vida</li>
+                    </ul>
+                </div>
+
+                <div
+                    style="background: rgba(255, 85, 85, 0.1); border: 2px solid #ff5555; border-radius: 12px; padding: 15px; margin-bottom: 25px;">
+                    <p style="color: #ff9999; margin: 0; font-size: 0.9rem;">
+                        ⚠️ <strong>Advertencia:</strong> Tus decisiones tienen consecuencias. La vida puede ser dura.
+                    </p>
+                </div>
+
+                <button id="start-life-btn" disabled style="
+                    background: linear-gradient(135deg, #666, #444);
+                    color: #888;
+                    border: none;
+                    padding: 15px 40px;
+                    border-radius: 30px;
+                    font-size: 1.2rem;
+                    font-weight: bold;
+                    cursor: not-allowed;
+                    transition: all 0.3s;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+                    width: 100%;
+                ">
+                    🚀 Comenzar Mi Vida
+                </button>
+                <p id="form-error" style="color: #ff5555; margin-top: 10px; font-size: 0.85rem; min-height: 20px;"></p>
+            </div>
+        </div>
+    </div>
+
     <!-- Job Modal -->
+
     <div class="modal-overlay" id="job-modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -750,24 +857,41 @@
                         <label>💪 Physical Health:</label>
                         <input type="number" id="dev-phealth" min="0" max="100" placeholder="0-100">
                         <button onclick="DevMode.setStat('physicalHealth')">Set</button>
-                        <!-- Dev Panel Removed (Now injected dynamically by js/dev.js) -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                        <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-                        <script src="js/config.js"></script>
-                        <script src="js/state.js"></script>
-                        <script src="js/audio.js"></script>
-                        <script src="js/db.js"></script>
-                        <script src="js/world.js"></script> <!-- NEW -->
-                        <script src="js/ui.js"></script>
-                        <script src="js/business.js"></script>
-                        <script src="js/athletics.js"></script>
-                        <script src="js/freelancer.js"></script>
-                        <script src="js/routine.js"></script>
-                        <script src="js/school.js"></script>
-                        <script src="js/phases.js"></script>
-                        <script src="js/game.js"></script>
-                        <script src="js/dev.js"></script>
-                        <script src="js/app.js"></script>
+    <!-- Import Supabase JS -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="css/style.css?v=2.0">
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=2.0"></script>
+    <script src="js/config.js?v=2.0"></script>
+    <script src="js/state.js?v=2.0"></script>
+    <script src="js/audio.js?v=2.0"></script>
+    <script src="js/db.js?v=2.0"></script>
+    <script src="js/ErrorHandler.js?v=2.0"></script>
+    <script src="js/EventManager.js?v=2.0"></script>
+    <script src="js/UIHelpers.js?v=2.0"></script>
+    <script src="js/PerformanceManager.js?v=2.0"></script>
+    <script src="js/KeyboardManager.js?v=2.0"></script>
+    <script src="js/A11yManager.js?v=2.0"></script>
+    <script src="js/AdvancedFeatures.js?v=2.0"></script>
+    <script src="js/FinanceManager.js?v=2.0"></script>
+    <script src="js/world.js?v=2.0"></script>
+    <script src="js/ui.js?v=2.0"></script>
+    <script src="js/business.js?v=2.0"></script>
+    <script src="js/athletics.js?v=2.0"></script>
+    <script src="js/freelancer.js?v=2.0"></script>
+    <script src="js/routine.js?v=2.0"></script>
+    <script src="js/school.js?v=2.0"></script>
+    <script src="js/phases.js?v=2.0"></script>
+    <script src="js/game.js?v=2.0"></script>
+    <script src="js/dev.js?v=2.0"></script>
+    <script src="js/app.js?v=2.0"></script>
 </body>
 
 </html>

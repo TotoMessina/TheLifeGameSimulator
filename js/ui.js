@@ -8,6 +8,10 @@ const UI = {
         auth: {}
     },
 
+    /**
+     * Initializes UI element references
+     * Caches DOM elements for better performance
+     */
     init() {
         this.cacheElements();
     },
@@ -116,6 +120,10 @@ const UI = {
         };
     },
 
+    /**
+     * Main render function - updates all UI elements
+     * Called after any state change
+     */
     render() {
         // Date
         // Start age is 12 (144 months). But wait, state.totalMonths IS the age in months?
@@ -125,7 +133,19 @@ const UI = {
         const totalM = state.totalMonths;
         const yrs = Math.floor(totalM / 12);
         const mos = (totalM % 12) + 1;
-        this.els.date.innerText = `Año ${yrs} - Mes ${mos}`;
+
+        // Economic Indicator
+        const econState = state.world && state.world.economicState ? World.ECON_STATES[state.world.economicState] : World.ECON_STATES.stable;
+        const econIcon = econState ? (econState.id === 'boom' ? '📈' : (econState.id === 'recession' ? '📉' : (econState.id === 'depression' ? '⚠️' : (econState.id === 'hyperinflation' ? '💸' : '⚖️')))) : '⚖️';
+        const econName = econState ? econState.name : 'Estable';
+
+        this.els.date.innerHTML = `
+            <div>Año ${yrs} - Mes ${mos}</div>
+            <div style="font-size: 0.8rem; color: #aaa; margin-top: 4px; display: flex; align-items: center; gap: 5px;">
+                <span>${econIcon}</span>
+                <span style="color: ${econState.id === 'boom' ? '#4dffea' : (econState.id === 'stable' ? '#aaa' : '#ff5555')}">${econName}</span>
+            </div>
+        `;
 
         // Money Animation
         this.animateNumber(this.els.money, parseInt(this.els.money.innerText.replace(/[^0-9-]/g, '')) || 0, state.money);
@@ -178,6 +198,16 @@ const UI = {
         this.els.jobTitle.innerHTML = `${job.title} ($${job.salary}/mes)`;
         // XP Bar
         document.getElementById('job-xp-bar').style.width = `${state.jobXP}%`;
+
+        // HIDE JOB SECTION FOR CHILDREN (Under 18)
+        const jobTrigger = document.getElementById('job-trigger');
+        if (jobTrigger) {
+            if (state.age < 18) {
+                jobTrigger.style.display = 'none';
+            } else {
+                jobTrigger.style.display = 'block';
+            }
+        }
 
         // XP Bar
 
@@ -271,10 +301,18 @@ const UI = {
             <div style="margin-bottom:20px; text-align:center;">
                 <h4 style="color:#aaa; font-size:0.9rem;">ENTRENAMIENTO MENSUAL</h4>
                 <div style="display:flex; justify-content:center; gap:5px;">
-                    <button class="choice-btn ${ath.training === 'none' ? 'active-job' : ''}" onclick="Athletics.setTraining('none'); UI.renderAthletics()">Nada</button>
-                    <button class="choice-btn ${ath.training === 'low' ? 'active-job' : ''}" onclick="Athletics.setTraining('low'); UI.renderAthletics()">Suave</button>
-                    <button class="choice-btn ${ath.training === 'med' ? 'active-job' : ''}" onclick="Athletics.setTraining('med'); UI.renderAthletics()">Medio</button>
-                    <button class="choice-btn ${ath.training === 'high' ? 'active-job' : ''}" onclick="Athletics.setTraining('high'); UI.renderAthletics()">Intenso</button>
+                    <button class="choice-btn ${ath.training === 'none' ? 'active-job' : ''}" 
+                            data-action="set-training" 
+                            data-params='{"level":"none"}'>Nada</button>
+                    <button class="choice-btn ${ath.training === 'low' ? 'active-job' : ''}" 
+                            data-action="set-training" 
+                            data-params='{"level":"low"}'>Suave</button>
+                    <button class="choice-btn ${ath.training === 'med' ? 'active-job' : ''}" 
+                            data-action="set-training" 
+                            data-params='{"level":"med"}'>Medio</button>
+                    <button class="choice-btn ${ath.training === 'high' ? 'active-job' : ''}" 
+                            data-action="set-training" 
+                            data-params='{"level":"high"}'>Intenso</button>
                 </div>
                 <div style="font-size:0.8rem; margin-top:5px; color:#888;">
                     ${ath.training === 'none' ? 'Descanso total.' :
@@ -307,7 +345,9 @@ const UI = {
                         <div class="job-req">Dist: ${race.dist}km | Req: ${race.reqStam} Stam</div>
                     </div>
                     ${!ath.race && !completed ?
-                    `<button class="btn-buy" onclick="if(Athletics.registerRace('${key}')) UI.renderAthletics()">Inscribir</button>` :
+                    `<button class="btn-buy" 
+                             data-action="register-race" 
+                             data-params='{"raceType":"${key}"}'>Inscribir</button>` :
                     ''
                 }
                 </div>
@@ -327,7 +367,9 @@ const UI = {
                         <div class="job-req">$${item.cost} - ${item.effect}</div>
                     </div>
                     ${owned ? '<span style="color:#4dffea; fontSize:0.8rem">ADQUIRIDO</span>' :
-                    `<button class="btn-buy" onclick="Athletics.buyGear('${key}')">Comprar</button>`}
+                    `<button class="btn-buy" 
+                             data-action="buy-gear" 
+                             data-params='{"gearId":"${key}"}'>Comprar</button>`}
                 </div>
             `;
         });
@@ -417,11 +459,11 @@ const UI = {
             </div>
             
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <button class="choice-btn" onclick="UI.raiseFunds()">
+                <button class="choice-btn" data-action="raise-funds">
                     <span class="choice-text">💸 Buscar Inversión</span>
                     <span class="choice-sub">Vender 10% Equity</span>
                 </button>
-                 <button class="choice-btn" style="background:#442222;" onclick="if(confirm('¿Cerrar empresa?')) { state.business.active=false; UI.renderBusiness(); }">
+                 <button class="choice-btn" style="background:#442222;" data-action="close-business">
                     <span class="choice-text">🔒 Cerrar</span>
                 </button>
             </div>
@@ -447,6 +489,11 @@ const UI = {
         this.renderBusiness();
     },
 
+    /**
+     * Adds an event to the game timeline
+     * @param {string} msg - Event message to display
+     * @param {string} type - Event type: 'info', 'good', 'bad', 'normal'
+     */
     log(msg, type = 'info') {
         const div = document.createElement('div');
         div.className = `event-card ${type}`;
@@ -579,6 +626,10 @@ const UI = {
         };
     },
 
+    /**
+     * Opens a modal by ID
+     * @param {string} id - Modal element ID
+     */
     openModal(id) {
         const modal = document.getElementById(id);
         if (modal) {
@@ -590,49 +641,98 @@ const UI = {
         }
     },
 
+    /**
+     * Closes a modal by ID
+     * @param {string} id - Modal element ID
+     */
     closeModal(id) {
         const modal = document.getElementById(id);
         if (modal) modal.classList.remove('active');
     },
 
-    renderJobMarket(filter = 'all') {
+    renderJobMarket(category = null) {
         const modal = document.getElementById('job-modal');
         const container = document.getElementById('job-list-container');
         if (!modal || !container) return;
 
+        // AGE RESTRICTION: Must be 18+ to access job market
+        if (state.age < 18) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#888;">
+                    <div style="font-size:3rem; margin-bottom:20px;">🎓</div>
+                    <h3 style="color:#fff; margin-bottom:10px;">Demasiado Joven</h3>
+                    <p>Debes tener al menos 18 años para acceder al mercado laboral.</p>
+                    <p style="color:#666; margin-top:10px;">Enfócate en tus estudios por ahora.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // ECONOMIC RESTRICTION: Hiring Freeze in Depression/Recession
+        const econState = state.world.economicState || 'stable';
+        const isCrisis = econState === 'depression' || (econState === 'recession' && Math.random() < 0.3); // 30% chance to see freeze in recession
+
+        if (econState === 'depression') {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#ff5555;">
+                    <div style="font-size:3rem; margin-bottom:20px;">⚠️</div>
+                    <h3 style="color:#ff5555; margin-bottom:10px;">Crisis Económica</h3>
+                    <p>Debido a la Gran Depresión, las empresas han congelado las contrataciones.</p>
+                    <p style="color:#aaa; margin-top:10px;">Intenta buscar trabajos independientes o espera a que mejore la economía.</p>
+                </div>
+            `;
+            return;
+        }
+
+        const filter = category || 'all';
         container.innerHTML = '';
 
         // --- 1. TABS ---
         const cats = [
-            { id: 'all', name: 'Todos' },
-            { id: 'service', name: 'Servicios' },
-            { id: 'trade', name: 'Oficios' },
-            { id: 'corp', name: 'Corporativo' },
-            { id: 'tech', name: 'Tech' },
-            { id: 'creative', name: 'Creativo' },
-            { id: 'medical', name: 'Salud' },
-            { id: 'law', name: 'Leyes' },
-            { id: 'sport', name: 'Deportes' }
+            { id: 'all', name: '📋 Todos', icon: '📋' },
+            { id: 'service', name: '🧹 Servicios', icon: '🧹' },
+            { id: 'product', name: '🎯 Product', icon: '🎯' },
+            { id: 'trade', name: '🛠️ Oficios', icon: '🛠️' },
+            { id: 'corp', name: '💼 Corporativo', icon: '💼' },
+            { id: 'tech', name: '💻 Tech', icon: '💻' },
+            { id: 'creative', name: '🎨 Creativo', icon: '🎨' },
+            { id: 'medical', name: '🏥 Salud', icon: '🏥' },
+            { id: 'law', name: '⚖️ Leyes', icon: '⚖️' },
+            { id: 'sport', name: '⚽ Deportes', icon: '⚽' },
+            { id: 'education', name: '🎓 Educación', icon: '🎓' }
         ];
 
         const tabContainer = document.createElement('div');
-        tabContainer.style.cssText = "display:flex; gap:10px; overflow-x:auto; padding-bottom:10px; margin-bottom:15px; border-bottom:1px solid #333;";
+        tabContainer.style.cssText = "display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:15px; border-bottom:2px solid #333;";
 
         cats.forEach(c => {
             const btn = document.createElement('button');
             btn.innerText = c.name;
             btn.className = `filter-btn ${filter === c.id ? 'active' : ''}`;
-            // Inline style for filter button (since we might not have CSS class yet)
             btn.style.cssText = `
-                padding: 6px 12px;
-                border: 1px solid ${filter === c.id ? '#4dffea' : '#444'};
-                background: ${filter === c.id ? 'rgba(77, 255, 234, 0.1)' : '#222'};
-                color: ${filter === c.id ? '#4dffea' : '#888'};
+                padding: 8px 14px;
+                border: 2px solid ${filter === c.id ? '#4dffea' : '#444'};
+                background: ${filter === c.id ? 'rgba(77, 255, 234, 0.15)' : '#1a1a1a'};
+                color: ${filter === c.id ? '#4dffea' : '#999'};
                 border-radius: 20px;
                 cursor: pointer;
                 white-space: nowrap;
-                font-size: 0.85rem;
+                font-size: 0.9rem;
+                font-weight: ${filter === c.id ? 'bold' : 'normal'};
+                transition: all 0.2s;
             `;
+            btn.onmouseover = () => {
+                if (filter !== c.id) {
+                    btn.style.background = '#222';
+                    btn.style.color = '#ccc';
+                }
+            };
+            btn.onmouseout = () => {
+                if (filter !== c.id) {
+                    btn.style.background = '#1a1a1a';
+                    btn.style.color = '#999';
+                }
+            };
             btn.onclick = () => this.renderJobMarket(c.id);
             tabContainer.appendChild(btn);
         });
@@ -648,58 +748,186 @@ const UI = {
         jobs.sort((a, b) => a.salary - b.salary);
 
         jobs.forEach(j => {
+            // Check qualifications
             const isQual = state.intelligence >= (j.req.int || 0) &&
                 state.physicalHealth >= (j.req.health || 0) &&
-                (!j.req.deg || state.education.includes(j.req.deg)); // Simple match
+                state.happiness >= (j.req.happy || 0) &&
+                (!j.req.deg || state.education.includes(j.req.deg)) &&
+                (!j.req.isStudent || state.isStudent);
 
+            // Check career experience
+            let hasCareerExp = true;
+            let expMessage = '';
+            if (j.req.careerExp) {
+                for (const [career, requiredMonths] of Object.entries(j.req.careerExp)) {
+                    const currentExp = state.careerExperience[career] || 0;
+                    if (currentExp < requiredMonths) {
+                        hasCareerExp = false;
+                        const yearsNeeded = Math.ceil(requiredMonths / 12);
+                        expMessage = `Requiere ${yearsNeeded} año(s) en ${career}`;
+                    }
+                }
+            }
+
+            const isFullyQual = isQual && hasCareerExp;
             const isCurr = state.currJobId === j.id;
 
             const card = document.createElement('div');
             card.className = 'job-card';
-            // Inline style for improved card
             card.style.cssText = `
-                display:flex; justify-content:space-between; align-items:center;
-                background: ${isCurr ? 'rgba(0, 255, 204, 0.1)' : '#1a1a1a'};
-                border: 1px solid ${isCurr ? '#00ffcc' : '#333'};
-                padding: 12px; margin-bottom: 10px; border-radius: 8px;
-                opacity: ${isQual ? 1 : 0.6};
+                background: ${isCurr ? 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(77, 255, 234, 0.05))' : '#1a1a1a'};
+                border: 2px solid ${isCurr ? '#00ffcc' : (isFullyQual ? '#333' : '#222')};
+                padding: 16px;
+                margin-bottom: 12px;
+                border-radius: 12px;
+                opacity: ${isFullyQual ? 1 : 0.5};
+                transition: all 0.3s;
             `;
 
-            const qualText = isQual ? '' : '🔒';
-            const reqText = [];
-            if (j.req.int) reqText.push(`🧠 ${j.req.int}`);
-            if (j.req.health) reqText.push(`💪 ${j.req.health}`);
-            if (j.req.deg) reqText.push(`🎓 Título`);
-
-            card.innerHTML = `
-                <div>
-                    <div style="font-weight:bold; color:${isCurr ? '#00ffcc' : '#fff'}; font-size:1rem;">${j.title} ${isCurr ? '(Actual)' : ''}</div>
-                    <div style="color:#aaa; font-size:0.85rem;">$${j.salary}/mes • <span style="color:${j.stress > 10 ? '#ff5555' : '#888'}">Estrés: ${j.stress || 'Bajo'}</span></div>
-                    <div style="color:#666; font-size:0.75rem; margin-top:4px;">${reqText.join(' • ')}</div>
-                </div>
-            `;
-
-            const btn = document.createElement('button');
-            btn.innerText = isCurr ? 'Trabajando' : (isQual ? 'Aplicar' : 'No Calificado');
-            btn.disabled = isCurr || !isQual;
-            btn.style.cssText = `
-                background: ${isCurr ? '#222' : (isQual ? '#007bff' : '#444')};
-                color: ${isQual ? '#fff' : '#888'};
-                border:none; padding: 8px 16px; border-radius:4px; cursor: ${isQual ? 'pointer' : 'not-allowed'};
-            `;
-            if (isQual && !isCurr) {
-                btn.onclick = () => {
-                    Game.applyJob(j.id);
-                    this.renderJobMarket(filter); // Refresh to showing Working
+            if (isFullyQual && !isCurr) {
+                card.onmouseover = () => {
+                    card.style.borderColor = '#4dffea';
+                    card.style.background = 'rgba(77, 255, 234, 0.05)';
+                };
+                card.onmouseout = () => {
+                    card.style.borderColor = '#333';
+                    card.style.background = '#1a1a1a';
                 };
             }
 
-            card.appendChild(btn);
+            // Calculate net salary
+            const salaryData = FinanceManager.calculateNetSalary(j.salary);
+
+            // Build requirement badges
+            const reqBadges = [];
+            if (j.req.int) {
+                const hasInt = state.intelligence >= j.req.int;
+                reqBadges.push(`<span style="color:${hasInt ? '#4dffea' : '#ff5555'};">🧠 ${j.req.int}</span>`);
+            }
+            if (j.req.health) {
+                const hasHealth = state.physicalHealth >= j.req.health;
+                reqBadges.push(`<span style="color:${hasHealth ? '#4dffea' : '#ff5555'};">💪 ${j.req.health}</span>`);
+            }
+            if (j.req.deg) {
+                const hasDeg = state.education.includes(j.req.deg);
+                reqBadges.push(`<span style="color:${hasDeg ? '#4dffea' : '#ff5555'};">🎓 Título</span>`);
+            }
+            if (j.req.isStudent) {
+                reqBadges.push(`<span style="color:${state.isStudent ? '#4dffea' : '#ff5555'};">📚 Estudiante</span>`);
+            }
+            if (!hasCareerExp) {
+                reqBadges.push(`<span style="color:#ff5555;">⏱️ ${expMessage}</span>`);
+            }
+
+            // Build benefits/warnings
+            const benefits = [];
+            if (j.bonusChance) {
+                benefits.push(`💰 ${Math.floor(j.bonusChance * 100)}% bono ($${j.bonusAmount})`);
+            }
+            if (j.xpGain === 0) {
+                benefits.push(`<span style="color:#ff5555;">⚠️ Sin progresión</span>`);
+            }
+            if (j.deadEnd) {
+                benefits.push(`<span style="color:#ff5555;">🚫 Callejón sin salida</span>`);
+            }
+            if (j.boredom >= 8) {
+                benefits.push(`<span style="color:#ff9955;">😴 Muy aburrido (${j.boredom}/10)</span>`);
+            }
+            if (j.type === 'part_time') {
+                benefits.push(`<span style="color:#4dffea;">⏰ Medio tiempo</span>`);
+            }
+
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+                    <div style="flex:1;">
+                        <div style="font-weight:bold; color:${isCurr ? '#00ffcc' : '#fff'}; font-size:1.1rem; margin-bottom:4px;">
+                            ${j.title} ${isCurr ? '✓' : ''}
+                        </div>
+                        ${j.desc ? `<div style="color:#888; font-size:0.85rem; margin-bottom:8px; font-style:italic;">${j.desc}</div>` : ''}
+                        
+                        <div style="display:flex; gap:15px; margin-bottom:8px;">
+                            <div>
+                                <span style="color:#666; font-size:0.75rem;">BRUTO</span>
+                                <div style="color:#aaa; font-size:0.95rem; text-decoration:line-through;">$${j.salary.toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <span style="color:#666; font-size:0.75rem;">NETO (${salaryData.taxRate}% imp.)</span>
+                                <div style="color:#4dffea; font-size:1.1rem; font-weight:bold;">$${salaryData.net.toLocaleString()}/mes</div>
+                            </div>
+                        </div>
+
+                        ${reqBadges.length > 0 ? `
+                            <div style="margin-bottom:6px;">
+                                <span style="color:#666; font-size:0.75rem;">REQUISITOS:</span>
+                                <div style="font-size:0.85rem; margin-top:2px;">${reqBadges.join(' • ')}</div>
+                            </div>
+                        ` : ''}
+
+                        ${benefits.length > 0 ? `
+                            <div>
+                                <span style="color:#666; font-size:0.75rem;">DETALLES:</span>
+                                <div style="font-size:0.85rem; margin-top:2px;">${benefits.join(' • ')}</div>
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="flex:1; display:flex; gap:8px; font-size:0.8rem;">
+                        <div style="background:#222; padding:4px 8px; border-radius:4px;">
+                            <span style="color:#666;">Estrés:</span> 
+                            <span style="color:${(j.stressPerMonth || j.stress || 0) > 15 ? '#ff5555' : '#4dffea'};">${j.stressPerMonth || j.stress || 0}/mes</span>
+                        </div>
+                        <div style="background:#222; padding:4px 8px; border-radius:4px;">
+                            <span style="color:#666;">Energía:</span> 
+                            <span style="color:${(j.energyCost || 0) > 30 ? '#ff5555' : '#4dffea'};">-${j.energyCost || 0}/mes</span>
+                        </div>
+                        <div style="background:#222; padding:4px 8px; border-radius:4px;">
+                            <span style="color:#666;">XP:</span> 
+                            <span style="color:${(j.xpGain || 1) === 0 ? '#ff5555' : '#4dffea'};">${(j.xpGain || 1)}x</span>
+                        </div>
+                    </div>
+                    <button id="apply-btn-${j.id}" style="
+                        background: ${isCurr ? '#222' : (isFullyQual ? 'linear-gradient(135deg, #007bff, #0056b3)' : '#333')};
+                        color: ${isFullyQual || isCurr ? '#fff' : '#666'};
+                        border:none;
+                        padding: 10px 20px;
+                        border-radius:6px;
+                        cursor: ${isFullyQual && !isCurr ? 'pointer' : 'not-allowed'};
+                        font-weight:bold;
+                        font-size:0.9rem;
+                        min-width:120px;
+                        transition: all 0.2s;
+                    ">${isCurr ? '✓ Trabajando' : (isFullyQual ? 'Aplicar' : '🔒 Bloqueado')}</button>
+                </div>
+            `;
+
+            const applyBtn = card.querySelector(`#apply-btn-${j.id}`);
+            if (isFullyQual && !isCurr) {
+                applyBtn.onmouseover = () => {
+                    applyBtn.style.background = 'linear-gradient(135deg, #0056b3, #003d82)';
+                    applyBtn.style.transform = 'scale(1.05)';
+                };
+                applyBtn.onmouseout = () => {
+                    applyBtn.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+                    applyBtn.style.transform = 'scale(1)';
+                };
+                applyBtn.onclick = () => {
+                    Game.applyJob(j.id);
+                    this.renderJobMarket(filter);
+                };
+            }
+
             container.appendChild(card);
         });
 
         if (jobs.length === 0) {
-            container.innerHTML += `<div style="text-align:center; color:#666; padding:20px;">No hay trabajos disponibles en esta categoría.</div>`;
+            container.innerHTML += `
+                <div style="text-align:center; color:#666; padding:40px;">
+                    <div style="font-size:3rem; margin-bottom:10px;">📭</div>
+                    <p>No hay trabajos disponibles en esta categoría.</p>
+                </div>
+            `;
         }
     },
 
@@ -768,8 +996,8 @@ const UI = {
                     b.val = `${daysLeft} / ${b.val} disponibles`;
                     if (daysLeft > 0) {
                         extraHtml = `<div style="margin-top:5px; display:flex; gap:5px;">
-                            <button style="font-size:0.7rem; background:#4CAF50; border:none; color:white; padding:3px 8px; border-radius:3px; cursor:pointer;" onclick="Game.takeVacationDays(1)">-1 Día</button>
-                            ${daysLeft >= 7 ? '<button style="font-size:0.7rem; background:#2196F3; border:none; color:white; padding:3px 8px; border-radius:3px; cursor:pointer;" onclick="Game.takeVacationDays(7)">-7 Días</button>' : ''}
+                            <button style="font-size:0.7rem; background:#4CAF50; border:none; color:white; padding:3px 8px; border-radius:3px; cursor:pointer;" data-action="take-vacation" data-params='{"days":1}'>-1 Día</button>
+                            ${daysLeft >= 7 ? '<button style="font-size:0.7rem; background:#2196F3; border:none; color:white; padding:3px 8px; border-radius:3px; cursor:pointer;" data-action="take-vacation" data-params=\'{"days":7}\'>-7 Días</button>' : ''}
                         </div>`;
                     }
                 }
@@ -849,7 +1077,7 @@ const UI = {
                         <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Pago:</span><span class="lifestyle-card-stat-value positive">$${gig.reward}</span></div>
                         <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Energía:</span><span class="lifestyle-card-stat-value" style="color:#ff5555">-${gig.energy}</span></div>
                     </div>
-                    <button class="lifestyle-card-btn" ${canAfford ? '' : 'disabled'} onclick="Freelancer.acceptGig(${gig.pk})">
+                    <button class="lifestyle-card-btn" ${canAfford ? '' : 'disabled'} data-action="accept-gig" data-params='{"gigId":${gig.pk}}'>
                         ${canAfford ? 'Realizar Trabajo' : 'Muy Cansado'}
                     </button>
                 </div>`;
@@ -903,7 +1131,7 @@ const UI = {
                     <div class="job-req">${course.degree}</div>
                 </div>
                 ${hasDegree ? '<span class="owned-tag">COMPLETADO</span>' :
-                    `<button class="btn-buy" onclick="Game.enrollCourse('${course.id}')">Inscribirse</button>`}
+                    `<button class="btn-buy" data-action="enroll-course" data-params='{"courseId":"${course.id}"}'>Inscribirse</button>`}
             `;
             container.appendChild(el);
         });
@@ -1000,7 +1228,7 @@ const UI = {
                             <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Pago:</span><span class="lifestyle-card-stat-value positive">$${gig.reward}</span></div>
                             <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Energía:</span><span class="lifestyle-card-stat-value" style="color:#ff5555">-${gig.energy}</span></div>
                         </div>
-                        <button class="lifestyle-card-btn" ${canAfford ? '' : 'disabled'} onclick="Freelancer.acceptGig(${gig.pk})">
+                        <button class="lifestyle-card-btn" ${canAfford ? '' : 'disabled'} data-action="accept-gig" data-params='{"gigId":${gig.pk}}'>
                             ${canAfford ? 'Realizar Trabajo' : 'Muy Cansado'}
                         </button>
                     </div>`;
@@ -1131,7 +1359,7 @@ const UI = {
                         <div class="job-req">$${up.cost}</div>
                     </div>
                     ${owned ? '<span style="color:#4dffea; fontSize:0.8rem">ADQUIRIDO</span>' :
-                    `<button class="btn-buy" onclick="Routine.buyUpgrade('${key}')">Comprar</button>`}
+                    `<button class="btn-buy" data-action="buy-upgrade" data-params='{"upgradeId":"${key}"}'>Comprar</button>`}
                 </div>
             `;
         });
@@ -1151,7 +1379,7 @@ const UI = {
             const f = School.FOCUS[key];
             const active = s.focus === key ? 'active' : '';
             focusHtml += `
-                <button class="choice-btn ${active}" onclick="School.setFocus('${key}')">
+                <button class="choice-btn ${active}" data-action="set-focus" data-params='{"subject":"${key}"}'>
                     <div style="font-weight:bold;">${f.name}</div>
                     <div style="font-size:0.8rem; opacity:0.8;">${f.desc}</div>
                 </button>
@@ -1294,7 +1522,7 @@ const UI = {
             pSection.innerHTML =
                 '<h4 style="color:#aaa; margin-top:0;">Situación Sentimental</h4>' +
                 '<div class="market-card" style="justify-content:center; padding: 20px;">' +
-                '<button class="act-btn" style="width:100%;" onclick="Game.findLove()">' +
+                '<button class="act-btn" style="width:100%;" data-action="find-love">' +
                 'Buscar Pareja ♥ ($100)' +
                 '</button>' +
                 '</div>';
@@ -1304,9 +1532,9 @@ const UI = {
             let nextStepBtn = '';
 
             if (p.status === 'dating' && p.relation > 60) {
-                nextStepBtn = '<button class="act-btn" style="flex:1; background:#00bcd4;" onclick="Game.advanceRel()">Mudarse Juntos</button>';
+                nextStepBtn = '<button class="act-btn" style="flex:1; background:#00bcd4;" data-action="advance-relationship">Mudarse Juntos</button>';
             } else if (p.status === 'living' && p.relation > 90) {
-                nextStepBtn = '<button class="act-btn" style="flex:1; background:#ff9800;" onclick="Game.advanceRel()">Proponer Matrimonio ($2k)</button>';
+                nextStepBtn = '<button class="act-btn" style="flex:1; background:#ff9800;" data-action="advance-relationship">Proponer Matrimonio ($2k)</button>';
             }
 
             pSection.innerHTML =
@@ -1322,9 +1550,9 @@ const UI = {
                 '</div>' +
                 '</div>' +
                 '<div style="display:flex; gap:10px;">' +
-                '<button class="act-btn" style="flex:1;" onclick="Game.datePartner()">Cita ($80)</button>' +
+                '<button class="act-btn" style="flex:1;" data-action="date-partner">Cita ($80)</button>' +
                 nextStepBtn +
-                '<button class="act-btn" style="flex:1; background:#552222;" onclick="Game.breakup()">Romper</button>' +
+                '<button class="act-btn" style="flex:1; background:#552222;" data-action="breakup">Romper</button>' +
                 '</div>' +
                 '</div>';
         }
@@ -1335,14 +1563,14 @@ const UI = {
         charity.style.marginTop = "20px";
         charity.innerHTML =
             '<h4 style="color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Filantropía</h4>' +
-            '<button class="act-btn" onclick="Game.donateCharity(100)">' +
+            '<button class="act-btn" data-action="donate-charity" data-params=\'{"amount":100}\'>' +
             '<div class="act-info">' +
             '<h4>Donar $100</h4>' +
             '<p>Ayuda a los necesitados.</p>' +
             '</div>' +
             '<div class="act-cost">+1 Karma</div>' +
             '</button>' +
-            '<button class="act-btn" onclick="Game.donateCharity(1000)">' +
+            '<button class="act-btn" data-action="donate-charity" data-params=\'{"amount":1000}\'>' +
             '<div class="act-info">' +
             '<h4>Donar $1,000</h4>' +
             '<p>Haz una gran diferencia.</p>' +
@@ -1374,7 +1602,7 @@ const UI = {
                     '<div style="font-size:0.8rem; color:#aaa;">' + f.jobTitle + '</div>' +
                     '<div style="font-size:0.75rem; color:' + (isNet ? '#4dffea' : '#888') + ';">Relación: ' + f.relation + '/100</div>' +
                     '</div>' +
-                    '<button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" onclick="Game.maintainFriend(\'' + f.id + '\')">' +
+                    '<button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" data-action="maintain-friend" data-params=\'{"friendId":"' + f.id + '"}\'>' +
                     'Llamar ($50)' +
                     '</button>';
                 list.appendChild(el);
@@ -1402,8 +1630,8 @@ const UI = {
             el.className = 'market-card';
             el.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; margin-bottom:10px; padding:10px; background:#1e1e1e; border:1px solid #444; border-radius:6px;";
 
-            const buyBtn = `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" onclick="Game.buyRealEstate('${prop.id}')">Comprar ($${currentPrice.toLocaleString()})</button>`;
-            const sellBtn = ownedCount > 0 ? `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" onclick="Game.sellRealEstate('${prop.id}')">Vender</button>` : '';
+            const buyBtn = `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" data-action="buy-real-estate" data-params='{"propertyId":"${prop.id}"}'>Comprar ($${currentPrice.toLocaleString()})</button>`;
+            const sellBtn = ownedCount > 0 ? `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" data-action="sell-real-estate" data-params='{"propertyId":"${prop.id}"}'>Vender</button>` : '';
 
             el.innerHTML =
                 '<div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:5px;">' +
@@ -1445,8 +1673,8 @@ const UI = {
                 '<div style="font-size:0.8rem;">Posees: ' + holding.qty + ' (Media: $' + holding.avg.toFixed(0) + ')' + profitTxt + '</div>' +
                 '</div>' +
                 '<div style="display:flex; flex-direction:column; gap:5px;">' +
-                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" onclick="Game.trade(\'' + asset.id + '\', \'buy\')">Comprar</button>' +
-                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" onclick="Game.trade(\'' + asset.id + '\', \'sell\')">Vender</button>' +
+                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" data-action="trade" data-params=\'{"assetId":"' + asset.id + '","type":"buy"}\'>Comprar</button>' +
+                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" data-action="trade" data-params=\'{"assetId":"' + asset.id + '","type":"sell"}\'>Vender</button>' +
                 '</div>';
             container.appendChild(el);
         });
@@ -1481,7 +1709,7 @@ const UI = {
                     '<div style="font-size:0.8rem; color:#aaa;">' + item.desc + '</div>' +
                     '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
                     '</div>' +
-                    '<button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ' + (owned ? 'disabled' : '') + ' onclick="Game.buyRareItem(\'' + item.id + '\')">' +
+                    '<button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ' + (owned ? 'disabled' : '') + ' data-action="buy-rare-item" data-params=\'{"itemId":"' + item.id + '"}\'>' +
                     (owned ? 'Comprado' : '$' + item.price.toLocaleString()) +
                     '</button>';
                 list.appendChild(el);
@@ -1500,7 +1728,7 @@ const UI = {
                 '<div style="font-size:0.8rem; color:#888;">' + item.desc + '</div>' +
                 '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
                 '</div>' +
-                '<button class="btn-select-job" ' + (owned ? 'disabled' : '') + ' onclick="Game.buyItem(\'' + item.id + '\')">' +
+                '<button class="btn-select-job" ' + (owned ? 'disabled' : '') + ' data-action="buy-item" data-params=\'{"itemId":"' + item.id + '"}\'>' +
                 (owned ? 'Comprado' : '$' + item.price) +
                 '</button>';
             list.appendChild(el);
@@ -1581,7 +1809,7 @@ const UI = {
                 '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + house.maint.toLocaleString() + '</span></div>' +
                 '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Felicidad:</span><span class="lifestyle-card-stat-value positive">+' + house.happiness + '</span></div>' +
                 '</div>' +
-                '<button class="lifestyle-card-btn" ' + (isCurrent ? 'disabled' : '') + ' onclick="Game.buyHousingFromModal(\'' + house.id + '\')">' +
+                '<button class="lifestyle-card-btn" ' + (isCurrent ? 'disabled' : '') + ' data-action="buy-housing" data-params=\'{"housingId":"' + house.id + '"}\'>' +
                 (isCurrent ? '✓ Actual' : (state.money >= house.cost ? 'Comprar/Mudar' : 'Sin Fondos')) +
                 '</button>';
             grid.appendChild(card);
@@ -1605,7 +1833,7 @@ const UI = {
                 '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + vehicle.maint.toLocaleString() + '</span></div>' +
                 '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Estatus:</span><span class="lifestyle-card-stat-value positive">+' + vehicle.status + '</span></div>' +
                 '</div>' +
-                '<button class="lifestyle-card-btn" ' + (isCurrent || !canAfford ? 'disabled' : '') + ' onclick="Game.buyVehicleFromModal(\'' + vehicle.id + '\')">' +
+                '<button class="lifestyle-card-btn" ' + (isCurrent || !canAfford ? 'disabled' : '') + ' data-action="buy-vehicle" data-params=\'{"vehicleId":"' + vehicle.id + '"}\'>' +
                 (isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')) +
                 '</button>';
             grid.appendChild(card);
@@ -1628,7 +1856,7 @@ const UI = {
                 '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + pet.cost + '</span></div>' +
                 '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + pet.maint + '/m</span></div>' +
                 '</div>' +
-                '<button class="lifestyle-card-btn" ' + (owned || !canAfford ? 'disabled' : '') + ' onclick="Game.buyPet(\'' + pet.id + '\')">' +
+                '<button class="lifestyle-card-btn" ' + (owned || !canAfford ? 'disabled' : '') + ' data-action="buy-pet" data-params=\'{"petId":"' + pet.id + '"}\'>' +
                 (owned ? 'Adoptado' : (canAfford ? 'Adoptar' : 'Sin Fondos')) +
                 '</button>';
             grid.appendChild(card);
@@ -1672,7 +1900,7 @@ const UI = {
                 '<div style="font-size:0.8rem; color:#aaa;">Salario: $' + job.salary + '/mes</div>' +
                 '<div style="font-size:0.75rem; color:#888;">Req: ' + (reqText.join(', ') || 'Ninguno') + '</div>' +
                 '</div>' +
-                '<button class="act-btn" style="min-height:30px; width:auto; font-size:0.8rem; padding: 5px 10px;" ' + (isCurrent ? 'disabled' : '') + ' onclick="Game.applyJob(\'' + job.id + '\')">' +
+                '<button class="act-btn" style="min-height:30px; width:auto; font-size:0.8rem; padding: 5px 10px;" ' + (isCurrent ? 'disabled' : '') + ' data-action="apply-job" data-params=\'{"jobId":"' + job.id + '"}\'>' +
                 (isCurrent ? 'Tuy' : 'Aplicar') +
                 '</button>';
             list.appendChild(el);

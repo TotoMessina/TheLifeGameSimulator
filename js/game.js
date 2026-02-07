@@ -2,6 +2,11 @@
 const Game = {
     _tempChar: null, // For char gen
 
+    /**
+     * Initializes the game state and UI
+     * Handles character generation screen for new games
+     * Applies legacy bonuses and migrates old save data
+     */
     init() {
         if (state.totalMonths === 0 && (!state.traits || state.traits.length === 0)) {
             console.log("Showing Char Gen Screen (Init Check)");
@@ -110,6 +115,10 @@ const Game = {
         DB.saveGame();
     },
 
+    /**
+     * Checks all trophy conditions and awards new achievements
+     * Called after significant game events (stat changes, job changes, etc.)
+     */
     checkAchievements() {
         if (!state.unlockedTrophies) state.unlockedTrophies = [];
         TROPHIES.forEach(t => {
@@ -121,6 +130,10 @@ const Game = {
         });
     },
 
+    /**
+     * Awards a trophy to the player
+     * @param {string} id - Trophy ID from TROPHIES config
+     */
     awardTrophy(id) {
         if (state.unlockedTrophies.includes(id)) return;
         state.unlockedTrophies.push(id);
@@ -176,6 +189,14 @@ const Game = {
         return score;
     },
 
+    /**
+     * Calculates all financial metrics for the player
+     * @returns {Object} Financial summary with income, expenses, and net worth
+     * @property {number} activeIncome - Monthly salary from job
+     * @property {number} passiveIncome - Income from investments, real estate, royalties
+     * @property {number} expenses - Monthly expenses (living costs, children, loans)
+     * @property {number} netWorth - Total assets (cash + investments + real estate + business)
+     */
     calculateFinancials() {
         let activeIncome = 0;
         let passiveIncome = 0;
@@ -261,62 +282,12 @@ const Game = {
         localStorage.setItem('lifeSim_legacy', JSON.stringify(legacy));
     },
 
-    claimLegacy(type) {
-        const legacyData = JSON.parse(localStorage.getItem('lifeSim_legacy'));
-        if (!legacyData) return UI.log("No tienes herencia disponible.", "info");
 
-        if (type === 'money' && legacyData.type === 'money') {
-            this.updateStat('money', legacyData.val);
-            UI.log(`¡Herencia reclamada! +$${legacyData.val}`, 'good');
-        } else if (type === 'genetics' && legacyData.type === 'genetics') {
-            this.updateStat('intelligence', legacyData.val);
-            UI.log(`¡Genética activada! +${legacyData.val} Inteligencia`, 'good');
-        } else {
-            UI.log("Ese tipo de legado no está disponible.", "bad");
-            return;
-        }
-
-        // Clear legacy after claim? Or allow one claim per new game?
-        // Let's clear it to prevent abuse
-        localStorage.removeItem('lifeSim_legacy');
-
-        // Hide modal if open (end game modal might not be open if this is new game)
-        // Actually, where is this button? It's in the END GAME modal of the PREVIOUS game?
-        // No, typically you claim legacy at START of NEW game.
-        // But the user code shows it inside 'end-game-modal'.
-        // Wait, if it's in end-game modal, it means you claim it right away? That doesn't make sense for "Next Life".
-        // Ah, maybe the user wants to "Bank" it for the next life.
-        // "Elige qué dejarle a tu próxima vida" -> Choose what to leave.
-        // So clicking it SETS the legacy.
-        // Re-reading logic:
-
-        // The buttons say: "Hereda el 10% de tu dinero".
-        // So clicking this should SET the localStorage for the NEXT run.
-        // My previous logic in `showEndGame` ALREADY sets it based on logic.
-        // Maybe the user wants a CHOICE.
-
-        // Let's change this to "chooseLegacy".
-        // But wait, the error says "claimLegacy".
-        // Let's implement it as "Set Legacy Preference".
-
-        // Actually, looking at `showEndGame`:
-        /*
-        const legacy = {
-            val: Math.floor(state.money * 0.1), 
-            type: 'money'
-        };
-        if (state.intelligence > 90) ...
-        localStorage.setItem...
-        */
-        // It's automatic right now.
-        // The UI buttons suggest the player should CHOOSE.
-
-        // Implementation: Overwrite the automatic legacy with the user choice.
-    },
-
-    // Correcting Implementation based on UI context:
-    // User clicks button at end of game -> calls claimLegacy -> sets localStorage -> Reloads?
-
+    /**
+     * Sets the legacy bonus for the next playthrough
+     * Called when player chooses inheritance type at end of game
+     * @param {string} choice - Either 'money' (10% of current money) or 'genetics' (20% of intelligence)
+     */
     claimLegacy(choice) {
         let legacy = {};
         if (choice === 'money') {
@@ -331,6 +302,11 @@ const Game = {
         UI.showAlert("Legado Confirmado", "Tu próxima vida comenzará con esta bonificación.\nRecarga la página para empezar de nuevo.");
     },
 
+    /**
+     * Updates a player stat with trait modifiers and clamping
+     * @param {string} key - Stat name (e.g., 'money', 'intelligence', 'physicalHealth')
+     * @param {number} amount - Amount to add/subtract (can be negative)
+     */
     updateStat(key, amount) {
         // Trait modifiers
         if (state.traits) {
@@ -582,6 +558,11 @@ const Game = {
         const job = JOBS.find(j => j.id === jobId);
         if (!job) return;
 
+        // AGE RESTRICTION: Must be 18+ to work (except unemployed)
+        if (state.age < 18 && jobId !== 'unemployed') {
+            return UI.showAlert("Muy Joven", "Debes tener al menos 18 años para trabajar. Enfócate en tus estudios.");
+        }
+
         // Restriction: Students can only take Part-Time jobs
         if (state.isStudent && job.type !== 'part_time' && jobId !== 'unemployed') {
             return UI.showAlert("Estudiante", "No puedes tener un empleo a tiempo completo mientras estudias. Acepta un trabajo de medio tiempo.");
@@ -600,11 +581,24 @@ const Game = {
             return;
         }
 
+        // NEW: Check career experience requirements
+        if (job.req.careerExp) {
+            for (const [career, requiredMonths] of Object.entries(job.req.careerExp)) {
+                const currentExp = state.careerExperience[career] || 0;
+                if (currentExp < requiredMonths) {
+                    const yearsNeeded = Math.ceil(requiredMonths / 12);
+                    UI.showAlert("Falta Experiencia", `Necesitas al menos ${yearsNeeded} año(s) de experiencia en ${career}.`);
+                    return;
+                }
+            }
+        }
+
         // Apply
         state.currJobId = jobId;
         state.jobXP = 0;
         state.promotions = 0;
         state.consecutiveWork = 0;
+        state.jobMonths = 0; // Reset job months for new job
 
         // Vacation Days Init
         const tier = job.salary > 5000 ? 30 : job.salary > 2000 ? 14 : 7;
@@ -618,27 +612,7 @@ const Game = {
         UI.render();
     },
 
-    checkAchievements() {
-        if (!state.unlockedTrophies) state.unlockedTrophies = [];
-
-        TROPHIES.forEach(t => {
-            if (!state.unlockedTrophies.includes(t.id)) {
-                if (t.condition(state)) {
-                    this.awardTrophy(t.id);
-                }
-            }
-        });
-    },
-
-    awardTrophy(id) {
-        if (state.unlockedTrophies.includes(id)) return;
-        const t = TROPHIES.find(x => x.id === id);
-        state.unlockedTrophies.push(id);
-        UI.showAlert("🏆 LOGRO DESBLOQUEADO", `${t.icon} ${t.name}\n${t.desc}`);
-        UI.log(`🏆 LOGRO: ${t.name}`, 'good');
-        AudioSys.playSuccess();
-        DB.saveGame();
-    },
+    // ⚠️ DUPLICATE REMOVED - Using implementation at lines 113-135
 
     // --- Actions ---
     doActivity(type) {
@@ -922,6 +896,9 @@ const Game = {
         this.updateStat('jobXP', 5);
         this.updateStat('happiness', -2); // Stress
 
+        // Mark that player worked this month (prevents firing)
+        state.workedThisMonth = true;
+
         // Bonus Chance
         if (Math.random() < 0.4) {
             UI.log("Tu esfuerzo extra impresionó a tu jefe. +XP", "good");
@@ -968,134 +945,132 @@ const Game = {
     },
 
     // MERGED nextMonth
+    /**
+     * Main monthly game tick - processes all game systems and updates
+     * 
+     * @description
+     * Execution order:
+     * 1. Advance time (age, months)
+     * 2. Process employment (firing, boredom)
+     * 3. Process health and sickness
+     * 4. Tick all game systems (Business, Athletics, etc.)
+     * 5. Process finances (income, expenses)
+     * 6. Process relationships (partner, children)
+     * 7. Trigger random events
+     * 8. Update UI and save
+     */
     nextMonth() {
         if (this.checkGameOver()) return;
 
+        // 1. Advance time
+        this.advanceTime();
+
+        // 2. Process employment
+        this.processEmployment();
+
+        // 3. Process health
+        this.processHealthAndSickness();
+
+        // 4. Tick all systems
+        this.processSystemTicks();
+
+        // 5. Process finances
+        FinanceManager.processMonthlyFinances();
+
+        // 6. Process relationships
+        this.processRelationships();
+
+        // 7. Random events
+        this.triggerRandomEvents();
+
+        // 8. Finalize month
+        this.finalizeMonth();
+    },
+
+    /**
+     * Advance game time and reset monthly flags
+     */
+    advanceTime() {
         state.totalMonths++;
         state.age = Math.floor(state.totalMonths / 12);
         state.consecutiveWork = 0;
+        state.workedThisMonth = false;
+    },
 
-        // --- FIRING LOGIC ---
-        if (state.currJobId !== 'unemployed') {
-            const lowMental = state.mentalHealth < 20;
-            const skippedWork = !state.workedThisMonth && !state.onVacation; // onVacation flag if we used official days? 
-            // Simplified: if skipped work check
+    /**
+     * Process employment status
+     * Handles firing logic and boredom penalties
+     */
+    processEmployment() {
+        if (state.currJobId === 'unemployed') return;
 
-            if (skippedWork || lowMental) {
-                if (Math.random() < 0.15) {
-                    const reason = skippedWork ? "por ausentismo" : "por inestabilidad mental";
-                    UI.showAlert("¡DESPEDIDO!", `Te han despedido ${reason}.`);
-                    UI.log(`Has perdido tu empleo de ${state.currJobId} ${reason}.`, "bad");
-                    state.currJobId = 'unemployed';
-                    state.jobXP = 0;
-                    this.updateStat('happiness', -20);
-                }
-            }
+        // Firing logic
+        const lowMental = state.mentalHealth < 20;
+        const skippedWork = !state.workedThisMonth && !state.onVacation;
 
-            // --- BOREDOM LOGIC ---
-            const job = JOBS.find(j => j.id === state.currJobId);
-            if (job && job.boredom && job.boredom > 50) {
-                const borePenalty = Math.floor((job.boredom - 40) / 10);
-                this.updateStat('happiness', -borePenalty);
-                if (Math.random() < 0.2) UI.log("Tu trabajo es realmente aburrido...", "normal");
+        if ((skippedWork || lowMental) && Math.random() < 0.15) {
+            const reason = skippedWork ? "por ausentismo" : "por inestabilidad mental";
+            UI.showAlert("¡DESPEDIDO!", `Te han despedido ${reason}.`);
+            UI.log(`Has perdido tu empleo ${reason}.`, "bad");
+            state.currJobId = 'unemployed';
+            state.jobXP = 0;
+            this.updateStat('happiness', -20);
+            return;
+        }
+
+        // Boredom penalty
+        const job = JOBS.find(j => j.id === state.currJobId);
+        if (job && job.boredom && job.boredom > 50) {
+            const borePenalty = Math.floor((job.boredom - 40) / 10);
+            this.updateStat('happiness', -borePenalty);
+            if (Math.random() < 0.2) {
+                UI.log("Tu trabajo es realmente aburrido...", "normal");
             }
         }
-        state.workedThisMonth = false; // Reset for new month
 
-        // 1. BASE STAT DECAY & FLUCTUATIONS
-        // Replaces static decay with randomized "Realism" logic
+        // Auto XP gain
+        let xpGain = 2;
+        if (state.work_relations && state.work_relations.performance > 80) {
+            xpGain += 2;
+        }
+        this.updateStat('jobXP', xpGain);
+
+        // Auto promotion check
+        if (state.jobXP >= 100) {
+            this.applyPerformanceReview();
+        }
+
+        // Work events (sabotage, promotion opportunities)
+        this.processWorkEvents();
+    },
+
+    /**
+     * Process health, sickness, and age-related decay
+     */
+    processHealthAndSickness() {
+        // Natural fluctuations
         this.applyNaturalFluctuations();
 
-        // Passive rest (reduced slightly to balance fluctuations)
+        // Passive energy recovery
         this.updateStat('energy', 5);
 
-        // Age Decay
+        // Age-related decay
         if (state.age > 40) this.updateStat('physicalHealth', -1);
         if (state.age > 60) this.updateStat('intelligence', -1);
 
-        // 2. Systems Tick
-        World.tick();
-        if (state.business && state.business.active) {
-            Business.tick();
-        }
-
-        // Athletics Tick
-        if (typeof Athletics !== 'undefined') Athletics.tick();
-
-        // Routine Tick
-        if (typeof Routine !== 'undefined') Routine.tick();
-
-        // Freelancer Tick (Monthly Gigs)
-        if (typeof Freelancer !== 'undefined') {
-            Freelancer.generateMonthlyGigs();
-            // Refresh logic handled by view switch or manual refresh, 
-            // but if we want live update if tab is open:
-            if (document.getElementById('act-tab-projects') && !document.getElementById('act-tab-projects').classList.contains('hidden')) {
-                UI.renderProjects();
-            }
-        }
-
-        // Aguinaldo (Re-implemented Fix)
-        // 0=Jan, 11=Dec. So 5=June, 11=Dec.
-        const monthIdx = state.totalMonths % 12;
-        if ((monthIdx === 5 || monthIdx === 11) && state.currJobId !== 'unemployed') {
-            const job = JOBS.find(j => j.id === state.currJobId);
-            if (job) {
-                const bonus = Math.floor(job.salary * 0.5);
-                this.updateStat('money', bonus);
-                UI.log(`¡Aguinaldo! Recibiste un bono de medio sueldo: +$${bonus}`, 'money');
-                // Use a toast instead of alert to not block flow, or just allow the alert
-                UI.showAlert("¡AGUINALDO!", `Has recibido tu bono semestral de $${bonus}.`);
-            }
-        }
-
-        // School Tick (Under 18 OR University Student)
-        if ((state.age < 18 || state.isStudent) && typeof School !== 'undefined') {
-            School.tick();
-        }
-
-        // Graduation Trigger
-        // Standard: 18 years (216 months)
-        // Skipped Grade: 17 years (204 months)
-        const graduationMonth = (state.school && state.school.skippedGrade) ? 204 : 216;
-
-        if (state.totalMonths >= graduationMonth) {
-            if (!state.graduationHandled) {
-                School.triggerGraduation();
-                // Hook: Evolve Friends at 18
-                this.evolveFriends();
-                return; // Stop processing to wait for user choice
-            }
-        }
-
-        // --- FRIEND EVENTS ---
-        // 1. Reunion (Age 28 = 336 months)
-        if (state.totalMonths === 336) {
-            this.triggerReunion();
-        }
-
-        // 2. Millionaire Offer (Age 30 = 360 months)
-        if (state.totalMonths === 360) {
-            this.triggerMillionaireOffer();
-        }
-
-        // Phase Transition Check
-        if (typeof PhaseManager !== 'undefined') {
-            PhaseManager.checkTransition();
-        }
-
-        // 3. Health & Sickness
+        // World effects
         const effects = World.getEffects ? World.getEffects() : {};
         if (effects.healthDecay) {
             this.updateStat('physicalHealth', -effects.healthDecay);
         }
 
+        // Sickness system
         if (state.sickDuration > 0) {
             state.sickDuration--;
             UI.log("Sigues enfermo... (-5 Salud)", "bad");
             this.updateStat('physicalHealth', -5);
         } else if (state.physicalHealth < 20) {
-            // Risk of getting sick if low health
+            // Risk of getting sick with low health
             if (Math.random() < 0.3) {
                 state.sickDuration = 3;
                 UI.log("¡Te has enfermado por defensas bajas!", "bad");
@@ -1103,29 +1078,7 @@ const Game = {
             }
         }
 
-        // Active Project
-        if (state.activeProject) {
-            this.processProjects();
-            if (state.activeProject) { // Still active
-                this.updateStat('energy', -state.activeProject.penalty);
-            }
-        }
-
-        // Work Events (Sabotage, Promotion)
-        this.processWorkEvents();
-
-        // Work XP Gain (Auto)
-        if (state.currJobId !== 'unemployed') {
-            // Base XP + Performance Bonus
-            let xpGain = 2;
-            if (state.work_relations && state.work_relations.performance > 80) xpGain += 2;
-            this.updateStat('jobXP', xpGain);
-
-            // Auto Promote Check
-            if (state.jobXP >= 100) this.applyPerformanceReview();
-        }
-
-        // Diet Effect
+        // Diet effects
         if (state.diet === 'fast_food') {
             this.updateStat('physicalHealth', -1);
             this.updateStat('energy', 2);
@@ -1135,81 +1088,151 @@ const Game = {
             this.updateStat('physicalHealth', 2);
             this.updateStat('happiness', 2);
         }
+    },
 
-        // Financials (Calc and Apply Passive)
-        const fin = this.calculateFinancials();
+    /**
+     * Tick all game systems (Business, Athletics, School, etc.)
+     */
+    processSystemTicks() {
+        // World tick (economic trends, events)
+        World.tick();
 
-        // Income Logic:
-        // Passive Income: Always added
-        // Active Income (Job): Now AUTOMATICALLY added per month (User Request)
-        // BURNOUT CHECK: If stress > 80, productivity drops 50%
-        let activeInc = fin.activeIncome;
-        if (state.stress > 80) {
-            activeInc *= 0.5;
-            // Only notify once per month to avoid spam, or finding a subtle way
-            // We'll rely on the visual bar mostly, but maybe a log entry?
+        // Business tick
+        if (state.business && state.business.active) {
+            Business.tick();
         }
 
-        const netCashFlow = (activeInc + fin.passiveIncome) - fin.expenses;
+        // Athletics tick
+        if (typeof Athletics !== 'undefined') {
+            Athletics.tick();
+        }
 
-        this.updateStat('money', netCashFlow);
+        // Routine tick
+        if (typeof Routine !== 'undefined') {
+            Routine.tick();
+        }
 
-        // --- BURNOUT & STRESS SYSTEM ---
+        // Freelancer tick
+        if (typeof Freelancer !== 'undefined') {
+            Freelancer.generateMonthlyGigs();
+            // Refresh UI if projects tab is open
+            const projectsTab = document.getElementById('act-tab-projects');
+            if (projectsTab && !projectsTab.classList.contains('hidden')) {
+                UI.renderProjects();
+            }
+        }
 
-        // 1. Apply Job Stress
+        // School tick (for students)
+        if ((state.age < 18 || state.isStudent) && typeof School !== 'undefined') {
+            School.tick();
+        }
+
+        // Aguinaldo (semi-annual bonus)
+        const monthIdx = state.totalMonths % 12;
+        if ((monthIdx === 5 || monthIdx === 11) && state.currJobId !== 'unemployed') {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job) {
+                const bonus = Math.floor(job.salary * 0.5);
+                this.updateStat('money', bonus);
+                UI.log(`¡Aguinaldo! Recibiste un bono de medio sueldo: +$${bonus}`, 'money');
+                UI.showAlert("¡AGUINALDO!", `Has recibido tu bono semestral de $${bonus}.`);
+            }
+        }
+
+        // Graduation trigger
+        const graduationMonth = (state.school && state.school.skippedGrade) ? 204 : 216;
+        if (state.totalMonths >= graduationMonth && !state.graduationHandled) {
+            School.triggerGraduation();
+            this.evolveFriends();
+            return; // Stop processing to wait for user choice
+        }
+
+        // Phase transitions
+        if (typeof PhaseManager !== 'undefined') {
+            PhaseManager.checkTransition();
+        }
+
+        // Active project processing
+        if (state.activeProject) {
+            this.processProjects();
+            if (state.activeProject) {
+                this.updateStat('energy', -state.activeProject.penalty);
+            }
+        }
+    },
+
+    /**
+     * Process relationships (partner, children, friends)
+     */
+    processRelationships() {
+        // Partner relationship decay
+        if (state.partner && state.partner.name) {
+            if (Math.random() < 0.1) {
+                state.partner.relation = Math.max(0, state.partner.relation - 5);
+                UI.log(`${state.partner.name} siente que no le dedicas tiempo.`, "bad");
+            }
+        }
+
+        // Friend events at specific ages
+        if (state.totalMonths === 336) { // Age 28
+            this.triggerReunion();
+        }
+
+        if (state.totalMonths === 360) { // Age 30
+            this.triggerMillionaireOffer();
+        }
+    },
+
+    /**
+     * Trigger random events and market fluctuations
+     */
+    triggerRandomEvents() {
+        const effects = World.getEffects ? World.getEffects() : {};
+
+        // Burnout check
         if (state.currJobId && state.currJobId !== 'unemployed') {
             const job = JOBS.find(j => j.id === state.currJobId);
             if (job && job.stress) {
                 this.updateStat('stress', job.stress);
             }
         }
-        // Unemployed stress (financial anxiety)
+
+        // Unemployment stress
         if (state.currJobId === 'unemployed' && state.money < 1000) {
             this.updateStat('stress', 2);
         }
 
-        // 2. Burnout Collapse Check
+        // Burnout collapse
         if (state.stress >= 100) {
             this.triggerBurnoutCollapse();
-            return; // Stop further processing for this month's loop if we want to be strict, but collapse handles skip
+            return;
         }
 
-        // Warning for high stress
+        // Stress warning
         if (state.stress > 80) {
             UI.log("⚠️ ¡ESTRÉS CRÍTICO! Tu productividad ha caído 50%.", "bad");
         }
 
-        if (netCashFlow !== 0) {
-            // Optional: Don't spam log every month unless significant changes? 
-            // Or maybe just show in the UI summary.
-            // Let's log if negative to warn user
-            if (netCashFlow < 0) {
-                // Check if bankrupt
-                if (state.money < 0) UI.log("¡Tus gastos superan tus ingresos! Cuidado.", "bad");
-            }
-        }
-
-
-
-        // Market Fluctuations including World Effects
+        // Market fluctuations
         ASSETS.forEach(a => {
             let change = (Math.random() - 0.5) * a.vol;
 
-            // World specific market overrides
-            if (effects.stockMarket && a.id === 'stock') change += 0.05; // Bull market
-            if (effects.cryptoPrice && a.id === 'crypto') change -= 0.1; // Bear market
+            // World-specific market effects
+            if (effects.stockMarket && a.id === 'stock') change += 0.05;
+            if (effects.cryptoPrice && a.id === 'crypto') change -= 0.1;
 
             state.marketPrices[a.id] *= (1 + change);
             if (state.marketPrices[a.id] < 1) state.marketPrices[a.id] = 1;
         });
 
-        // RE Appreciation (Simple) with World Effects
+        // Real estate appreciation
         Object.keys(state.rePrices).forEach(id => {
             let chance = 0.1;
             let mult = 0.05;
+
             if (effects.realEstatePrice) {
                 chance = 0.3;
-                mult = 0.1; // Higher appreciate during bubble
+                mult = 0.1;
             }
 
             if (Math.random() < chance) {
@@ -1217,33 +1240,38 @@ const Game = {
             }
         });
 
-        // Random Events (reduced chance if big trend active? No, parallel)
-        if (Math.random() < 0.15) { // 15% chance
+        // Random events (15% chance)
+        if (Math.random() < 0.15) {
             this.randomEvent();
         }
 
-        // Elite Events
+        // Elite events (5% chance)
         if (Math.random() < 0.05) {
             this.triggerEliteEvent();
         }
 
-        state.energy = Math.min(100, state.energy + 10); // Natural recovery
+        // Natural energy recovery
+        state.energy = Math.min(100, state.energy + 10);
 
-        // World bonus happiness?
-        if (effects.happinessGain) state.happiness += 2;
-
-        // Partner Logic
-        if (state.partner) {
-            if (Math.random() < 0.1) {
-                state.partner.relation = Math.max(0, state.partner.relation - 5);
-                UI.log(`${state.partner.name} siente que no le dedicas tiempo.`, "bad");
-            }
+        // World happiness bonus
+        if (effects.happinessGain) {
+            state.happiness += 2;
         }
+    },
+
+    /**
+     * Finalize month - save game and update UI
+     */
+    finalizeMonth() {
+        const fin = this.calculateFinancials();
 
         DB.saveGame();
-        DB.logHistory(state.totalMonths, fin); // Log history point
+        DB.logHistory(state.totalMonths, fin);
         UI.render();
+
+        this.checkAchievements();
     },
+
 
     applyNaturalFluctuations() {
         const stats = ['physicalHealth', 'mentalHealth', 'happiness', 'energy'];

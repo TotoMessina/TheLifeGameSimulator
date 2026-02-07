@@ -209,12 +209,23 @@ const PhaseManager = {
 
     getCurrentPhase() {
         const age = state.age;
-        // Prioritize Student Status for "Prodigies" (Under 18 Uni)
-        if (state.isStudent && age < 23) return this.PHASES.UNIVERSITY;
 
-        if (age < 18) return this.PHASES.CHILDHOOD;
-        // if (age >= 18 && age < 23 && state.isStudent) return this.PHASES.UNIVERSITY; // Covered above
-        if (age < 65) return this.PHASES.ADULTHOOD;
+        // STRICT AGE ENFORCEMENT: Must be 18+ for university or work
+        if (age < 18) {
+            return this.PHASES.CHILDHOOD;
+        }
+
+        // Age 18-22: University phase if student
+        if (age >= 18 && age < 23 && state.isStudent) {
+            return this.PHASES.UNIVERSITY;
+        }
+
+        // Age 18-64: Adulthood (working age)
+        if (age >= 18 && age < 65) {
+            return this.PHASES.ADULTHOOD;
+        }
+
+        // Age 65+: Retirement
         return this.PHASES.RETIREMENT;
     },
 

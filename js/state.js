@@ -1,7 +1,10 @@
 
+
 // --- GAME STATE ---
 const state = {
     totalMonths: 144, // Start at 12 years old
+    characterName: 'Jugador', // Player's chosen name
+    gender: 'male', // 'male' or 'female'
     money: 100, // Less money for a kid
     physicalHealth: 100,
     mentalHealth: 100,
@@ -39,6 +42,23 @@ const state = {
     loans: 0,
     network: 0,
     education: [],
+
+    // JOB SYSTEM EXPANSION
+    workedThisMonth: false, // Track if player worked this month (reset monthly)
+    jobMonths: 0, // Months in current job
+    careerExperience: { // Experience by career (in months)
+        tech: 0,
+        product: 0,
+        corp: 0,
+        medical: 0,
+        law: 0,
+        trade: 0,
+        creative: 0,
+        service: 0,
+        sport: 0,
+        education: 0
+    },
+
     work_relations: {
         boss: 50,       // 0-100 Relationship
         colleagues: 50, // 0-100 Relationship
@@ -63,7 +83,13 @@ const state = {
     housing: 'couch', // Current housing ID
     vehicle: 'none', // Current vehicle ID
     status: 0, // Social status (0-250+)
-    world: { currentTrend: null, activeOpps: [] }, // Init explicitly
+    world: {
+        currentTrend: null,
+        activeOpps: [],
+        economicState: 'stable', // stable, boom, recession, depression
+        inflation: 1.0, // Multiplier for expenses
+        econTimer: 24 // Months until next economic state change check
+    }, // Init explicitly
     unlockedTrophies: [], // Init empty array
     traits: [] // Init empty array
 };
