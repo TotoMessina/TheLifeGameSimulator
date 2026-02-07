@@ -12,7 +12,8 @@ const Game = {
             console.log("Showing Char Gen Screen (Init Check)");
             document.getElementById('char-gen-screen').classList.remove('hidden');
             document.getElementById('char-gen-screen').classList.add('active');
-            document.getElementById('main-ui').classList.add('hidden');
+            const appContainer = document.getElementById('app-container');
+            if (appContainer) appContainer.classList.add('hidden');
             document.getElementById('char-gen-screen').style.display = 'flex';
             this.generateCharacter();
         } else if (!state.traits || state.traits.length === 0) {
@@ -21,7 +22,8 @@ const Game = {
                 console.log("Force showing Char Gen Screen (Legacy Fix)");
                 document.getElementById('char-gen-screen').classList.remove('hidden');
                 document.getElementById('char-gen-screen').classList.add('active');
-                document.getElementById('main-ui').classList.add('hidden');
+                const appContainer = document.getElementById('app-container');
+                if (appContainer) appContainer.classList.add('hidden');
                 document.getElementById('char-gen-screen').style.display = 'flex';
                 this.generateCharacter();
             } else {
@@ -35,13 +37,15 @@ const Game = {
                     state.traits.push(pool[idx].id);
                     pool.splice(idx, 1);
                 }
-                document.getElementById('main-ui').classList.remove('hidden');
+                const appContainer = document.getElementById('app-container');
+                if (appContainer) appContainer.classList.remove('hidden');
             }
         } else {
             document.getElementById('char-gen-screen').classList.add('hidden');
             document.getElementById('char-gen-screen').classList.remove('active');
             document.getElementById('char-gen-screen').style.display = 'none';
-            document.getElementById('main-ui').classList.remove('hidden');
+            const appContainer = document.getElementById('app-container');
+            if (appContainer) appContainer.classList.remove('hidden');
         }
 
         // Apply dark mode immediately if needed (or other init preferences)
@@ -63,6 +67,33 @@ const Game = {
         }
 
         UI.render();
+
+        // Generate initial welcome message at the start
+        setTimeout(() => {
+            const eventLog = document.getElementById('event-log');
+            if (eventLog && state.traits && state.traits.length > 0) {
+                const age = Math.floor(state.totalMonths / 12);
+                const traitNames = state.traits.map(t => {
+                    const trait = TRAITS.find(tr => tr.id === t);
+                    return trait ? trait.name : t;
+                }).join(', ');
+
+                // Create welcome message
+                const welcomeDiv = document.createElement('div');
+                welcomeDiv.className = 'event-card info';
+                welcomeDiv.innerHTML = `
+                    <span class="event-date">INICIO</span>
+                    Bienvenido. Tienes ${age} años. Tus rasgos son: ${traitNames}. Comienza tu historia.
+                `;
+
+                // Prepend as first message
+                if (eventLog.firstChild) {
+                    eventLog.insertBefore(welcomeDiv, eventLog.firstChild);
+                } else {
+                    eventLog.appendChild(welcomeDiv);
+                }
+            }
+        }, 100);
     },
 
     generateCharacter() {
@@ -109,8 +140,17 @@ const Game = {
         else state.money = 1000;
 
         document.getElementById('char-gen-screen').style.display = 'none';
-        document.getElementById('main-ui').classList.remove('hidden');
-        UI.log("¡Nueva vida comenzada!", "good");
+        const appContainer = document.getElementById('app-container');
+        if (appContainer) appContainer.classList.remove('hidden');
+
+        // Create welcome message with age and traits
+        const age = Math.floor(state.totalMonths / 12);
+        const traitNames = state.traits.map(t => {
+            const trait = TRAITS.find(tr => tr.id === t);
+            return trait ? trait.name : t;
+        }).join(', ');
+
+        UI.log(`Bienvenido. Tienes ${age} años. Tus rasgos son: ${traitNames}. Comienza tu historia.`, "info");
         UI.render();
         DB.saveGame();
     },
@@ -170,6 +210,61 @@ const Game = {
             return true;
         }
         return false;
+    },
+
+    // --- Survival Mechanics ---
+
+    /**
+     * Emergency Sell Option
+     * Allows player to liquidate assets at 30% value for quick cash
+     * @param {string} type - 'items', 'vehicle', 'properties'
+     */
+    emergencySell(type) {
+        if (!confirm("⚠️ VENTA DE EMERGENCIA\nEstás a punto de vender tus pertenencias por solo el 30% de su valor.\n¿Estás realmente desesperado?")) return;
+
+        let gain = 0;
+        let soldCount = 0;
+
+        if (type === 'items') {
+            if (!state.items || state.items.length === 0) return UI.showAlert("Nada que vender", "No tienes objetos de valor.");
+
+            state.items.forEach(itemId => {
+                const item = ITEMS.find(i => i.id === itemId);
+                if (item) gain += Math.floor(item.price * 0.3);
+            });
+            soldCount = state.items.length;
+            state.items = [];
+            UI.log(`📦 Vendiste ${soldCount} objetos por $${gain}.`, "bad");
+        }
+        else if (type === 'vehicle') {
+            if (!state.vehicle) return UI.showAlert("Nada que vender", "No tienes vehículo.");
+
+            const vehicle = VEHICLES.find(v => v.id === state.vehicle);
+            if (vehicle) gain += Math.floor(vehicle.price * 0.3);
+            soldCount = 1;
+            state.vehicle = null;
+            UI.log(`🚗 Vendiste tu vehículo por $${gain}.`, "bad");
+        }
+        else if (type === 'properties') {
+            if (!state.realEstate || state.realEstate.length === 0) return UI.showAlert("Nada que vender", "No tienes propiedades.");
+
+            state.realEstate.forEach(propId => {
+                const prop = REAL_ESTATE.find(p => p.id === propId);
+                if (prop) gain += Math.floor(prop.price * 0.3);
+            });
+            soldCount = state.realEstate.length;
+            state.realEstate = [];
+            UI.log(`🏠 Vendiste ${soldCount} propiedades por $${gain}.`, "bad");
+        }
+
+        if (gain > 0) {
+            this.updateStat('money', gain);
+            this.updateStat('happiness', -10); // Painful to sell
+            this.updateStat('stress', 5);
+            AudioSys.playMoney();
+            UI.showAlert("Liquidación Completada", `Has obtenido $${gain} vendiendo tus activos de emergencia.`);
+            UI.render();
+        }
     },
 
     calculateScore() {
@@ -249,14 +344,20 @@ const Game = {
         // Loans?
         if (state.loans > 0) expenses += Math.ceil(state.loans * 0.01); // 1% interest
 
-        const netWorth = state.money + reVal + bizVal + invVal;
+        // TRAVEL SYSTEM: Fix Net Worth (Convert Local Cash to HOME)
+        let cashInHome = state.money;
+        if (typeof Travel !== 'undefined') {
+            cashInHome = Travel.getTotalMoney();
+        }
+
+        const netWorth = cashInHome + reVal + bizVal + invVal;
 
         return {
             activeIncome,
             passiveIncome,
             expenses,
             netWorth,
-            cash: state.money,
+            cash: state.money, // Display raw local cash
             investments: invVal,
             realEstate: reVal
         };
@@ -438,16 +539,21 @@ const Game = {
         // Laptop bonus for tech
         if (job.career === 'tech' && state.inventory.includes('laptop')) wage *= 1.2;
 
+        if (job.career === 'tech' && state.inventory.includes('laptop')) wage *= 1.2;
+
+        // TRAVEL SYSTEM: Apply country salary multiplier & exchange rate
+        if (typeof Travel !== 'undefined' && state.currentCountry) {
+            const country = Travel.getCurrentCountry();
+            if (country) {
+                if (country.salaryMultiplier) wage *= country.salaryMultiplier;
+                if (country.exchangeRate) wage /= country.exchangeRate;
+            }
+        }
+
         // WORLD EFFECTS: Salary
         const effects = World.getEffects();
         if (effects.jobSalary && job.career === 'tech') wage *= effects.jobSalary;
-        // Note: For now only tech boom logic in World.trends matches 'tech'. 
-        // Generalized: if (effects.jobSalary) wage *= effects.jobSalary; ? No, let's keep it specific per trend definitions or logic.
-        // Actually, let's check World.trends specific logic in World.js or explicitly here.
-        // World.js defined 'type: tech' and effects.jobSalary.
-        // Let's assume effects.jobSalary applies if job.career matches the trend type OR global?
-        // Let's just apply broadly if key matches for now simplicity or specific check:
-        // Current 'ai_boom' is type 'tech'.
+        // Note: For now only tech boom logic in World.trends matches 'tech'.
         if (effects.jobSalary) {
             // If trend is tech specific logic:
             if (World.getTrendName(state.world.currentTrend.id) === 'Auge de la IA' && job.career === 'tech') {
@@ -568,6 +674,17 @@ const Game = {
             return UI.showAlert("Estudiante", "No puedes tener un empleo a tiempo completo mientras estudias. Acepta un trabajo de medio tiempo.");
         }
 
+        // TRAVEL CHECK: Visa Requirements
+        if (typeof Travel !== 'undefined' && state.currentCountry !== 'home') {
+            const visa = state.visaStatus;
+            if (!visa) {
+                return UI.showAlert('Sin Visa', 'No tienes permiso para trabajar aquí.');
+            }
+            if (!visa.allowWork) {
+                return UI.showAlert('Visa Restrictiva', `Tu ${VISA_TYPES[visa.type].name} no permite trabajar.`);
+            }
+        }
+
         // Check reqs
         if (state.intelligence < (job.req.int || 0) ||
             state.physicalHealth < (job.req.health || 0) ||
@@ -623,7 +740,15 @@ const Game = {
 
         if (type === 'gym') {
             cost = 50;
-            if (state.money < cost) return UI.log("No tienes dinero para el Gym.", "bad");
+            // TRAVEL SYSTEM: Apply COL & Exchange Rate
+            if (typeof Travel !== 'undefined' && state.currentCountry) {
+                const country = Travel.getCurrentCountry();
+                if (country) {
+                    if (country.costOfLiving) cost *= country.costOfLiving;
+                    if (country.exchangeRate) cost /= country.exchangeRate;
+                }
+            }
+            if (state.money < cost) return UI.log(`No tienes dinero para el Gym ($${Math.floor(cost)}).`, "bad");
             this.updateStat('money', -cost);
             this.updateStat('physicalHealth', 2);
             this.updateStat('energy', -15);
@@ -653,7 +778,16 @@ const Game = {
 
     party() {
         let cost = 100;
-        if (state.money < cost) return UI.log("No tienes dinero para salir.", "bad");
+        // TRAVEL SYSTEM: Apply COL & Exchange Rate
+        if (typeof Travel !== 'undefined' && state.currentCountry) {
+            const country = Travel.getCurrentCountry();
+            if (country) {
+                if (country.costOfLiving) cost *= country.costOfLiving;
+                if (country.exchangeRate) cost /= country.exchangeRate;
+            }
+        }
+
+        if (state.money < cost) return UI.log(`No tienes dinero para salir ($${Math.floor(cost)}).`, "bad");
         if (state.energy < 20) return UI.log("Estás muy cansado.", "bad");
 
         this.updateStat('money', -cost);
@@ -1096,6 +1230,11 @@ const Game = {
     processSystemTicks() {
         // World tick (economic trends, events)
         World.tick();
+
+        // Travel system tick (adaptation, visa expiry)
+        if (typeof Travel !== 'undefined') {
+            Travel.updateAdaptation();
+        }
 
         // Business tick
         if (state.business && state.business.active) {

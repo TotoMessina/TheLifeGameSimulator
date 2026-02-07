@@ -51,13 +51,27 @@ const FinanceManager = {
      * Process all sources of income
      * - Job salary
      * - Passive income (business, investments, real estate)
-     * - Special bonuses (aguinaldo handled separately in Game.js)
+     * - Unemployment Insurance
      */
     processIncome() {
         let totalIncome = 0;
 
+        // 0. Unemployment Insurance
+        if (state.currJobId === 'unemployed' && state.unemployment && state.unemployment.months > 0) {
+            totalIncome += state.unemployment.amount;
+            state.unemployment.months--;
+            UI.log(`🏛️ Seguro de Desempleo: +$${Math.floor(state.unemployment.amount)} (${state.unemployment.months} meses restantes)`, 'money');
+            if (state.unemployment.months <= 0) {
+                UI.log("⚠️ Tu seguro de desempleo ha expirado.", "warning");
+                delete state.unemployment;
+            }
+        }
+
         // 1. Job Salary (if employed)
         if (state.currJobId !== 'unemployed') {
+            // AUTO-ATTENDANCE: Assume work unless stated otherwise
+            state.workedThisMonth = true;
+
             const job = JOBS.find(j => j.id === state.currJobId);
             if (job) {
                 let grossSalary = job.salary;
@@ -75,6 +89,28 @@ const FinanceManager = {
                 if (effects.jobSalary && state.world && state.world.currentTrend) {
                     if (state.world.currentTrend.type === 'tech' && job.career === 'tech') {
                         grossSalary *= effects.jobSalary;
+                    }
+                }
+
+                // TRAVEL SYSTEM: Apply country salary multiplier & exchange rate
+                if (typeof Travel !== 'undefined' && state.currentCountry) {
+                    const country = Travel.getCurrentCountry();
+                    if (country) {
+                        if (country.salaryMultiplier) {
+                            grossSalary *= country.salaryMultiplier;
+                        }
+                        // Convert to local currency
+                        if (country.exchangeRate) {
+                            grossSalary /= country.exchangeRate;
+                        }
+                    }
+
+                    // Apply visa work restrictions
+                    if (state.visaStatus && state.visaStatus.workRestriction) {
+                        grossSalary *= state.visaStatus.workRestriction;
+                        if (state.visaStatus.workRestriction < 1) {
+                            UI.log(`⚠️ Tu visa de estudiante limita tu salario al ${(state.visaStatus.workRestriction * 100)}%`, 'warning');
+                        }
                     }
                 }
 
@@ -96,7 +132,16 @@ const FinanceManager = {
 
         // 2. Business Income
         if (state.business && state.business.active) {
-            const bizIncome = state.business.revenue || 0;
+            let bizIncome = state.business.revenue || 0;
+
+            // TRAVEL SYSTEM: Convert Business Income (Assumed HOME) to Local
+            if (typeof Travel !== 'undefined' && state.currentCountry) {
+                const country = Travel.getCurrentCountry();
+                if (country && country.exchangeRate) {
+                    bizIncome /= country.exchangeRate;
+                }
+            }
+
             totalIncome += bizIncome;
             if (bizIncome > 0) {
                 UI.log(`Ingresos del negocio: +$${Math.floor(bizIncome)}`, 'money');
@@ -112,6 +157,15 @@ const FinanceManager = {
                     rentalIncome += property.rental;
                 }
             });
+
+            // TRAVEL SYSTEM: Convert Rental Income (Assumed HOME) to Local
+            if (typeof Travel !== 'undefined' && state.currentCountry) {
+                const country = Travel.getCurrentCountry();
+                if (country && country.exchangeRate) {
+                    rentalIncome /= country.exchangeRate;
+                }
+            }
+
             if (rentalIncome > 0) {
                 totalIncome += rentalIncome;
                 UI.log(`Ingresos por alquiler: +$${Math.floor(rentalIncome)}`, 'money');
@@ -121,7 +175,16 @@ const FinanceManager = {
         // 4. Investment Returns (simplified - could be expanded)
         if (state.investments && state.investments > 0) {
             // Average 0.5% monthly return (6% annual)
-            const returns = state.investments * 0.005;
+            let returns = state.investments * 0.005;
+
+            // TRAVEL SYSTEM: Convert Investment Returns (Assumed HOME) to Local
+            if (typeof Travel !== 'undefined' && state.currentCountry) {
+                const country = Travel.getCurrentCountry();
+                if (country && country.exchangeRate) {
+                    returns /= country.exchangeRate;
+                }
+            }
+
             totalIncome += returns;
             if (returns > 100) {
                 UI.log(`Retornos de inversión: +$${Math.floor(returns)}`, 'money');
@@ -141,6 +204,7 @@ const FinanceManager = {
      * - Cost of living (housing, food, utilities)
      * - Family expenses (partner, children, pets)
      * - Loan payments
+     * - CRISIS LOGGING: Hunger and health penalty if broke
      */
     processExpenses() {
         // CHILDREN DON'T PAY EXPENSES - Skip entirely for under 18
@@ -180,28 +244,36 @@ const FinanceManager = {
             UI.log(`Gastos de propiedades: -$${Math.floor(propertyExpenses)}`, 'expense');
         }
 
+        // CRISIS CHECK: Can we pay?
+        if (state.money < totalExpenses) {
+            // Can't pay full expenses
+            const deficit = totalExpenses - state.money; // Amount we go under
+
+            // Allow going into debt via auto-loans later, BUT penalize health immediately due to stress/hunger
+            // if deficit is huge relative to needs
+
+            if (state.money < costOfLiving) {
+                // EXTREME POVERTY: Hunger
+                Game.updateStat('physicalHealth', -20);
+                Game.updateStat('happiness', -20);
+                Game.updateStat('energy', -50);
+                UI.log("💀 Has pasado hambre este mes. Tu salud se deteriora gravemente.", "bad");
+                UI.showAlert("HAMBRE EXTREMA", "No tienes dinero suficiente ni para comer. Tu cuerpo está sufriendo.");
+            } else {
+                // MODERATE POVERTY: Stress
+                Game.updateStat('stress', 15);
+                Game.updateStat('happiness', -5);
+                UI.log("⚠️ Estás viviendo al límite. Las deudas se acumulan.", "warning");
+            }
+        }
+
         // Apply total expenses
         state.money -= totalExpenses;
     },
 
     /**
-     * Check for layoffs based on economic state
-     */
-    checkFiring() {
-        if (state.currJobId === 'unemployed') return;
-
-        const econ = World.getEconMultipliers ? World.getEconMultipliers() : { layoffChance: 0 };
-        const baseChance = econ.layoffChance || 0;
-
-        // Roll for layoff
-        if (Math.random() < baseChance) {
-            Game.loseJob(`Debido a la situación económica (${state.world.economicState}), tu empresa ha reducido personal.`);
-        }
-    },
-
-    /**
      * Calculate base cost of living based on lifestyle
-     * Factors: housing, vehicle, general lifestyle
+     * Factors: housing, vehicle, general lifestyle, COUNTRY
      */
     calculateCostOfLiving() {
         let cost = 500; // Base survival cost
@@ -227,6 +299,20 @@ const FinanceManager = {
             cost += state.items.length * 50; // Each luxury item adds to lifestyle cost
         }
 
+        // TRAVEL SYSTEM: Apply country cost of living multiplier & exchange rate
+        if (typeof Travel !== 'undefined' && state.currentCountry) {
+            const country = Travel.getCurrentCountry();
+            if (country) {
+                if (country.costOfLiving) {
+                    cost *= country.costOfLiving;
+                }
+                // Convert to local currency
+                if (country.exchangeRate) {
+                    cost /= country.exchangeRate;
+                }
+            }
+        }
+
         return cost;
     },
 
@@ -236,6 +322,8 @@ const FinanceManager = {
      */
     calculateFamilyExpenses() {
         let cost = 0;
+
+        // Base costs are in HOME currency (USD)
 
         // Partner expenses
         if (state.partner && state.partner.name) {
@@ -252,6 +340,15 @@ const FinanceManager = {
                     cost += 400; // Young adult (college support)
                 }
             });
+        }
+
+        // TRAVEL SYSTEM: Apply Cost of Living and Exchange Rate to family expenses
+        if (typeof Travel !== 'undefined' && state.currentCountry) {
+            const country = Travel.getCurrentCountry();
+            if (country) {
+                if (country.costOfLiving) cost *= country.costOfLiving;
+                if (country.exchangeRate) cost /= country.exchangeRate;
+            }
         }
 
         return cost;
@@ -274,37 +371,86 @@ const FinanceManager = {
             });
         }
 
+        // TRAVEL SYSTEM: Apply Exchange Rate to property expenses
+        if (typeof Travel !== 'undefined' && state.currentCountry) {
+            const country = Travel.getCurrentCountry();
+            if (country && country.exchangeRate) {
+                cost /= country.exchangeRate;
+            }
+        }
+
         return cost;
     },
 
     /**
-     * Process loan payments and interest
+     * Process loan payments and create EMERGENCY LOANS
      */
     processLoans() {
+        // EMERGENCY LOAN CHECK
+        if (state.money < 0) {
+            // Need cash to reach 0? Or just cover deficit?
+            // "Credit card" debt logic
+            const deficit = Math.abs(state.money);
+
+            // Create or update Emergency Loan
+            if (!state.loans) state.loans = [];
+
+            let emergencyLoan = state.loans.find(l => l.type === 'emergency');
+            if (emergencyLoan) {
+                emergencyLoan.amount += deficit;
+                UI.log(`⚠️ Sobregiro bancario aumentado en -$${deficit}`, "bad");
+            } else {
+                UI.showAlert("CRÉDITO DE EMERGENCIA", "Tu cuenta está en rojo. El banco ha activado un crédito de consumo automático con una tasa de interés del 20%.");
+                state.loans.push({
+                    name: "Crédito Tiburón",
+                    amount: deficit,
+                    months: 12, // Indefinite really, until paid, but logic uses months
+                    rate: 0.20, // 20% monthly!
+                    type: 'emergency'
+                });
+                UI.log(`⚠️ Nuevo Crédito de Emergencia: $${deficit} (20% interés mensual)`, "bad");
+            }
+
+            // "Reset" money to 0 because debt moved to loan? 
+            // Or keep negative? Usually games reset to 0 and add debt.
+            state.money = 0;
+        }
+
         if (!state.loans || state.loans.length === 0) return;
 
         let totalPayment = 0;
 
         state.loans.forEach((loan, index) => {
-            // Calculate monthly payment (simplified)
-            const monthlyPayment = loan.amount / loan.months;
-            const interest = loan.amount * (loan.rate / 12);
+            // Calculate monthly payment
+            // For emergency loan, payment is interest + percentage of principal
+            let monthlyPayment = 0;
+            let interest = 0;
+
+            if (loan.type === 'emergency') {
+                interest = Math.ceil(loan.amount * loan.rate); // 20% of total
+                monthlyPayment = Math.ceil(loan.amount * 0.05); // Min 5% payment
+            } else {
+                monthlyPayment = Math.ceil(loan.amount / loan.months);
+                interest = Math.ceil(loan.amount * (loan.rate / 12));
+            }
+
+            // Cap payment to available cash? No, let them burn.
 
             totalPayment += monthlyPayment + interest;
 
             // Reduce loan amount
             loan.amount -= monthlyPayment;
-            loan.months -= 1;
+            if (loan.type !== 'emergency') loan.months -= 1; // Emergency loan months don't tick down fixed way
 
             // Remove if paid off
-            if (loan.months <= 0 || loan.amount <= 0) {
-                UI.log(`¡Préstamo pagado! 🎉`, 'good');
+            if (loan.amount <= 0) {
+                UI.log(`¡Préstamo ${loan.name} pagado! 🎉`, 'good');
                 state.loans.splice(index, 1);
             }
         });
 
         if (totalPayment > 0) {
-            Game.updateStat('money', -totalPayment);
+            state.money -= totalPayment; // Can go negative again, triggering loop next month
             UI.log(`Pago de préstamos: -$${Math.floor(totalPayment)}`, 'bad');
         }
     },

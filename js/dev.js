@@ -71,20 +71,25 @@ const DevMode = {
         if (this.active) return;
         this.active = true;
 
+        // Cleanup old panels if any
+        const oldPanel = document.getElementById('dev-panel');
+        if (oldPanel) oldPanel.remove();
+
         const panel = document.createElement('div');
         panel.id = 'dev-panel';
+        // USE INLINE ONCLICK HANDLERS - FAILSAFE METHOD
         panel.innerHTML = `
             <div class="dev-header">
                 <h3>⚡ GOD MODE 2.0</h3>
-                <button id="dev-close-btn" class="close-btn">X</button>
+                <button class="close-btn" onclick="window.DevMode.close(event)" style="position:relative; z-index:10002; pointer-events:auto;">X</button>
             </div>
             
             <div class="dev-tabs">
-                <button class="tab-btn active" data-tab="general">General</button>
-                <button class="tab-btn" data-tab="economy">Economy</button>
-                <button class="tab-btn" data-tab="career">Career</button>
-                <button class="tab-btn" data-tab="assets">Assets</button>
-                <button class="tab-btn" data-tab="world">World</button>
+                <button class="tab-btn active" onclick="window.DevMode.switchTab('general', event)">General</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('economy', event)">Economy</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('career', event)">Career</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('assets', event)">Assets</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('world', event)">World</button>
             </div>
 
             <div class="dev-content-scroll" id="dev-content">
@@ -93,56 +98,91 @@ const DevMode = {
         `;
         document.body.appendChild(panel);
 
-        // Attach Events
-        document.getElementById('dev-close-btn').addEventListener('click', () => this.close());
-
-        panel.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tab = e.currentTarget.getAttribute('data-tab'); // Use currentTarget
-                this.switchTab(tab);
-            });
-        });
+        // Backup Close Listener
+        const closeBtn = panel.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', (e) => this.close(e));
+            closeBtn.addEventListener('touchstart', (e) => this.close(e));
+        }
 
         // Make draggable
         this.makeDraggable(panel);
     },
 
-    switchTab(tab) {
+    switchTab(tab, e) {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
+        if (!tab) return;
+
+        console.log("[DEV] Switching to tab:", tab); // Explicit Log
+
+        // SCOPED SELECTION - Critical fix for ID collision
+        const panel = document.getElementById('dev-panel');
+        if (!panel) {
+            console.error("[DEV] Panel not found in DOM");
+            return;
+        }
+
         this.currentTab = tab;
-        const content = document.getElementById('dev-content');
-        if (!content) return;
+        const content = panel.querySelector('#dev-content');
+        if (!content) {
+            console.error("[DEV] Content container not found inside active panel!");
+            return;
+        }
 
-        // Update tab buttons
-        document.querySelectorAll('#dev-panel .tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector(`#dev-panel .tab-btn[data-tab="${tab}"]`)?.classList.add('active');
+        // Update tab buttons UI
+        const buttons = panel.querySelectorAll('.tab-btn');
+        buttons.forEach(b => {
+            b.classList.remove('active');
+            // Check if the onClick attribute contains the tab name
+            if (b.getAttribute('onclick').includes(`'${tab}'`)) b.classList.add('active');
+        });
 
-        // Render content
+        // Update Header Title for Feedback
+        const headerTitle = panel.querySelector('.dev-header h3');
+        if (headerTitle) headerTitle.innerText = `⚡ GOD MODE - ${tab.toUpperCase()}`;
+
+        // Render content with Error Boundary
         try {
+            let html = '';
             switch (tab) {
-                case 'general': content.innerHTML = this.renderGeneralTab(); break;
-                case 'economy': content.innerHTML = this.renderEconomyTab(); break;
-                case 'career': content.innerHTML = this.renderCareerTab(); break;
-                case 'assets': content.innerHTML = this.renderAssetsTab(); break;
-                case 'world': content.innerHTML = this.renderWorldTab(); break;
+                case 'general': html = this.renderGeneralTab(); break;
+                case 'economy': html = this.renderEconomyTab(); break;
+                case 'career': html = this.renderCareerTab(); break;
+                case 'assets': html = this.renderAssetsTab(); break;
+                case 'world': html = this.renderWorldTab(); break;
+                default: html = '<p>Tab not found</p>';
             }
+            console.log(`[DEV] Generated HTML length for ${tab}:`, html.length);
+            content.innerHTML = html;
         } catch (err) {
-            console.error(err);
-            content.innerHTML = `<div style="color:red; padding:20px;">Error rendering tab: ${err.message}</div>`;
+            console.error("DevMode Render Error:", err);
+            content.innerHTML = `
+                <div style="padding:15px; background:rgba(255,0,0,0.1); border:1px solid red; color:#ff5555; border-radius:5px;">
+                    <strong>⚠️ Error Rendering Tab</strong><br>
+                    <small>${err.message}</small>
+                    <br><br>
+                    <button class="tab-btn" onclick="window.DevMode.switchTab('general', event)" style="width:auto; border:1px solid #444;">Back to General</button>
+                </div>
+            `;
         }
     },
 
     renderGeneralTab() {
-        // Safety checks
-        const traits = state.traits || [];
+        // Safe access to state
+        const s = window.state || {};
+        const traits = s.traits || [];
 
         return `
             <div class="dev-section">
                 <h4>📊 Player Stats</h4>
-                ${this.renderSlider('Health', 'physicalHealth', state.physicalHealth || 50, 0, 100)}
-                ${this.renderSlider('Happiness', 'happiness', state.happiness || 50, 0, 100)}
-                ${this.renderSlider('Intelligence', 'intelligence', state.intelligence || 10, 0, 100)}
-                ${this.renderSlider('Energy', 'energy', state.energy || 100, 0, 100)}
-                ${this.renderSlider('Stress', 'stress', state.stress || 0, 0, 100)}
+                ${this.renderSlider('Health', 'physicalHealth', s.physicalHealth || 50, 0, 100)}
+                ${this.renderSlider('Happiness', 'happiness', s.happiness || 50, 0, 100)}
+                ${this.renderSlider('Intelligence', 'intelligence', s.intelligence || 10, 0, 100)}
+                ${this.renderSlider('Energy', 'energy', s.energy || 100, 0, 100)}
+                ${this.renderSlider('Stress', 'stress', s.stress || 0, 0, 100)}
             </div>
             <div class="dev-section">
                 <h4>💰 Quick Money</h4>
@@ -171,8 +211,10 @@ const DevMode = {
     },
 
     renderEconomyTab() {
-        const econState = state.world?.economicState || 'stable';
-        const inflation = state.world?.inflation || 1.0;
+        const s = window.state || {};
+        const world = s.world || { economicState: 'stable', inflation: 1.0 };
+        const econState = world.economicState || 'stable';
+        const inflation = world.inflation || 1.0;
 
         return `
             <div class="dev-section">
@@ -199,8 +241,10 @@ const DevMode = {
     },
 
     renderCareerTab() {
+        const s = window.state || {};
         const jobs = typeof JOBS !== 'undefined' ? JOBS : [];
-        const jobOpts = jobs.map(j => `<option value="${j.id}" ${state.currJobId === j.id ? 'selected' : ''}>${j.title} ($${j.salary})</option>`).join('');
+        const work = s.work_relations || { performance: 50, boss: 50, colleagues: 50 };
+        const jobOpts = jobs.map(j => `<option value="${j.id}" ${s.currJobId === j.id ? 'selected' : ''}>${j.title} ($${j.salary})</option>`).join('');
 
         return `
             <div class="dev-section">
@@ -212,15 +256,15 @@ const DevMode = {
             </div>
             <div class="dev-section">
                 <h4>📈 Job Stats</h4>
-                ${this.renderSlider('Job XP', 'jobXP', state.jobXP || 0, 0, 500)}
-                ${this.renderSlider('Performance', 'performance', state.work_relations?.performance || 50, 0, 100)}
-                ${this.renderSlider('Boss Relation', 'boss', state.work_relations?.boss || 50, 0, 100)}
-                 ${this.renderSlider('Colleagues', 'colleagues', state.work_relations?.colleagues || 50, 0, 100)}
+                ${this.renderSlider('Job XP', 'jobXP', s.jobXP || 0, 0, 500)}
+                ${this.renderSlider('Performance', 'performance', work.performance || 50, 0, 100)}
+                ${this.renderSlider('Boss Relation', 'boss', work.boss || 50, 0, 100)}
+                 ${this.renderSlider('Colleagues', 'colleagues', work.colleagues || 50, 0, 100)}
             </div>
             <div class="dev-section">
                 <h4>🎓 Career XP</h4>
-                ${Object.keys(state.careerExperience || {}).map(k =>
-            this.renderSlider(k.charAt(0).toUpperCase() + k.slice(1), `career_${k}`, state.careerExperience[k], 0, 240)
+                ${Object.keys(s.careerExperience || {}).map(k =>
+            this.renderSlider(k.charAt(0).toUpperCase() + k.slice(1), `career_${k}`, s.careerExperience[k], 0, 240)
         ).join('')}
             </div>
             <div class="dev-section">
@@ -230,16 +274,17 @@ const DevMode = {
     },
 
     renderAssetsTab() {
+        const s = window.state || {};
         const houses = typeof HOUSING !== 'undefined' ? HOUSING : [];
         const vehicles = typeof VEHICLES !== 'undefined' ? VEHICLES : [];
-        const realEstate = state.realEstate || [];
+        const realEstate = s.realEstate || [];
 
         return `
             <div class="dev-section">
                 <h4>🏠 Real Estate</h4>
                 <select onchange="DevMode.giveAsset('housing', this.value)">
                     <option value="">-- Set Active Housing --</option>
-                    ${houses.map(h => `<option value="${h.id}" ${state.housing === h.id ? 'selected' : ''}>${h.name}</option>`).join('')}
+                    ${houses.map(h => `<option value="${h.id}" ${s.housing === h.id ? 'selected' : ''}>${h.name}</option>`).join('')}
                 </select>
                  <div style="margin-top:5px; font-size:0.8rem; color:#aaa">Owned: ${realEstate.join(', ')}</div>
             </div>
@@ -247,7 +292,7 @@ const DevMode = {
                 <h4>🚗 Vehicles</h4>
                 <select onchange="DevMode.giveAsset('vehicle', this.value)">
                     <option value="">-- Set Active vehicle --</option>
-                    ${vehicles.map(v => `<option value="${v.id}" ${state.vehicle === v.id ? 'selected' : ''}>${v.name}</option>`).join('')}
+                    ${vehicles.map(v => `<option value="${v.id}" ${s.vehicle === v.id ? 'selected' : ''}>${v.name}</option>`).join('')}
                 </select>
             </div>
             <div class="dev-section">
@@ -262,7 +307,7 @@ const DevMode = {
     },
 
     renderWorldTab() {
-        const trends = typeof World !== 'undefined' ? World.trends : [];
+        const trends = typeof World !== 'undefined' ? (World.trends || []) : [];
 
         return `
             <div class="dev-section">
@@ -291,7 +336,9 @@ const DevMode = {
     // --- Components ---
 
     renderSlider(label, key, val, min, max, step = 1, isFloat = false) {
-        // Special handling for nested keys like 'career_tech' or 'performance'
+        // Validation for values to avoid NaN errors
+        const safeVal = (val === undefined || val === null || isNaN(val)) ? min : val;
+
         const fn = key.startsWith('career_') ? `DevMode.setCareerXP('${key.split('_')[1]}', this.value)` :
             (key === 'inflation' ? `DevMode.setInflation(this.value)` :
                 (key === 'performance' || key === 'boss' || key === 'colleagues' ? `DevMode.setJobStat('${key}', this.value)` :
@@ -299,18 +346,25 @@ const DevMode = {
 
         return `
             <div class="stat-slider">
-                <label>${label}: <span id="dev-val-${key}">${isFloat ? parseFloat(val).toFixed(2) : Math.floor(val)}</span></label>
-                <input type="range" min="${min}" max="${max}" step="${step}" value="${val}" oninput="${fn}">
+                <label>${label}: <span id="dev-val-${key}">${isFloat ? parseFloat(safeVal).toFixed(2) : Math.floor(safeVal)}</span></label>
+                <input type="range" min="${min}" max="${max}" step="${step}" value="${safeVal}" oninput="${fn}">
             </div>
         `;
     },
 
     // --- Actions ---
 
-    close() {
+    close(e) {
+        if (e) {
+            e.stopPropagation();
+            e.preventDefault();
+        }
         const panel = document.getElementById('dev-panel');
         if (panel) panel.remove();
         this.active = false;
+
+        // Remove active state from document body if needed
+        document.body.style.overflow = '';
     },
 
     addTime(months) {

@@ -91,7 +91,22 @@ const state = {
         econTimer: 24 // Months until next economic state change check
     }, // Init explicitly
     unlockedTrophies: [], // Init empty array
-    traits: [] // Init empty array
+    traits: [], // Init empty array
+
+    // INTERNATIONAL TRAVEL SYSTEM
+    currentCountry: 'home', // Current country ID
+    homeCountry: 'home', // Origin country (never changes)
+    visaStatus: null, // {countryId, type, expiryMonths, allowWork, workRestriction}
+    monthsInCountry: 999, // Months in current country (for adaptation)
+    adaptationLevel: 100, // 0-100, affects happiness
+    currencies: { // Multi-currency wallet
+        HOME: 100,
+        USD: 0,
+        CAD: 0,
+        EUR: 0,
+        JPY: 0,
+        MXN: 0
+    }
 };
 
 // Init RE Prices if empty

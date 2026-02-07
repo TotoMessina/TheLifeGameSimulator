@@ -86,6 +86,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             background: linear-gradient(45deg, #d4af37, #f2d06b);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
@@ -456,8 +457,26 @@
         .progress-fill {
             height: 100%;
             width: 50%;
-            width: 50%;
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: width 0.5s ease-out;
+        }
+
+        /* Critical state blink for low bars */
+        .progress-fill.critical-blink {
+            animation: criticalBlink 0.8s ease-in-out infinite;
+        }
+
+        @keyframes criticalBlink {
+
+            0%,
+            100% {
+                filter: brightness(1);
+                box-shadow: 0 0 5px rgba(255, 77, 77, 0.3);
+            }
+
+            50% {
+                filter: brightness(1.5);
+                box-shadow: 0 0 15px rgba(255, 77, 77, 0.8);
+            }
         }
 
         .health-fill {
@@ -1794,4 +1813,50 @@
             background: #333;
             color: #555;
             cursor: not-allowed;
+        }
+
+        /* ========== JUICE EFFECTS ========== */
+
+        /* Confetti Particles */
+        .confetti-particle {
+            position: fixed;
+            font-size: 1.5rem;
+            pointer-events: none;
+            z-index: 9999;
+            animation: confettiFall 2s ease-out forwards;
+            will-change: transform, opacity;
+        }
+
+        @keyframes confettiFall {
+            0% {
+                transform: translate(0, 0) rotate(0deg) scale(0.5);
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 1;
+                transform: translate(var(--deltaX), calc(var(--deltaY) * 0.5)) rotate(calc(var(--rotation) * 0.5)) scale(1.2);
+            }
+
+            100% {
+                transform: translate(var(--deltaX), var(--deltaY)) rotate(var(--rotation)) scale(0.8);
+                opacity: 0;
+            }
+        }
+
+        /* Money counter pulse on change */
+        .money-display.animating {
+            animation: moneyPulse 0.5s ease-out;
+        }
+
+        @keyframes moneyPulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.15);
+            }
         }

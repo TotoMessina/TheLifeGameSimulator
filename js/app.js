@@ -8,9 +8,8 @@ const App = {
                 Game.nextMonth();
             };
             UI.els.btns.next.addEventListener('touchstart', (e) => {
-                e.preventDefault();
                 Game.nextMonth();
-            }, { passive: false });
+            }, { passive: true });
         }
 
         // Modal Close Buttons
@@ -150,6 +149,12 @@ App.init = async () => {
         Game.init(); // Then initialize Game logic (which calls UI.render)
         // UI.render() is called by Game.init, which calls UI.init, which caches elements.
         // So UI.els should be populated now.
+
+        // Initialize Travel System
+        if (typeof Travel !== 'undefined') {
+            Travel.init();
+        }
+
         App.setupEventListeners();
 
         // Welcome Modal & Character Creation
@@ -159,7 +164,7 @@ App.init = async () => {
         const genderMaleBtn = document.getElementById('gender-male-btn');
         const genderFemaleBtn = document.getElementById('gender-female-btn');
         const formError = document.getElementById('form-error');
-        const mainUI = document.getElementById('main-ui');
+        const appContainer = document.getElementById('app-container');
 
         let selectedGender = null;
 
@@ -172,7 +177,7 @@ App.init = async () => {
             if (welcomeModal) {
                 welcomeModal.classList.add('active');
                 // Block main UI
-                if (mainUI) mainUI.style.pointerEvents = 'none';
+                if (appContainer) appContainer.style.pointerEvents = 'none';
             }
 
             // Gender button handlers
@@ -258,7 +263,7 @@ App.init = async () => {
                         }
 
                         // Unblock main UI
-                        if (mainUI) mainUI.style.pointerEvents = 'auto';
+                        if (appContainer) appContainer.style.pointerEvents = 'auto';
 
                         // Hide splash screen now that character is created
                         const splash = document.getElementById('splash-screen');
@@ -301,7 +306,7 @@ App.init = async () => {
         } else {
             // Hide for existing games
             if (welcomeModal) welcomeModal.classList.remove('active');
-            if (mainUI) mainUI.style.pointerEvents = 'auto';
+            if (appContainer) appContainer.style.pointerEvents = 'auto';
         }
 
         UI.render();
@@ -343,9 +348,13 @@ App.init = async () => {
     }
 };
 
-// Global click for sound (careful with this one, might be annoying)
+// Global click for sound and haptic feedback
 document.addEventListener('click', (e) => {
     if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+        // Add haptic feedback for all buttons
+        if (typeof Juice !== 'undefined' && Juice.hapticFeedback) {
+            Juice.hapticFeedback('short');
+        }
         // AudioSys.playClick(); // Already handled in specific actions mostly
     }
 });

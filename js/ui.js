@@ -150,6 +150,30 @@ const UI = {
         // Money Animation
         this.animateNumber(this.els.money, parseInt(this.els.money.innerText.replace(/[^0-9-]/g, '')) || 0, state.money);
 
+        // EMERGENCY BUTTON
+        const existingPanic = document.getElementById('panic-btn');
+        if (state.money < 500) {
+            if (!existingPanic) {
+                const btn = document.createElement('button');
+                btn.id = 'panic-btn';
+                btn.innerText = '🆘 Liquidar';
+                btn.className = 'panic-btn'; // Needs CSS
+                btn.style.cssText = "background:#ff3333; color:white; border:none; padding:5px 10px; border-radius:5px; margin-left:10px; cursor:pointer; font-weight:bold; font-size:0.8rem; animation: pulse 1s infinite;";
+                btn.onclick = () => {
+                    // Show options
+                    const opts = [
+                        { text: "📦 Vender Objetos (30%)", onClick: () => Game.emergencySell('items') },
+                        { text: "🚗 Vender Vehículo (30%)", onClick: () => Game.emergencySell('vehicle') },
+                        { text: "🏠 Vender Propiedades (30%)", onClick: () => Game.emergencySell('properties') }
+                    ];
+                    UI.showEventChoices("VENTA DE EMERGENCIA", "Elige qué activos liquidar por el 30% de su valor.", opts);
+                };
+                this.els.money.parentNode.appendChild(btn); // Append to header container
+            }
+        } else {
+            if (existingPanic) existingPanic.remove();
+        }
+
         // Finance Panel
         const fin = Game.calculateFinancials();
         document.getElementById('networth-val').innerText = `$${Math.floor(fin.netWorth).toLocaleString()}`;
@@ -542,20 +566,44 @@ const UI = {
         const el = this.els.money;
         const isGain = amount > 0;
 
-        // Remove class then re-add to restart animation
-        el.classList.remove('gain', 'loss');
-        void el.offsetWidth; // Force reflow
-        el.classList.add(isGain ? 'gain' : 'loss');
+        // Get current value
+        const currentText = el.innerText.replace(/[$,]/g, '');
+        const currentValue = parseInt(currentText) || 0;
+        const newValue = state.money;
 
+        // Use Juice for smooth counter animation
+        if (typeof Juice !== 'undefined' && Juice.animateCounter) {
+            Juice.animateCounter(el, currentValue, newValue, 500, true);
+        } else {
+            // Fallback
+            el.innerText = `$${newValue.toLocaleString()}`;
+        }
+
+        // Visual flash effect
+        el.classList.remove('gain', 'loss', 'animating');
+        void el.offsetWidth; // Force reflow
+        el.classList.add(isGain ? 'gain' : 'loss', 'animating');
+
+        // Float text
         const color = isGain ? '#39FF14' : '#FF3939';
         const sign = isGain ? '+' : '';
         this.floatText(`${sign}$${Math.abs(amount)}`, color);
 
-        if (isGain && amount >= 100) {
-            this.spawnParticles('💸', 3);
-            if (amount >= 1000) Haptics.medium();
-        } else if (!isGain) {
-            Haptics.pulse(); // Small haptic on loss
+        // Confetti and haptic for gains
+        if (typeof Juice !== 'undefined') {
+            if (isGain) {
+                Juice.moneyGained(amount, el);
+            } else {
+                Juice.negativeEvent();
+            }
+        } else {
+            // Fallback haptic
+            if (isGain && amount >= 100) {
+                this.spawnParticles('💸', 3);
+                if (amount >= 1000) Haptics.medium();
+            } else if (!isGain) {
+                Haptics.pulse();
+            }
         }
     },
 
@@ -913,6 +961,21 @@ const UI = {
                     applyBtn.style.transform = 'scale(1)';
                 };
                 applyBtn.onclick = () => {
+                    // TRAVEL CHECK: Visa Requirements
+                    if (typeof Travel !== 'undefined' && state.currentCountry !== 'home') {
+                        const visa = state.visaStatus;
+                        // 1. Check if we HAVE a visa (should be true if we are here, but safety check)
+                        if (!visa) {
+                            UI.showAlert('Sin Visa', 'No tienes permiso para trabajar aquí.');
+                            return;
+                        }
+                        // 2. Check if visa allows work
+                        if (!visa.allowWork) {
+                            UI.showAlert('Visa Restrictiva', `Tu ${VISA_TYPES[visa.type].name} no permite trabajar.`);
+                            return;
+                        }
+                    }
+
                     Game.applyJob(j.id);
                     this.renderJobMarket(filter);
                 };
@@ -1430,11 +1493,9 @@ const UI = {
         if (phase && phase.actions) {
             phase.actions.forEach(act => {
                 const btn = document.createElement('button');
-                btn.className = 'act-btn'; // Fix: Apply CSS class!
+                btn.className = 'act-btn';
                 btn.id = act.id;
-                // Reduced border width for mobile (visual preference)
                 btn.style.borderBottom = '2px solid ' + (act.color || '#444');
-                // Removed inner div for better flex behavior
                 btn.innerText = act.label;
 
                 btn.onclick = () => {
@@ -1443,6 +1504,21 @@ const UI = {
 
                 container.appendChild(btn);
             });
+        }
+
+        // Always add Airport button (available from age 18+)
+        if (state.age >= 18 && typeof Travel !== 'undefined') {
+            const airportBtn = document.createElement('button');
+            airportBtn.className = 'act-btn';
+            airportBtn.id = 'act-airport';
+            airportBtn.style.borderBottom = '2px solid #667eea';
+            airportBtn.innerText = '✈️ Aeropuerto';
+
+            airportBtn.onclick = () => {
+                Travel.openAirport();
+            };
+
+            container.appendChild(airportBtn);
         }
     },
 

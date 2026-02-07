@@ -977,5 +977,41 @@ const EVENTS = [
             f.relation += 10;
             return { happiness: 5, msg: `Chat con ${f.name} reavivó la amistad.`, type: 'good' };
         }
+    },
+
+    // --- TRAVEL EVENTS ---
+    {
+        id: 17, type: 'instant', text: "Perdiste tu pasaporte.",
+        condition: s => s.currentCountry && s.currentCountry !== 'home',
+        effect: (s) => ({ money: -200, happiness: -10, msg: "Trámite de emergencia. -$200", type: 'bad' })
+    },
+    {
+        id: 18, type: 'instant', text: "Probaste comida local exótica.",
+        condition: s => s.currentCountry && s.currentCountry !== 'home',
+        effect: (s) => {
+            if (Math.random() > 0.3) {
+                return { happiness: 10, msg: "¡Delicioso! +Felicidad", type: 'good' };
+            } else {
+                return { health: -5, happiness: -5, msg: "Te cayó mal. -Salud", type: 'bad' };
+            }
+        }
+    },
+    {
+        id: 19, type: 'choice', text: "Un local te invita a una fiesta tradicional.",
+        condition: s => s.currentCountry && s.currentCountry !== 'home',
+        choices: [
+            {
+                text: "Ir", sub: "Integración cultural", action: (s) => {
+                    if (typeof Travel !== 'undefined') Travel.updateAdaptation(5);
+                    return { happiness: 10, msg: "Gran experiencia. +Adaptación", type: 'good' };
+                }
+            },
+            { text: "Quedarse", sub: "Descansar", action: (s) => ({ energy: 10, msg: "Descansaste en el hotel.", type: 'info' }) }
+        ]
+    },
+    {
+        id: 20, type: 'instant', text: "Problemas con la visa.",
+        condition: s => s.visaStatus && s.visaStatus.expiryMonths < 6,
+        effect: (s) => ({ stress: 10, msg: "Tu visa está por vencer. ¡Estrés!", type: 'bad' })
     }
 ];

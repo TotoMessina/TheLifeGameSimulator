@@ -3,16 +3,20 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Life Game Simulator</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+    <title>Life Simulator</title>
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/mobile.css">
     <link rel="manifest" href="/manifest.json">
-    <meta name="theme-color" content="#4CAF50">
+    <meta name="theme-color" content="#121212">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Simulador de vida completo - Experimenta diferentes caminos profesionales">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <!-- Import Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/style.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/travel.css">
 
 <body>
     <div id="splash-screen">
@@ -21,119 +25,180 @@
         <div class="splash-loader"></div>
     </div>
     <div class="critical-vignette" id="critical-overlay"></div>
-    <div id="main-ui">
-        <header>
-            <div class="header-top">
-                <div class="date-display" id="date-display">Cargando...</div>
-                <div>
-                    <button class="settings-btn" id="school-trigger"
-                        style="margin-right:10px; display:none;">🎒</button>
-                    <button class="settings-btn" id="shop-trigger" style="margin-right:10px;">🛒</button>
-                    <button class="settings-btn" id="home-trigger" style="margin-right:10px;">🏠</button>
-                    <button class="settings-btn" id="profile-trigger" style="margin-right:10px;">👤</button>
-                    <button class="settings-btn" id="athletics-trigger" style="margin-right:10px;">🏃</button>
-                    <button class="settings-btn" id="social-trigger" style="margin-right:10px;">👥</button>
-                    <button class="settings-btn" id="routine-trigger" style="margin-right:10px;">⏰</button>
-                    <button class="settings-btn" id="trophy-trigger" style="margin-right:10px;">🏆</button>
-                    <button class="settings-btn" id="business-trigger" style="margin-right:10px;">🏢</button>
+
+    <!-- Native Mobile App Container -->
+    <div id="app-container">
+
+        <!-- TAB 1: VIDA (Stats & Timeline) -->
+        <div class="tab-content active" id="tab-vida">
+            <header class="tab-header">
+                <div class="header-top">
+                    <div class="date-display" id="date-display">Cargando...</div>
                     <button class="settings-btn" id="settings-trigger">⚙️</button>
                 </div>
-            </div>
+            </header>
 
-            <div class="finance-panel">
-                <div class="fin-row">
-                    <span>Efectivo: <span class="money-display" id="money-display">$0</span></span>
-                    <span>Neto: <span id="networth-val">$0</span></span>
-                    <span id="gpa-box" style="margin-left:10px; display:none;">GPA: <span id="gpa-display"
-                            style="color:var(--primary-color); font-weight:bold;">0.0</span></span>
-                </div>
-                <div class="fin-row" style="font-size:0.8rem; justify-content: space-between;">
-                    <span title="Ingresos Totales (Salario + Pasivos)">Ing: <span id="income-total"
-                            style="color:var(--accent-color)">$0</span></span>
-                    <span title="Gastos Mensuales">Gas: <span id="expense-total" style="color:#ff4d4d">$0</span></span>
-                    <span title="Flujo de Caja Neto">Flujo: <span id="net-flow"
-                            style="font-weight:bold">$0</span></span>
-                </div>
-                <div class="asset-bar" id="fn-asset-bar">
-                    <div class="asset-seg seg-cash" style="width:100%"></div>
-                    <div class="asset-seg seg-inv" style="width:0%"></div>
-                    <div class="asset-seg seg-re" style="width:0%"></div>
-                </div>
-            </div>
-
-            <div class="job-display" id="job-trigger">
-                <div class="job-row-top">
-                    <span id="job-title-display">Mendigo ($0/mes)</span>
-                    <button id="btn-job-dashboard"
-                        style="background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:10px;">📊</button>
-                    <span style="font-size: 0.8rem; color: #888; margin-left: auto;">ℹ️ Cambiar</span>
-                </div>
-                <div class="job-xp-bg">
-                    <div class="job-xp-fill" id="job-xp-bar"></div>
-                </div>
-                <div id="diploma-display" style="font-size: 0.7rem; color: var(--accent-color); margin-top: 2px;"></div>
-            </div>
-
-            <div class="stat-grid">
-                <!-- Row 1 -->
-                <div class="bar-group">
-                    <div class="bar-label"><span>💪 Salud Física</span> <span id="health-val">100%</span></div>
-                    <div class="progress-bg">
-                        <div class="progress-fill health-fill" id="health-bar" style="width: 100%;"></div>
+            <!-- Stats Section -->
+            <section class="stats-section">
+                <div class="stat-grid">
+                    <div class="bar-group">
+                        <div class="bar-label"><span>💪 Salud Física</span> <span id="health-val">100%</span></div>
+                        <div class="progress-bg">
+                            <div class="progress-fill health-fill" id="health-bar" style="width: 100%;"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="bar-group">
-                    <div class="bar-label"><span>🧠 Salud Mental</span> <span id="mhealth-val">100%</span></div>
-                    <div class="progress-bg">
-                        <div class="progress-fill" id="mhealth-bar" style="width: 100%; background: #70a1ff;"></div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>🧠 Salud Mental</span> <span id="mhealth-val">100%</span></div>
+                        <div class="progress-bg">
+                            <div class="progress-fill" id="mhealth-bar" style="width: 100%; background: #70a1ff;"></div>
+                        </div>
                     </div>
-                </div>
-                <!-- Row 2 -->
-                <div class="bar-group">
-                    <div class="bar-label"><span>Felicidad</span> <span id="happiness-val">100%</span></div>
-                    <div class="progress-bg">
-                        <div class="progress-fill happiness-fill" id="happiness-bar" style="width: 100%;"></div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>Felicidad</span> <span id="happiness-val">100%</span></div>
+                        <div class="progress-bg">
+                            <div class="progress-fill happiness-fill" id="happiness-bar" style="width: 100%;"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="bar-group">
-                    <div class="bar-label"><span>Energía</span> <span id="energy-val">100%</span></div>
-                    <div class="progress-bg">
-                        <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%;"></div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>Energía</span> <span id="energy-val">100%</span></div>
+                        <div class="progress-bg">
+                            <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%;"></div>
+                        </div>
                     </div>
-                </div>
-                <!-- Row 3 -->
-                <div class="bar-group">
-                    <div class="bar-label"><span>Inteligencia</span> <span id="intel-val">10</span></div>
-                    <div class="progress-bg">
-                        <div class="progress-fill intelligence-fill" id="intel-bar" style="width: 10%;"></div>
+                    <div class="bar-group">
+                        <div class="bar-label"><span>Inteligencia</span> <span id="intel-val">10</span></div>
+                        <div class="progress-bg">
+                            <div class="progress-fill intelligence-fill" id="intel-bar" style="width: 10%;"></div>
+                        </div>
                     </div>
-                </div>
-                <div class="bar-group">
-                    <div class="bar-label"><span>Estrés</span> <span id="stress-val">0%</span></div>
-                    <div class="progress-bg">
-                        <div class="progress-fill stress-fill" id="stress-bar" style="width: 0%; background: #ff4757;">
+                    <div class="bar-group">
+                        <div class="bar-label"><span>Estrés</span> <span id="stress-val">0%</span></div>
+                        <div class="progress-bg">
+                            <div class="progress-fill stress-fill" id="stress-bar"
+                                style="width: 0%; background: #ff4757;"></div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </header>
+            </section>
 
-        <main id="event-log">
-            <div class="event-card info">
-                <span class="event-date">Inicio</span>
-                Bienvenido. Tienes 18 años. Comienza tu historia.
-            </div>
-        </main>
+            <!-- Event Timeline -->
+            <main class="event-log" id="event-log">
+                <!-- Events will be added dynamically by JavaScript -->
+            </main>
 
-        <footer>
-            <div id="actions-container" class="actions-row">
-                <!-- Filled dynamically by UI.renderActions() based on Phase -->
+            <!-- Actions & Next Month -->
+            <div class="bottom-actions">
+                <div id="actions-container" class="actions-row"></div>
+                <button id="btn-next" class="primary btn-next-month">
+                    <span class="btn-icon">📅 Siguiente mes</span>
+                </button>
             </div>
-            <button id="btn-next" class="primary">
-                <span class="btn-icon">📅 Siguiente mes</span>
+        </div>
+
+        <!-- TAB 2: TRABAJO (Career & Jobs) -->
+        <div class="tab-content" id="tab-trabajo">
+            <header class="tab-header">
+                <h1 class="tab-title">💼 Carrera</h1>
+            </header>
+
+            <section class="content-section">
+                <div class="job-display-card" id="job-trigger">
+                    <div class="job-row-top">
+                        <span id="job-title-display">Mendigo ($0/mes)</span>
+                        <button id="btn-job-dashboard"
+                            style="background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:10px;">📊</button>
+                        <span style="font-size: 0.8rem; color: #888; margin-left: auto;">ℹ️ Cambiar</span>
+                    </div>
+                    <div class="job-xp-bg">
+                        <div class="job-xp-fill" id="job-xp-bar"></div>
+                    </div>
+                    <div id="diploma-display" style="font-size: 0.7rem; color: var(--accent-color); margin-top: 2px;">
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="settings-btn action-btn" id="school-trigger" style="display:none;">🎒
+                        Escuela</button>
+                    <button class="settings-btn action-btn" id="profile-trigger">👤 Perfil</button>
+                    <button class="settings-btn action-btn" id="routine-trigger">⏰ Rutina</button>
+                    <button class="settings-btn action-btn" id="trophy-trigger">🏆 Logros</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 3: INVERSIONES (Finance & Shop) -->
+        <div class="tab-content" id="tab-inversiones">
+            <header class="tab-header">
+                <h1 class="tab-title">💰 Finanzas</h1>
+            </header>
+
+            <section class="content-section">
+                <div class="finance-panel-card">
+                    <div class="fin-row">
+                        <span>Efectivo: <span class="money-display" id="money-display">$0</span></span>
+                        <span>Neto: <span id="networth-val">$0</span></span>
+                        <span id="gpa-box" style="margin-left:10px; display:none;">GPA: <span id="gpa-display"
+                                style="color:var(--primary-color); font-weight:bold;">0.0</span></span>
+                    </div>
+                    <div class="fin-row" style="font-size:0.8rem; justify-content: space-between;">
+                        <span title="Ingresos Totales (Salario + Pasivos)">Ing: <span id="income-total"
+                                style="color:var(--accent-color)">$0</span></span>
+                        <span title="Gastos Mensuales">Gas: <span id="expense-total"
+                                style="color:#ff4d4d">$0</span></span>
+                        <span title="Flujo de Caja Neto">Flujo: <span id="net-flow"
+                                style="font-weight:bold">$0</span></span>
+                    </div>
+                    <div class="asset-bar" id="fn-asset-bar">
+                        <div class="asset-seg seg-cash" style="width:100%"></div>
+                        <div class="asset-seg seg-inv" style="width:0%"></div>
+                        <div class="asset-seg seg-re" style="width:0%"></div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="settings-btn action-btn" id="shop-trigger">🛒 Shop</button>
+                    <button class="settings-btn action-btn" id="business-trigger">🏢 Negocio</button>
+                    <button class="settings-btn action-btn" id="home-trigger">🏠 Hogar</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- TAB 4: SOCIAL (Friends, Family, Activities) -->
+        <div class="tab-content" id="tab-social">
+            <header class="tab-header">
+                <h1 class="tab-title">👥 Social</h1>
+            </header>
+
+            <section class="content-section">
+                <div class="quick-actions">
+                    <button class="settings-btn action-btn" id="social-trigger">💬 Actividades</button>
+                    <button class="settings-btn action-btn" id="athletics-trigger">🏃 Atletismo</button>
+                    <button class="settings-btn action-btn" onclick="Travel.openAirport()">✈️ Aeropuerto</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <nav class="bottom-tab-bar">
+            <button class="tab-btn active" data-tab="vida">
+                <span class="tab-icon">📊</span>
+                <span class="tab-label">Vida</span>
             </button>
-        </footer>
+            <button class="tab-btn" data-tab="trabajo">
+                <span class="tab-icon">💼</span>
+                <span class="tab-label">Trabajo</span>
+            </button>
+            <button class="tab-btn" data-tab="inversiones">
+                <span class="tab-icon">💰</span>
+                <span class="tab-label">Inversiones</span>
+            </button>
+            <button class="tab-btn" data-tab="social">
+                <span class="tab-icon">👥</span>
+                <span class="tab-label">Social</span>
+            </button>
+        </nav>
     </div>
+
 
     <!-- Character Generation Screen -->
     <div id="char-gen-screen" class="modal-overlay hidden"
@@ -239,6 +304,19 @@
             </div>
             <div class="modal-body" id="business-container">
                 <!-- Content injected by UI.renderBusiness() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- International Airport Modal -->
+    <div class="modal-overlay" id="airport-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>✈️ Aeropuerto Internacional</span>
+                <button class="close-btn" onclick="UI.closeModal('airport-modal')">×</button>
+            </div>
+            <div class="modal-body">
+                <!-- Rendered by Travel.renderAirportModal() -->
             </div>
         </div>
     </div>
@@ -890,8 +968,15 @@
     <script src="js/school.js?v=2.0"></script>
     <script src="js/phases.js?v=2.0"></script>
     <script src="js/game.js?v=2.0"></script>
-    <script src="js/dev.js?v=2.0"></script>
-    <script src="js/app.js?v=2.0"></script>
+    <script src="js/dev.js?v=2.0"></script> <!-- Juice Module -->
+    <script src="js/juice.js?v=2.0"></script>
+    <!-- International Travel Module -->
+    <script src="js/travel.js"></script>
+    <!-- Tab Navigation -->
+    <script src="js/tabs.js"></script>
+    <!-- Core Game Scripts -->
+    <script src="js/app.js?v=5.5"></script>
 </body>
 
 </html>
+```

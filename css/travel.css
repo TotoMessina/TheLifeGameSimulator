@@ -1,0 +1,180 @@
+/* ===============================
+   INTERNATIONAL TRAVEL SYSTEM
+   =============================== */
+
+/* Countries Grid */
+.countries-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+}
+
+/* Country Card */
+.country-card {
+    background: var(--mobile-card-bg);
+    border-radius: 12px;
+    padding: 12px;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+    border: 2px solid transparent;
+}
+
+.country-card:active {
+    transform: scale(0.97);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.country-flag {
+    font-size: 48px;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.country-name {
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 8px;
+    color: var(--mobile-text);
+}
+
+.country-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+}
+
+.country-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 4px;
+}
+
+.stat-label {
+    color: var(--mobile-text-secondary);
+}
+
+.stat-value {
+    color: var(--mobile-accent);
+    font-weight: 600;
+}
+
+.country-cost {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--mobile-accent);
+    font-weight: 600;
+}
+
+.country-home {
+    margin-top: 8px;
+    text-align: center;
+    font-size: 12px;
+    color: #30d158;
+    font-weight: 600;
+}
+
+/* Visa Options */
+.visa-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--mobile-card-bg);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+}
+
+.visa-option:not(.disabled):active {
+    transform: scale(0.98);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.visa-option.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Adaptation Meter */
+.adaptation-meter {
+    margin: 16px 0;
+}
+
+.adaptation-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.adaptation-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff9800, #4CAF50);
+    transition: width 0.5s ease-out;
+    border-radius: 4px;
+}
+
+/* Currency Display */
+.currency-display {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.currency-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--mobile-card-bg);
+    border-radius: 8px;
+    font-size: 12px;
+}
+
+.currency-code {
+    font-weight: 600;
+    color: var(--mobile-accent);
+}
+
+.currency-amount {
+    color: var(--mobile-text);
+}
+
+/* Country Info Badge */
+.country-info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    background: rgba(10, 132, 255, 0.1);
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--mobile-accent);
+    margin: 4px 0;
+}
+
+/* Travel Button  */
+.btn-travel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-travel:active {
+    transform: scale(0.97);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
