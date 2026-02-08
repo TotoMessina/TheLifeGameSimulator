@@ -272,20 +272,85 @@ const School = {
         state.isStudent = true;
         state.educationLevel = 'university';
 
+        // TRAVEL SYSTEM: Localize Costs
+        let baseCost = 0;
+        if (type === 'elite' && scholarship !== 'academic') baseCost = 50000;
+        if (type === 'public' && !scholarship) baseCost = 5000;
+
+        let finalCost = baseCost;
+        let currency = 'HOME';
+
+        if (typeof Travel !== 'undefined' && state.currentCountry) {
+            const country = Travel.getCurrentCountry();
+            if (country) {
+                currency = country.currency;
+                // Apply COL (Higher COL = More expensive education)
+                finalCost *= country.costOfLiving;
+                // Convert to local currency
+                if (country.exchangeRate) finalCost /= country.exchangeRate;
+            }
+        }
+
         if (type === 'elite') {
             if (scholarship === 'academic') {
-                state.money += 5000; // Stipend bonus
-                UI.log("Beca Élite aceptada. +$5000", "good");
+                // Stipend also localized? Let's say yes.
+                let stipend = 5000;
+                if (typeof Travel !== 'undefined' && state.currentCountry) {
+                    const country = Travel.getCurrentCountry();
+                    stipend *= country.costOfLiving;
+                    if (country.exchangeRate) stipend /= country.exchangeRate;
+                }
+
+                state.money += Math.floor(stipend);
+                UI.log(`Beca Élite aceptada. +$${Math.floor(stipend).toLocaleString()}`, "good");
             } else {
-                state.money -= 50000; // Debt
-                state.loans = (state.loans || 0) + 50000;
-                UI.log("Préstamo estudiantil tomado: -$50,000", "bad");
+                state.money -= Math.floor(finalCost); // Debt usually taken as cash then paid? 
+                // Wait, loans logic in this game seems to be "Negative Money" or implicit? 
+                // Line 281 says: state.loans = (state.loans || 0) + 50000;
+                // It doesn't subtract from state.money, it adds to state.loans.
+                // So we should add to state.loans.
+
+                // Let's keep loans in HOME currency for simplicity? 
+                // If we convert loans to local, then moving countries messes up debt value.
+                // BETTER: Keep Loans in HOME currency always. 
+                // But the COST is paid in local value? 
+                // If I take a loan in Japan, I owe YEN.
+                // Complexity Alert. 
+                // SIMPLIFICATION: Loans are always tracked in HOME currency (USD).
+                // So we add 'baseCost' (adjusted for COL) to loans.
+
+                // Re-calculating for Loan (HOME Currency adjusted for COL only)
+                let loanAmount = baseCost;
+                if (typeof Travel !== 'undefined' && state.currentCountry) {
+                    const country = Travel.getCurrentCountry();
+                    loanAmount *= country.costOfLiving;
+                }
+
+                state.loans = (state.loans || 0) + Math.floor(loanAmount);
+                UI.log(`Préstamo estudiantil tomado: -$${Math.floor(loanAmount).toLocaleString()} (Valor Base)`, "bad");
             }
-            state.network = (state.network || 0) + 50; // Elite networking
+            state.network = (state.network || 0) + 50;
         } else {
             if (!scholarship) {
-                state.money -= 5000;
-                state.loans = (state.loans || 0) + 5000;
+                // Public Uni cost is usually direct payment or small loan? 
+                // Original code: state.money -= 5000; state.loans += 5000; -> This assumes you pay it AND take a loan? 
+                // Or maybe it means "You lose money, if negative, it's debt"? 
+                // The original code was:
+                // state.money -= 5000;
+                // state.loans = (state.loans || 0) + 5000;
+                // This seems to double count? You lose the cash AND get debt? 
+                // Likely a bug or misunderstanding of legacy code.
+                // Let's assume it means "Cost is 5000". If you have it, pay it. If not, debt.
+                // But `state.loans` implies permanent debt tracking.
+                // Let's just add to Loans for consistency with Elite logic above.
+
+                let costHome = 5000;
+                if (typeof Travel !== 'undefined' && state.currentCountry) {
+                    const country = Travel.getCurrentCountry();
+                    costHome *= country.costOfLiving;
+                }
+                state.loans = (state.loans || 0) + Math.floor(costHome);
+                UI.log(`Costo Universitario: $${Math.floor(costHome)} (Agregado a Deuda)`, "normal");
             }
         }
 

@@ -498,6 +498,24 @@ const Game = {
         state.reputation = 0; // if we had it
         // Reset job
         state.currJobId = 'unemployed';
+
+        // REALISM: Deportation Risk
+        if (typeof Travel !== 'undefined' && state.currentCountry !== 'home') {
+            const country = Travel.getCurrentCountry();
+            // Strict countries always deport. Others have a chance.
+            let chance = 0.5;
+            if (country.lawStrictness === 'extreme') chance = 1.0;
+            if (country.lawStrictness === 'high') chance = 0.8;
+            if (country.lawStrictness === 'low') chance = 0.2;
+
+            if (Math.random() < chance) {
+                UI.showAlert("DEPORTADO", `Has sido deportado de ${country.name} por antecedentes penales.`);
+                UI.log(`👮 Deportado de ${country.name}. Visa revocada.`, "bad");
+                state.visaStatus = null; // Revoke visa
+                Travel.relocate('home'); // Force move home
+                return; // Stop further processing
+            }
+        }
         state.jobXP = 0;
         UI.showAlert("PRISIÓN", `Pasaste ${months} meses en la cárcel. Perdiste tu empleo.`);
     },
@@ -1203,6 +1221,36 @@ const Game = {
             state.sickDuration--;
             UI.log("Sigues enfermo... (-5 Salud)", "bad");
             this.updateStat('physicalHealth', -5);
+
+            // REALISM: Healthcare Costs
+            if (typeof Travel !== 'undefined' && state.currentCountry) {
+                const country = Travel.getCurrentCountry();
+                // If country has 'free' healthcare, no cost.
+                // If 'subsidized', small cost.
+                // If 'insurance', high cost unless insured (not implemented yet, so just high cost).
+
+                let medicalCost = 0;
+                if (country.healthcare === 'insurance') medicalCost = 200; // Daily cost
+                if (country.healthcare === 'subsidized') medicalCost = 50;
+
+                // Adjust for currency
+                // medicalCost is in HOME currency baseline, apply COL?
+                medicalCost *= country.costOfLiving;
+
+                if (medicalCost > 0) {
+                    // Convert to local currency for payment
+                    const localCost = Travel.convertCurrency(medicalCost, 'HOME', country.currency);
+                    if (state.money >= localCost) {
+                        state.money -= localCost;
+                        UI.log(`Gastos médicos: -$${localCost.toFixed(0)} ${country.currency}`, 'expense');
+                    } else {
+                        // Debt? Or just suffer?
+                        UI.log("No puedes pagar el médico. La salud empeora.", "bad");
+                        this.updateStat('physicalHealth', -2);
+                    }
+                }
+            }
+
         } else if (state.physicalHealth < 20) {
             // Risk of getting sick with low health
             if (Math.random() < 0.3) {

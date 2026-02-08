@@ -435,14 +435,32 @@ const Travel = {
 
         const travelCostHome = country.travelCost || 1000;
         const currentCountry = this.getCurrentCountry();
-        const travelCostLocal = this.convertCurrency(travelCostHome, 'HOME', currentCountry.currency);
+        // FAMILY LOGIC: Calculate total tickets
+        let passengers = 1; // Self
+        if (state.partner && state.partner.status === 'living' && state.partner.name) passengers++;
+        if (state.children) passengers += state.children.length;
 
-        if (state.money < travelCostLocal) {
-            UI.showAlert('Falta Dinero', `Pasaje: $${travelCostHome} (${travelCostLocal.toFixed(0)} ${currentCountry.currency})`);
+        const totalCostHome = travelCostHome * passengers;
+        const totalCostLocal = this.convertCurrency(totalCostHome, 'HOME', currentCountry.currency);
+
+        if (state.money < totalCostLocal) {
+            UI.showAlert('Falta Dinero', `Pasaje Total (${passengers} pax): $${totalCostHome} (${totalCostLocal.toFixed(0)} ${currentCountry.currency})`);
             return false;
         }
 
-        state.money -= travelCostLocal;
+        // Pay
+        state.money -= totalCostLocal;
+
+        // JOB LOGIC: Resign on move (unless remote - future proofing)
+        if (state.currJobId !== 'unemployed') {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job && !job.isRemote) { // Assuming isRemote might be added later
+                state.currJobId = 'unemployed';
+                state.jobXP = 0;
+                state.promotions = 0;
+                UI.log(`Renunciaste a tu empleo en ${currentCountry.name}.`, 'info');
+            }
+        }
 
         // WALLET SWAP
         const oldCurrency = currentCountry.currency;
