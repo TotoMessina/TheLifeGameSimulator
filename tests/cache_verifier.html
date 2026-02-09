@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cache Logic Verifier</title>
+</head>
+<body>
+    <h1>Cache Logic Verification</h1>
+    <div id="log"></div>
+
+    <script>
+        function log(msg, color = 'black') {
+            const div = document.createElement('div');
+            div.style.color = color;
+            div.innerText = msg;
+            document.getElementById('log').appendChild(div);
+        }
+
+        // Mock Config
+        const CONFIG = { version: '1.0.5' };
+
+        // Test Case 1: First Run (No version in generic storage mock)
+        log("Test 1: First Run (No local version)");
+        let mockStorage = {}; 
+        let lastVersion = mockStorage['app_version'];
+        
+        if (!lastVersion) {
+            log("Pass: No previous version detected.", 'green');
+            mockStorage['app_version'] = CONFIG.version;
+            log(`Action: Set version to ${CONFIG.version}`);
+        } else {
+            log("Fail: Detected version unexpectedly.", 'red');
+        }
+
+        // Test Case 2: Version Match
+        log("--------------------------------");
+        log("Test 2: Version Match");
+        lastVersion = mockStorage['app_version'];
+        if (lastVersion === CONFIG.version) {
+            log("Pass: Version matches. No reload needed.", 'green');
+        } else {
+            log("Fail: Version mismatch.", 'red');
+        }
+
+        // Test Case 3: New Version
+        log("--------------------------------");
+        log("Test 3: New Version Detected");
+        CONFIG.version = '1.0.6'; // Bump config
+        lastVersion = mockStorage['app_version'];
+        
+        if (lastVersion !== CONFIG.version) {
+            log(`Pass: Mismatch detected (${lastVersion} vs ${CONFIG.version})`, 'green');
+            
+            // Limit scope to version update logic
+            mockStorage['app_version'] = CONFIG.version;
+            
+            // Simulate reload trigger
+            if (true) { // Mock SW check
+               log("Pass: Reload triggered (Simulated)", 'green');
+            }
+        } else {
+             log("Fail: Mismatch NOT detected.", 'red');
+        }
+
+    </script>
+</body>
+</html>

@@ -46,6 +46,7 @@ const UI = {
 
     cacheElements() {
         this.els.date = document.getElementById('date-display');
+        this.els.lifeMoney = document.getElementById('life-money-display');
         this.els.money = document.getElementById('money-display');
         this.els.jobTitle = document.getElementById('job-title-display');
         this.els.jobTrigger = document.getElementById('job-trigger');
@@ -149,6 +150,15 @@ const UI = {
 
         // Money Animation
         this.animateNumber(this.els.money, parseInt(this.els.money.innerText.replace(/[^0-9-]/g, '')) || 0, state.money);
+        if (!this.els.lifeMoney) {
+            this.els.lifeMoney = document.getElementById('life-money-display');
+        }
+        if (this.els.lifeMoney) {
+            // Direct update to ensure visibility
+            this.els.lifeMoney.innerText = '$' + state.money.toLocaleString();
+            // Remove animation for now to rule out animation bugs
+            // this.animateNumber(this.els.lifeMoney, ...); 
+        }
 
         // EMERGENCY BUTTON
         const existingPanic = document.getElementById('panic-btn');

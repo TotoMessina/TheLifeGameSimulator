@@ -1,15 +1,32 @@
 // --- EVENT LISTENERS ---
 
+// RESCUE SCRIPT & ERROR HANDLER
+window.onerror = function (msg, url, line) {
+    const splash = document.getElementById('splash-screen');
+    if (splash && getComputedStyle(splash).display !== 'none') {
+        alert("CRITICAL ERROR: " + msg + "\nLine: " + line);
+    }
+};
+
+setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && getComputedStyle(splash).display !== 'none' && !splash.classList.contains('hidden')) {
+        console.warn("⚠️ Rescue: Force hiding splash screen after timeout.");
+        splash.style.opacity = '0';
+        setTimeout(() => {
+            splash.style.display = 'none';
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 500);
+    }
+}, 4000);
+
 const App = {
     setupEventListeners() {
         // Main Buttons
         if (UI.els.btns.next) {
-            UI.els.btns.next.onmousedown = () => {
+            UI.els.btns.next.onclick = (e) => {
                 Game.nextMonth();
             };
-            UI.els.btns.next.addEventListener('touchstart', (e) => {
-                Game.nextMonth();
-            }, { passive: true });
         }
 
         // Modal Close Buttons
@@ -122,6 +139,37 @@ App.init = async () => {
         }
 
         UI.init(); // Initialize UI first (cache elements)
+
+        // --- VERSION CHECK ---
+        const lastVersion = localStorage.getItem('app_version');
+        const currentVersion = CONFIG.version || '1.0.0';
+
+        if (lastVersion !== currentVersion) {
+            console.log(`🚀 New Version Detected: ${lastVersion} -> ${currentVersion}`);
+            console.log("🧹 Cleaning old cache...");
+
+            // Clear version-specific storage if needed, but keep save data
+            // localStorage.clear(); // Too aggressive, deletes save
+
+            // Update version
+            localStorage.setItem('app_version', currentVersion);
+
+            // Force SW update
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function (registrations) {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                    console.log("Service Workers Unregistered. Reloading...");
+                    window.location.reload(true);
+                });
+            } else {
+                window.location.reload(true);
+            }
+            return; // Stop execution to reload
+        }
+        // ---------------------
+
         EventManager.init(); // Initialize event system
         PerformanceManager.init(); // Initialize performance optimizations
         KeyboardManager.init(); // Initialize keyboard navigation

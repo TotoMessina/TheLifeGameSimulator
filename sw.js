@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sim-vida-v4'; // Update to v4 to force HTML refresh
+const CACHE_NAME = 'sim-vida-v5'; // Bump version to forcefuly update
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', (e) => {
+  // Force this SW to become the active one, kicking out the old one
+  self.skipWaiting(); 
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
@@ -23,13 +25,18 @@ self.addEventListener('fetch', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
+  // Take control of all clients immediately
   e.waitUntil(
-    caches.keys().then((keyList) => {
-      return Promise.all(keyList.map((key) => {
-        if (key !== CACHE_NAME) {
-          return caches.delete(key);
-        }
-      }));
-    })
+    Promise.all([
+      self.clients.claim(),
+      caches.keys().then((keyList) => {
+        return Promise.all(keyList.map((key) => {
+          if (key !== CACHE_NAME) {
+            console.log("Removing old cache:", key);
+            return caches.delete(key);
+          }
+        }));
+      })
+    ])
   );
 });

@@ -23,6 +23,16 @@ body {
     color: var(--mobile-text);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    /* FIX FOR JUMPING/ZOOMING */
+    touch-action: manipulation;
+    /* Disable double-tap zoom */
+    overscroll-behavior-y: none;
+    /* Disable pull-to-refresh/bounce */
+    -webkit-tap-highlight-color: transparent;
+    /* Remove gray tap box */
+    user-select: none;
+    /* Prevent accidental text selection */
 }
 
 /* Safe Area Support */
@@ -34,6 +44,8 @@ body {
     background: var(--mobile-bg);
     display: flex;
     flex-direction: column;
+    overscroll-behavior-y: none;
+    touch-action: manipulation;
 }
 
 /* Tab Content Areas */
@@ -147,6 +159,13 @@ body {
 }
 
 /* Tactile Button States - Global */
+button,
+.tab-btn,
+.action-btn,
+.settings-btn {
+    touch-action: manipulation;
+}
+
 button:active {
     transform: scale(0.95);
     transition: transform 150ms ease-out;
@@ -395,9 +414,24 @@ button,
 
 /* Modals - Native Overlay */
 .modal-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 2000 !important;
+    /* Above bottom-tab-bar (1000) */
     background: rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
+    display: none;
+    /* Hidden by default */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-overlay.active {
+    display: flex !important;
 }
 
 .modal-content {

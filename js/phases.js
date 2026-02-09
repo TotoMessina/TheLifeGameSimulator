@@ -175,7 +175,7 @@ const PhaseManager = {
                     label: '🛋️ Descansar',
                     desc: 'Recupera energía (+40)',
                     color: '#607D8B',
-                    onClick: () => Game.rest()
+                    onClick: () => { Game.rest(); Game.updateStat('stress', -10); }
                 },
                 {
                     id: 'act-social-menu',
@@ -231,12 +231,36 @@ const PhaseManager = {
 
     checkTransition() {
         // If pending graduation (Age 18), don't auto transition
-        if (state.age === 18 && !state.graduationHandled) return;
+        if (state.age === 18 && !state.graduationHandled) {
+
+            // GIFT: Ensure they have some cash for the transition
+            if (state.money < 500) {
+                state.money += 1000;
+                UI.log("🎂 ¡Feliz Cumpleaños #18! Tus padres te regalan $1,000 para tu nueva etapa.", "good");
+            }
+
+            // FIX: Force graduation trigger ONCE
+            if (!state.graduationTriggered) {
+                if (typeof School !== 'undefined' && School.triggerGraduation) {
+                    state.graduationTriggered = true;
+                    School.triggerGraduation();
+                }
+            }
+            // CRITICAL: Stop here. User choice in modal will decide next phase (Student or Worker).
+            // Do NOT fall through to transitionTo(Adulthood) below.
+            return;
+        }
 
         // Force Graduation at 23 if still student
         if (state.age >= 23 && state.isStudent) {
             state.isStudent = false;
-            state.education.push('university_degree'); // Generic degree if they survived
+            state.education.push('university_degree'); // Generic degree
+
+            // Award Major Degree if selected
+            if (state.school.major && !state.education.includes(state.school.major)) {
+                state.education.push(state.school.major);
+            }
+
             UI.log("¡Te has graduado de la Universidad! Bienvenido al mundo real.", "good");
         }
 
@@ -264,21 +288,39 @@ const PhaseManager = {
     },
 
     showSplashScreen(phase) {
-        const splash = document.getElementById('critical-overlay');
-        splash.innerHTML = `
-            <div style="text-align:center; color:white; animation: fadeIn 2s;">
-                <h1 style="font-size:3rem; margin-bottom:10px;">${phase.name}</h1>
-                <p style="font-size:1.5rem;">Una nueva etapa comienza...</p>
+        // Create overlay if not exists
+        let overlay = document.getElementById('phase-transition-overlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'phase-transition-overlay';
+            overlay.className = 'phase-transition-overlay';
+            document.body.appendChild(overlay);
+        }
+
+        // Set Content
+        overlay.innerHTML = `
+            <div class="phase-content">
+                <h1 class="phase-title">${phase.name}</h1>
+                <p class="phase-subtitle">Una nueva etapa comienza...</p>
+                <div class="phase-loader-bg">
+                    <div class="phase-loader-fill"></div>
+                </div>
             </div>
         `;
-        splash.style.display = 'flex';
-        splash.style.opacity = '1';
 
+        // Activate (Fade In)
+        // Force reflow
+        void overlay.offsetWidth;
+        overlay.classList.add('active');
+
+        // Play Sound?
+        if (typeof AudioSys !== 'undefined') {
+            // AudioSys.playPhaseTransition(); // If exists
+        }
+
+        // Wait for 3.5 seconds then fade out
         setTimeout(() => {
-            splash.style.opacity = '0';
-            setTimeout(() => {
-                splash.style.display = 'none';
-            }, 1000);
-        }, 3000);
+            overlay.classList.remove('active');
+        }, 3500); // 3.5s total
     }
 };

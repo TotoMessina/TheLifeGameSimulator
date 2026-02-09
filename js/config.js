@@ -1,6 +1,7 @@
 
 // --- CONFIG & DATA ---
 const CONFIG = {
+    version: '1.0.5', // App Version - Change this to force client refresh
     startAge: 18,
     costOfLiving: 500,
     studyCost: 200,

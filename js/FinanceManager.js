@@ -208,8 +208,9 @@ const FinanceManager = {
      */
     processExpenses() {
         // CHILDREN DON'T PAY EXPENSES - Skip entirely for under 18
-        if (state.age < 18) {
-            return; // Exit early - no expenses for children
+        // CHILDREN DON'T PAY EXPENSES - Skip entirely for under 18
+        if (state.age < 18 || state.isStudent) {
+            return; // Exit early - no expenses for children or students
         }
 
         let totalExpenses = 0;
@@ -410,8 +411,13 @@ const FinanceManager = {
      * Process loan payments and create EMERGENCY LOANS
      */
     processLoans() {
+        // Disabled by user request.
+        return;
+
+        /* 
         // EMERGENCY LOAN CHECK
-        if (state.money < 0) {
+        // FIX: Only for adults (18+) AND NOT STUDENTS
+        if (state.money < 0 && state.age >= 18 && !state.isStudent) {
             // Need cash to reach 0? Or just cover deficit?
             // "Credit card" debt logic
             const deficit = Math.abs(state.money);
@@ -477,6 +483,7 @@ const FinanceManager = {
             state.money -= totalPayment; // Can go negative again, triggering loop next month
             UI.log(`Pago de préstamos: -$${Math.floor(totalPayment)}`, 'bad');
         }
+        */
     },
 
     /**
@@ -721,6 +728,23 @@ const FinanceManager = {
             Game.updateStat('happiness', -2);
         }
         // 0-3: No effect
+    },
+
+    /**
+     * Calculate financials for tax and summary purposes
+     * Returns the raw numbers before expenses are applied
+     */
+    calculateFinancials() {
+        // Calculate monthly cash flow
+        const income = this.calculateMonthlyIncome();
+        const expenses = this.calculateMonthlyExpenses();
+
+        return {
+            activeIncome: income.active,
+            passiveIncome: income.passive,
+            expenses: expenses,
+            netFlow: income.active + income.passive - expenses
+        };
     },
 
     /**

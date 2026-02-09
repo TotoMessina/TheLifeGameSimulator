@@ -97,6 +97,13 @@ const Freelancer = {
         // Remove Gig
         state.freelancer.activeGigs.splice(gigIdx, 1);
 
+        // NEW: Gain Career Experience
+        if (gig.type) {
+            if (!state.careerExperience) state.careerExperience = {};
+            if (!state.careerExperience[gig.type]) state.careerExperience[gig.type] = 0;
+            state.careerExperience[gig.type] += 1; // +1 month worth of experience? or just 1 point?
+        }
+
         UI.log(`Trabajo "${gig.title}" completado. Ganaste $${finalPay}.`, "money");
 
         // Refresh UI

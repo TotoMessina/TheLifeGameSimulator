@@ -60,6 +60,7 @@ const Game = {
         if (!state.work_relations) {
             state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
         }
+        if (!state.careerExperience) state.careerExperience = {};
 
         // Init Freelancer State
         if (typeof Freelancer !== 'undefined') {
@@ -1158,7 +1159,8 @@ const Game = {
 
         // Firing logic
         const lowMental = state.mentalHealth < 20;
-        const skippedWork = !state.workedThisMonth && !state.onVacation;
+        // FIX: Absenteeism system not fully ready, disabling firing for it
+        const skippedWork = false; // !state.workedThisMonth && !state.onVacation;
 
         if ((skippedWork || lowMental) && Math.random() < 0.15) {
             const reason = skippedWork ? "por ausentismo" : "por inestabilidad mental";
@@ -1568,6 +1570,7 @@ const Game = {
     },
 
     trade(assetId, action) {
+        if (state.age < 18) return UI.showAlert("Restricción de Edad", "Debes tener 18 años para invertir en la bolsa.");
         const price = state.marketPrices[assetId];
         const holding = state.portfolio[assetId];
 
@@ -1614,6 +1617,7 @@ const Game = {
     },
 
     buyRealEstate(id) {
+        if (state.age < 18) return UI.showAlert("Restricción de Edad", "Debes tener 18 años para comprar propiedades.");
         const prop = REAL_ESTATE.find(p => p.id === id);
         const price = state.rePrices[id];
 
@@ -1751,7 +1755,8 @@ const Game = {
         let totalExpenses = expenses + petCost + childCost;
 
         // AGE EXEMPTION: Minors don't pay expenses
-        if (state.age < 18) {
+        // STUDENT EXEMPTION: Students don't pay living expenses
+        if (state.age < 18 || state.isStudent) {
             totalExpenses = 0;
             expenses = 0;
             petCost = 0;

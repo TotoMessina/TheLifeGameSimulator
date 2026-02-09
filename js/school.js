@@ -258,6 +258,7 @@ const School = {
                 text: 'Directo al Trabajo (Adultez)',
                 onClick: () => {
                     state.graduationHandled = true;
+                    state.graduationTriggered = false;
                     state.isStudent = false;
                     Game.nextMonth(); // Force next tick to transition
                 }
@@ -268,9 +269,35 @@ const School = {
     },
 
     enrollUniversity(type, scholarship) {
+        // Define available majors mapping to degree IDs
+        const majors = [
+            { id: 'business', name: 'Administración de Empresas', degree: 'university_degree' }, // General degree but focused
+            { id: 'med_school', name: 'Medicina (Dr.)', degree: 'med_school' },
+            { id: 'law_school', name: 'Derecho (Abogado)', degree: 'law_school' },
+            { id: 'engineering', name: 'Ingeniería', degree: 'university_degree' },
+            { id: 'arts', name: 'Artes y Humanidades', degree: 'university_degree' }
+        ];
+
+        const choices = majors.map(m => ({
+            text: m.name,
+            onClick: () => {
+                this.processEnrollment(type, scholarship, m.degree);
+            }
+        }));
+
+        // FIX: Wrap in setTimeout to prevent UI.js from closing this new modal immediately 
+        // after the previous button click handler finishes.
+        setTimeout(() => {
+            UI.showEventChoices("Elige tu Carrera", "Selecciona tu especialidad universitaria.\nEsto determinará a qué trabajos podrás postularte.", choices);
+        }, 100);
+    },
+
+    processEnrollment(type, scholarship, majorDegreeId) {
         state.graduationHandled = true;
+        state.graduationTriggered = false; // Reset for future use if needed
         state.isStudent = true;
         state.educationLevel = 'university';
+        state.school.major = majorDegreeId; // Store selected major/degree target
 
         // TRAVEL SYSTEM: Localize Costs
         let baseCost = 0;
@@ -304,22 +331,7 @@ const School = {
                 state.money += Math.floor(stipend);
                 UI.log(`Beca Élite aceptada. +$${Math.floor(stipend).toLocaleString()}`, "good");
             } else {
-                state.money -= Math.floor(finalCost); // Debt usually taken as cash then paid? 
-                // Wait, loans logic in this game seems to be "Negative Money" or implicit? 
-                // Line 281 says: state.loans = (state.loans || 0) + 50000;
-                // It doesn't subtract from state.money, it adds to state.loans.
-                // So we should add to state.loans.
-
-                // Let's keep loans in HOME currency for simplicity? 
-                // If we convert loans to local, then moving countries messes up debt value.
-                // BETTER: Keep Loans in HOME currency always. 
-                // But the COST is paid in local value? 
-                // If I take a loan in Japan, I owe YEN.
-                // Complexity Alert. 
-                // SIMPLIFICATION: Loans are always tracked in HOME currency (USD).
-                // So we add 'baseCost' (adjusted for COL) to loans.
-
-                // Re-calculating for Loan (HOME Currency adjusted for COL only)
+                // Loans logic
                 let loanAmount = baseCost;
                 if (typeof Travel !== 'undefined' && state.currentCountry) {
                     const country = Travel.getCurrentCountry();
@@ -332,18 +344,6 @@ const School = {
             state.network = (state.network || 0) + 50;
         } else {
             if (!scholarship) {
-                // Public Uni cost is usually direct payment or small loan? 
-                // Original code: state.money -= 5000; state.loans += 5000; -> This assumes you pay it AND take a loan? 
-                // Or maybe it means "You lose money, if negative, it's debt"? 
-                // The original code was:
-                // state.money -= 5000;
-                // state.loans = (state.loans || 0) + 5000;
-                // This seems to double count? You lose the cash AND get debt? 
-                // Likely a bug or misunderstanding of legacy code.
-                // Let's assume it means "Cost is 5000". If you have it, pay it. If not, debt.
-                // But `state.loans` implies permanent debt tracking.
-                // Let's just add to Loans for consistency with Elite logic above.
-
                 let costHome = 5000;
                 if (typeof Travel !== 'undefined' && state.currentCountry) {
                     const country = Travel.getCurrentCountry();
@@ -354,6 +354,11 @@ const School = {
             }
         }
 
+        // Ensure state is updated before transition
+        state.phase = PhaseManager.PHASES.UNIVERSITY.id;
         PhaseManager.transitionTo(PhaseManager.PHASES.UNIVERSITY);
+
+        // Force render to ensure UI updates immediately
+        UI.render();
     }
 };
