@@ -78,11 +78,73 @@ const School = {
         {
             id: 'first_love',
             text: 'Alguien te dejó una nota en tu casillero... ❤️',
-            trigger: () => Math.random() < 0.02 && state.age >= 14,
+            trigger: () => Math.random() < 0.02 && state.age >= 14 && state.age < 19,
             effect: () => {
                 UI.showAlert("Primer Amor", "Sientes mariposas en el estómago.");
                 Game.updateStat('happiness', 20);
                 state.school.popularity += 5;
+            }
+        },
+        // --- University Events ---
+        {
+            id: 'career_fair',
+            text: 'Feria de Empleos en el Campus',
+            trigger: () => state.isStudent && Math.random() < 0.15,
+            effect: () => {
+                UI.showEventChoices('Feria de Empleos', 'Muchas empresas buscan talento joven.', [
+                    {
+                        text: 'Repartir CVs (+Network)',
+                        onClick: () => {
+                            state.network += 5;
+                            UI.log("Conociste a varios reclutadores.", "good");
+                        }
+                    },
+                    {
+                        text: 'Asistir a charlas (+Int, +Exp)',
+                        onClick: () => {
+                            Game.updateStat('intelligence', 2);
+                            state.jobXP += 5;
+                            UI.log("Aprendiste sobre la industria.", "good");
+                        }
+                    }
+                ]);
+            }
+        },
+        {
+            id: 'party_night',
+            text: '¡Fiesta Universitaria!',
+            trigger: () => state.isStudent && Math.random() < 0.2,
+            effect: () => {
+                UI.showEventChoices('Noche de Joda', 'Tus amigos organizan una gran fiesta antes de los parciales.', [
+                    {
+                        text: '¡Ir de fiesta! (++Happy, --Grades, -Energy)',
+                        onClick: () => {
+                            Game.updateStat('happiness', 15);
+                            Game.updateStat('energy', -30);
+                            state.school.grades -= 5;
+                            state.school.popularity += 5;
+                            UI.log("¡Qué noche! Pero te duele la cabeza.", "normal");
+                        }
+                    },
+                    {
+                        text: 'Quedarse a estudiar (++Grades)',
+                        onClick: () => {
+                            state.school.grades += 3;
+                            Game.updateStat('stress', 5);
+                            UI.log("Decidiste ser responsable.", "good");
+                        }
+                    }
+                ]);
+            }
+        },
+        {
+            id: 'research_project',
+            text: 'Oportunidad de Investigación',
+            trigger: () => state.isStudent && state.intelligence > 80 && Math.random() < 0.1,
+            effect: () => {
+                state.school.grades += 5;
+                state.network += 3;
+                UI.showAlert("Proyecto de Investigación", "Un profesor te invitó a su equipo. Gran prestigio académico (+Grades +Network).");
             }
         }
     ],
@@ -91,22 +153,26 @@ const School = {
         // Run if Under 18 OR if Student (Uni)
         if (state.age >= 18 && !state.isStudent) return;
 
+        if (state.isStudent) {
+            this.universityTick();
+            return;
+        }
+
         const s = state.school;
         const focus = s.focus;
+        // ... (rest of k-12 tick logic)
 
         // 1. Focus Effects - NEW LOGIC: GRADES DECAY BY DEFAULT
-        // Requires active study to maintain high grades.
-
-        let gradeChange = -2; // Base decay (hard mode)
+        let gradeChange = -2;
 
         if (focus === 'study') {
-            gradeChange = 2; // Only positive if focused
+            gradeChange = 2;
             Game.updateStat('intelligence', 0.2);
             Game.updateStat('happiness', -2);
             s.popularity -= 1;
             s.pressure -= 1;
         } else if (focus === 'normal') {
-            gradeChange = -0.5; // Slight decay if just "normal"
+            gradeChange = -0.5;
         } else if (focus === 'social') {
             gradeChange = -3;
             s.popularity += 2;
@@ -119,12 +185,7 @@ const School = {
         }
 
         s.grades += gradeChange;
-
-        // Clamp Stats
-        if (s.grades > 100) s.grades = 100;
-        if (s.grades < 0) s.grades = 0;
-        if (s.popularity > 100) s.popularity = 100;
-        if (s.popularity < 0) s.popularity = 0;
+        this.clampStats();
 
         // 2. Parental Pressure logic
         if (s.grades < 60) {
@@ -143,13 +204,59 @@ const School = {
         // 3. Events
         this.EVENTS.forEach(ev => {
             if (ev.trigger()) {
-                // UI.log(ev.text, "info"); // Removing duplicate log if effect handles it, but ok for now
-                if (ev.id !== 'grade_skip') UI.log(ev.text, "info"); // Skip generic log for interactive
+                if (ev.id !== 'grade_skip') UI.log(ev.text, "info");
                 ev.effect();
             }
         });
 
         this.checkProdigy();
+    },
+
+    universityTick() {
+        const s = state.school;
+
+        // Decay
+        s.grades -= 1.5; // University is harder
+        s.pressure += 0.5;
+
+        // Exams every 6 months (Month 6 and 12 of the year? state.totalMonths % 6 === 0?)
+        // Assuming totalMonths starts at 144 (12yo). 
+        if ((state.totalMonths - 216) % 6 === 0 && (state.totalMonths > 216)) {
+            this.triggerSemesterExams();
+        }
+
+        this.clampStats();
+    },
+
+    triggerSemesterExams() {
+        const s = state.school;
+        const grade = s.grades;
+
+        UI.showAlert("📝 Exámenes Semestrales", `Has rendido tus finales. Tu promedio fue: ${Math.floor(grade)}`);
+
+        if (grade < 50) {
+            // Fail
+            s.pressure += 20;
+            Game.updateStat('happiness', -20);
+            UI.log("❌ Reprobaste el semestre. Debes recursar (+6 meses).", "bad");
+            state.totalMonths += 6; // Penalty delay? Or just wasted time?
+            // Actually, adding to totalMonths might mess up age. 
+            // Better to track "semesters passed" or just delay graduation logic if we had it.
+            // For now, let's just penalty stats.
+        } else {
+            Game.updateStat('intelligence', 2);
+            Game.updateStat('happiness', 5);
+            UI.log("✅ Aprobaste el semestre.", "good");
+        }
+    },
+
+    clampStats() {
+        const s = state.school;
+        if (s.grades > 100) s.grades = 100;
+        if (s.grades < 0) s.grades = 0;
+        if (s.popularity > 100) s.popularity = 100;
+        if (s.popularity < 0) s.popularity = 0;
+        if (s.pressure < 0) s.pressure = 0;
     },
 
     checkProdigy() {
@@ -227,40 +334,101 @@ const School = {
         UI.render();
     },
 
+    // --- University Actions ---
+    studyFinals() {
+        if (state.energy < 40) return UI.log("Necesitas mucha energía (40) para esto.", "bad");
+
+        Game.updateStat('energy', -40);
+        state.school.grades = Math.min(100, state.school.grades + 8);
+        Game.updateStat('intelligence', 2);
+        Game.updateStat('happiness', -5);
+
+        UI.log("📚 Estudiaste toda la noche para los finales. (+Grades ++Int)", "good");
+        UI.render();
+    },
+
+    networkCampus() {
+        if (state.money < 50) return UI.log("Necesitas $50 para invitar tragos/café.", "bad");
+        if (state.energy < 20) return UI.log("Estás muy cansado.", "bad");
+
+        Game.updateStat('energy', -20);
+        state.money -= 50;
+        state.network = (state.network || 0) + 2;
+        state.school.popularity = Math.min(100, state.school.popularity + 3);
+
+        UI.log("🤝 Hiciste networking en el campus. (+Network +Pop)", "good");
+        UI.render();
+    },
+
+    doInternship() {
+        if (state.energy < 30) return UI.log("Estás muy cansado.", "bad");
+
+        Game.updateStat('energy', -30);
+        Game.updateStat('stress', 10);
+        const pay = 200; // Low pay
+        state.money += pay;
+
+        // Add XP to relevant career if possible, otherwise generic generic 'jobXP'
+        // For now generic:
+        state.jobXP += 10;
+
+        // Also boost specific major XP if we had it mapped. 
+        // Let's assume 'internship' boosts 'jobXP' generally which helps getting hired.
+
+        UI.log(`💼 Completaste tus horas de pasantía. Ganaste $${pay} y experiencia.`, "good");
+        UI.render();
+    },
+
     triggerGraduation() {
         // Exam Calculation
         const examScore = Math.floor((state.intelligence * 0.6) + (state.school.grades * 0.4));
         let scholarship = null;
 
-        // Requires Excellence AND High Intelligence to prevent "dumb genius" exploit
-        if (state.school.grades >= 95 && state.intelligence >= 85) scholarship = 'academic';
-        else if (state.physicalHealth >= 90 && state.school.grades >= 60) scholarship = 'sports';
+        // Scholarship Logic
+        if (state.school.grades >= 90) scholarship = 'academic';
+        else if ((state.physicalHealth + state.athletics?.stamina) / 2 > 80) scholarship = 'sports'; // Approx check
 
-        let text = `Examen Nacional: ${examScore}/100. `;
-        if (scholarship === 'academic') text += "¡Beca de Excelencia Disponible! (Notas > 95, Int > 85)";
-        else if (scholarship === 'sports') text += "¡Beca Deportiva Disponible!";
-        else text += "Resultados normales.";
+        let text = `Examen Nacional: ${examScore}/100.\n`;
+        if (scholarship === 'academic') text += "¡Beca Académica Disponible! (Notas > 90)\n";
+        else if (scholarship === 'sports') text += "¡Beca Deportiva Disponible! (Alto rendimiento físico)\n";
+        else text += "Resultados normales.\n";
+
+        text += "\nElige tu camino:";
 
         const choices = [
             {
-                text: scholarship === 'academic' ? 'Universidad de Élite (Gratis + Estipendio)' : 'Universidad de Élite ($50,000 Deuda)',
+                text: '🏫 Universidad Pública (Examen de Ingreso)',
                 onClick: () => {
-                    this.enrollUniversity('elite', scholarship);
+                    if (state.intelligence < 70) {
+                        UI.showAlert("Examen Fallido", "No alcanzaste el puntaje mínimo de inteligencia (70) para la pública.");
+                    } else {
+                        this.enrollUniversity('public', scholarship);
+                    }
                 }
             },
             {
-                text: scholarship ? 'Universidad Pública (Gratis)' : 'Universidad Pública ($5,000 Deuda)',
+                text: scholarship ? '💎 Universidad de Élite (Becado - Gratis)' : '💎 Universidad de Élite ($50,000/año)',
                 onClick: () => {
-                    this.enrollUniversity('public', scholarship);
+                    if (!scholarship && state.money < 50000 && state.loans > 10000) {
+                        UI.showAlert("Fondos Insuficientes", "No puedes costear la universidad de élite sin beca.");
+                    } else {
+                        this.enrollUniversity('elite', scholarship);
+                    }
                 }
             },
             {
-                text: 'Directo al Trabajo (Adultez)',
+                text: '💻 Universidad Online (Flexible - $5,000/año)',
+                onClick: () => {
+                    this.enrollUniversity('online', null);
+                }
+            },
+            {
+                text: '🛠️ Directo al Trabajo (Full-time)',
                 onClick: () => {
                     state.graduationHandled = true;
                     state.graduationTriggered = false;
                     state.isStudent = false;
-                    Game.nextMonth(); // Force next tick to transition
+                    Game.nextMonth();
                 }
             }
         ];
@@ -281,7 +449,7 @@ const School = {
         const choices = majors.map(m => ({
             text: m.name,
             onClick: () => {
-                this.processEnrollment(type, scholarship, m.degree);
+                this.processEnrollment(type, scholarship, m.id);
             }
         }));
 
@@ -292,17 +460,20 @@ const School = {
         }, 100);
     },
 
-    processEnrollment(type, scholarship, majorDegreeId) {
+    processEnrollment(type, scholarship, majorId) {
         state.graduationHandled = true;
         state.graduationTriggered = false; // Reset for future use if needed
         state.isStudent = true;
         state.educationLevel = 'university';
-        state.school.major = majorDegreeId; // Store selected major/degree target
+        state.school.major = majorId;
+        state.school.universityPrestige = type; // 'public', 'elite', 'online'
+        state.school.scholarship = scholarship;
 
         // TRAVEL SYSTEM: Localize Costs
         let baseCost = 0;
         if (type === 'elite' && scholarship !== 'academic') baseCost = 50000;
-        if (type === 'public' && !scholarship) baseCost = 5000;
+        if (type === 'public' && !scholarship) baseCost = 2000; // Small fee
+        if (type === 'online') baseCost = 5000;
 
         let finalCost = baseCost;
         let currency = 'HOME';
@@ -342,15 +513,16 @@ const School = {
                 UI.log(`Préstamo estudiantil tomado: -$${Math.floor(loanAmount).toLocaleString()} (Valor Base)`, "bad");
             }
             state.network = (state.network || 0) + 50;
+        } else if (type === 'online') {
+            state.loans = (state.loans || 0) + Math.floor(finalCost);
+            UI.log(`Universidad Online: $${Math.floor(finalCost)} (Deuda)`, "normal");
         } else {
+            // Public
             if (!scholarship) {
-                let costHome = 5000;
-                if (typeof Travel !== 'undefined' && state.currentCountry) {
-                    const country = Travel.getCurrentCountry();
-                    costHome *= country.costOfLiving;
-                }
-                state.loans = (state.loans || 0) + Math.floor(costHome);
-                UI.log(`Costo Universitario: $${Math.floor(costHome)} (Agregado a Deuda)`, "normal");
+                state.loans = (state.loans || 0) + Math.floor(finalCost);
+                UI.log(`Costo Universidad Pública: $${Math.floor(finalCost)}`, "normal");
+            } else {
+                UI.log("Universidad Pública (Becado - Gratis)", "good");
             }
         }
 

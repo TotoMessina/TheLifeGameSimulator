@@ -12,6 +12,16 @@ const state = {
     stress: 0,
     diet: 'balanced',
     intelligence: 10,
+    charisma: 10, // New Stat
+    creativity: 10, // New Stat
+    fame: {
+        followers: 0,
+        channel: null, // 'youtube', 'twitch', 'linkedin'
+        status: 'active', // 'active', 'cancelled'
+        revenue: 0,
+        perks: []
+    },
+
     energy: 100,
     experience: 0,
     jobXP: 0,
@@ -20,7 +30,10 @@ const state = {
         grades: 70, // 0-100
         popularity: 50,
         pressure: 0,
-        focus: 'study' // study, social, hobby
+        focus: 'study', // study, social, hobby
+        major: null, // Engineering, Business, Arts, Medicine
+        universityPrestige: null, // 'public', 'elite', 'online'
+        scholarship: null // 'academic', 'sports', 'none'
     },
     // Business
     business: null,

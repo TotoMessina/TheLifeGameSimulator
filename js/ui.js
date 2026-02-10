@@ -102,7 +102,11 @@ const UI = {
             alert: document.getElementById('alert-modal'),
             alertTitle: document.getElementById('alert-title'),
             alertMsg: document.getElementById('alert-msg'),
-            alertBtn: document.getElementById('alert-ok-btn')
+            alertBtn: document.getElementById('alert-ok-btn'),
+            socialMedia: document.getElementById('social-media-modal'),
+            closeSocialMedia: document.getElementById('close-social-media'),
+            socialMediaContainer: document.getElementById('social-media-container'),
+            socialMediaBtn: document.getElementById('social-media-trigger')
         };
 
         this.els.auth = {
@@ -708,6 +712,96 @@ const UI = {
         if (modal) modal.classList.remove('active');
     },
 
+    renderSocialMedia() {
+        const container = document.getElementById('social-media-container');
+        if (!container) return;
+
+        // If no channel selected
+        if (!state.fame.channel) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:20px;">
+                    <h3>🚀 Comienza tu Carrera de Influencer</h3>
+                    <p style="color:#aaa; margin-bottom:20px;">Elige tu plataforma para conquistar el mundo.</p>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+                        ${Object.values(FAME_CHANNELS).map(c => `
+                            <button class="choice-btn" style="flex-direction:column; padding:15px;" onclick="Game.startFameCareer('${c.id}')">
+                                <div style="font-size:2.5rem; margin-bottom:10px;">${c.icon}</div>
+                                <div style="font-weight:bold; color:#4dffea;">${c.name}</div>
+                                <div style="font-size:0.8rem; color:#888; margin-top:5px;">Req: ${c.stat}</div>
+                                <div style="font-size:0.7rem; color:#aaa;">Costo: ${c.cost}E</div>
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        // Dashboard
+        const ch = FAME_CHANNELS[state.fame.channel];
+        const nextLevel = FAME_LEVELS.find(l => l.followers > state.fame.followers);
+        const nextTitle = nextLevel ? nextLevel.title : "Leyenda de Internet";
+        const nextTarget = nextLevel ? nextLevel.followers : "MAX";
+        const progress = nextLevel ? (state.fame.followers / nextLevel.followers) * 100 : 100;
+
+        container.innerHTML = `
+            <div style="background:#222; padding:15px; border-radius:10px; margin-bottom:20px; text-align:center;">
+                <div style="font-size:2rem;">${ch.icon}</div>
+                <h3 style="margin:5px 0; color:#4dffea;">${ch.name}</h3>
+                <div style="color:#aaa;">${UI.formatFollowers(state.fame.followers)} Seguidores</div>
+                
+                <div style="margin-top:15px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#888; margin-bottom:5px;">
+                        <span>Nivel Actual</span>
+                        <span>Próximo: ${nextTitle}</span>
+                    </div>
+                    <div class="progress-bg">
+                        <div class="progress-fill" style="width:${progress}%; background:var(--accent-color);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:20px;">
+                <button class="act-btn" onclick="Game.postContent()">
+                    <div class="act-info">
+                        <h4>📢 Publicar Contenido</h4>
+                        <p>Intenta viralizarte.</p>
+                    </div>
+                    <div class="act-cost">-${ch.cost}E</div>
+                </button>
+                <button class="act-btn" onclick="Game.collab()" ${state.fame.followers < 1000 ? 'disabled style="opacity:0.5"' : ''}>
+                    <div class="act-info">
+                        <h4>🤝 Colaboración</h4>
+                        <p>Boost de seguidores.</p>
+                    </div>
+                    <div class="act-cost">-$100<br>-30E</div>
+                </button>
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">💰 Monetización & Perks</h4>
+            <div style="display:grid; gap:10px;">
+                ${state.fame.perks.length > 0 ?
+                state.fame.perks.map(p => `
+                        <div class="job-item">
+                            <div class="job-details">
+                                <h4 style="color:#39FF14">✅ Desbloqueado</h4>
+                                <p>${p}</p>
+                            </div>
+                        </div>
+                    `).join('')
+                : '<div style="color:#666; font-style:italic; text-align:center;">Llega a 1,000 seguidores para desbloquear canjes.</div>'
+            }
+            </div>
+        `;
+    },
+
+    formatFollowers(num) {
+        if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+        if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+        return num.toLocaleString();
+    },
+
+
     renderJobMarket(category = null) {
         const modal = document.getElementById('job-modal');
         const container = document.getElementById('job-list-container');
@@ -1221,6 +1315,8 @@ const UI = {
         projects.classList.add('hidden');
         crime.classList.add('hidden');
         social.classList.add('hidden');
+        const uni = document.getElementById('act-tab-university');
+        if (uni) uni.classList.add('hidden');
         actBtns.forEach(b => b.classList.remove('active'));
 
         if (tab === 'courses') {
@@ -1235,11 +1331,87 @@ const UI = {
             crime.classList.remove('hidden');
             actBtns[2].classList.add('active');
             // No dynamic render needed for now, static buttons
+        } else if (tab === 'university') {
+            const uni = document.getElementById('act-tab-university');
+            if (uni) uni.classList.remove('hidden');
+            // Assuming button index 4 (last one added)
+            if (actBtns[4]) actBtns[4].classList.add('active');
+            this.renderUniversityTab();
         } else {
             social.classList.remove('hidden');
             actBtns[3].classList.add('active');
             this.renderSocialTab();
         }
+    },
+
+    renderUniversityTab() {
+        const container = document.getElementById('act-tab-university');
+        if (!container) return;
+
+        const s = state.school;
+
+        let majorName = 'Carrera Universitaria';
+        const majors = {
+            'engineering': 'Ingeniería', 'business': 'Negocios', 'med_school': 'Medicina', 'arts': 'Artes', 'law_school': 'Derecho'
+        };
+        if (s.major && majors[s.major]) majorName = majors[s.major];
+
+        container.innerHTML = `
+            <div style="text-align:center; margin-bottom:20px; background:linear-gradient(45deg, #3f51b5, #673ab7); padding:15px; border-radius:10px;">
+                <div style="font-size:2rem;">🎓 ${majorName}</div>
+                <div style="color:#ddd;">Semestre ${(Math.floor((state.totalMonths - 216) / 6) + 1)} | ${s.universityPrestige ? s.universityPrestige.toUpperCase() : 'ESTÁNDAR'}</div>
+                <div style="display:flex; justify-content:space-around; margin-top:10px;">
+                    <div>📝 Prom: <b>${s.grades.toFixed(1)}</b></div>
+                    <div>🤝 Red: <b>${state.network || 0}</b></div>
+                    <div>😫 Estrés: <b>${state.stress.toFixed(0)}%</b></div>
+                </div>
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">⚡ Acciones Académicas</h4>
+            <div class="university-actions" style="display:grid; gap:10px;">
+                <button class="act-btn" onclick="School.studyFinals()">
+                    <div class="act-info">
+                        <h4>📚 Estudiar para Finales</h4>
+                        <p>Mejora tus Notas y Conocimiento.</p>
+                    </div>
+                    <div class="act-cost">-40 E</div>
+                </button>
+                <button class="act-btn" onclick="School.networkCampus()">
+                        <div class="act-info">
+                        <h4>🤝 Networking en Campus</h4>
+                        <p>Conoce gente útil (+Pop/Red).</p>
+                    </div>
+                    <div class="act-cost">-$50<br>-20 E</div>
+                </button>
+                <button class="act-btn" onclick="School.doInternship()">
+                        <div class="act-info">
+                        <h4>💼 Pasantía / Beca</h4>
+                        <p>Gana Exp. laboral y algo de dinero.</p>
+                    </div>
+                    <div class="act-cost">+$200<br>-30 E</div>
+                </button>
+                <button class="act-btn" onclick="School.socializeNow(); Game.updateStat('stress', -10);">
+                        <div class="act-info">
+                        <h4>🎉 Ir de Fiesta</h4>
+                        <p>Diviértete con amigos.</p>
+                    </div>
+                    <div class="act-cost">-E ++Happy</div>
+                </button>
+                 <button class="act-btn" onclick="UI.openModal('job-modal'); UI.renderJobMarket();">
+                        <div class="act-info">
+                        <h4>📰 Bolsa de Trabajo</h4>
+                        <p>Busca empleos de medio tiempo.</p>
+                    </div>
+                    <div class="act-cost">Ver</div>
+                </button>
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">📅 Eventos y Vida Social</h4>
+            <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">
+                <p>⚠️ <b>Exámenes Semestrales:</b> Cada 6 meses. ¡No repruebes!</p>
+                <p>🎉 <b>Fiestas y Ferias:</b> Ocurren aleatoriamente al avanzar el mes.</p>
+            </div>
+        `;
     },
 
     switchShopTab(tab) {
@@ -1443,10 +1615,70 @@ const UI = {
 
     renderSchool() {
         const container = document.getElementById('school-container');
-        if (!container) return; // Need to add to index.html if not present, or reuse an existing modal
+        if (!container) return;
 
         const s = state.school;
 
+        // --- UNIVERSITY UI ---
+        if (state.isStudent) {
+            let majorName = 'Carrera Universitaria';
+            // Map ID to Name if possible, or just raw ID
+            const majors = {
+                'engineering': 'Ingeniería', 'business': 'Negocios', 'med_school': 'Medicina', 'arts': 'Artes', 'law_school': 'Derecho'
+            };
+            if (s.major && majors[s.major]) majorName = majors[s.major];
+
+            container.innerHTML = `
+                <div style="text-align:center; margin-bottom:20px;">
+                    <div style="font-size:3rem;">🎓</div>
+                    <h3>${majorName}</h3>
+                    <p>Semestre ${(Math.floor((state.totalMonths - 216) / 6) + 1)} | ${s.universityPrestige.toUpperCase()}</p>
+                </div>
+
+                <div class="stats-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px;">
+                    <div class="stat-box">
+                        <div class="label">Promedio</div>
+                        <div class="value" style="color:${s.grades > 60 ? '#4dffea' : '#ff4d4d'}">${s.grades.toFixed(1)}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Networking</div>
+                        <div class="value">${state.network || 0}</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="label">Estrés</div>
+                        <div class="value" style="color:${state.stress > 50 ? '#ff4d4d' : '#888'}">${state.stress.toFixed(0)}%</div>
+                    </div>
+                </div>
+
+                <h4>⚡ Acciones Universitarias</h4>
+                <div class="university-actions" style="display:grid; gap:10px;">
+                    <button class="act-btn" onclick="School.studyFinals()">
+                        <div class="act-info">
+                            <h4>📚 Estudiar para Finales</h4>
+                            <p>++Notas ++Inteligencia</p>
+                        </div>
+                        <div class="act-cost">-40 E</div>
+                    </button>
+                    <button class="act-btn" onclick="School.networkCampus()">
+                         <div class="act-info">
+                            <h4>🤝 Networking en Campus</h4>
+                            <p>++Popularidad ++Contactos</p>
+                        </div>
+                        <div class="act-cost">-$50<br>-20 E</div>
+                    </button>
+                    <button class="act-btn" onclick="School.doInternship()">
+                         <div class="act-info">
+                            <h4>💼 Pasantía / Beca</h4>
+                            <p>++Experiencia +Dinero ++Estrés</p>
+                        </div>
+                        <div class="act-cost">+$200<br>-30 E</div>
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        // --- NORMAL SCHOOL UI ---
         let focusHtml = '';
         Object.keys(School.FOCUS).forEach(key => {
             const f = School.FOCUS[key];

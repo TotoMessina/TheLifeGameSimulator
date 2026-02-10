@@ -1959,3 +1959,38 @@
             transition: width 2.5s cubic-bezier(0.4, 0, 0.2, 1);
             /* 2.5s progress */
         }
+
+        /* Quick Actions Grid */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .action-btn {
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            padding: 15px;
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+            background: #333;
+        }
+
+        .action-btn:hover {
+            border-color: var(--accent-color);
+            background: rgba(77, 255, 234, 0.05);
+        }

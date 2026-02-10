@@ -61,6 +61,15 @@ const Game = {
             state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
         }
         if (!state.careerExperience) state.careerExperience = {};
+        if (!state.fame) {
+            state.fame = {
+                followers: 0,
+                channel: null,
+                status: 'active',
+                revenue: 0,
+                perks: []
+            };
+        }
 
         // Init Freelancer State
         if (typeof Freelancer !== 'undefined') {
@@ -337,6 +346,12 @@ const Game = {
         if (state.creations) {
             state.creations.forEach(c => passiveIncome += c.royalty);
         }
+
+        // Fame Revenue (Sponsors)
+        if (state.fame && state.fame.revenue) {
+            passiveIncome += state.fame.revenue;
+        }
+
 
         // 3. Expenses
         if (state.children) expenses += state.children.length * 400;
@@ -1017,6 +1032,139 @@ const Game = {
         this.updateStat('happiness', 3);
         UI.log("Tomaste un descanso y te relajaste.", "normal");
         UI.render();
+    },
+
+    // --- FAME SYSTEM ---
+
+    startFameCareer(channelId) {
+        if (state.energy < 20) return UI.showAlert("Agotado", "Necesitas energía para iniciar esto.");
+
+        const channel = FAME_CHANNELS[channelId];
+        state.fame.channel = channelId;
+        state.fame.followers = 0;
+        state.fame.status = 'active';
+
+        UI.showAlert(`¡Canal de ${channel.name} Iniciado!`, `Has comenzado tu carrera como ${channel.name}. \nRequiere: ${channel.stat}.`);
+        UI.log(`Comenzaste tu camino como ${channel.name}.`, "good");
+        this.updateStat('energy', -20);
+
+        UI.renderSocialMedia();
+        UI.render();
+    },
+
+    postContent() {
+        if (!state.fame.channel) return;
+        const ch = FAME_CHANNELS[state.fame.channel];
+
+        if (state.energy < ch.cost) return UI.log("Muy cansado para crear contenido.", "bad");
+
+        this.updateStat('energy', -ch.cost);
+
+        // Success Calculation
+        // Base 10% + (Stat / 2)%
+        // Example: 50 Charisma = 35% chance of "Viral/Good" post
+        const statVal = state[ch.stat] || 0;
+        let successChance = 0.1 + (statVal * 0.005);
+        if (state.traits.includes('creative') && ch.stat === 'creativity') successChance += 0.2;
+        if (state.traits.includes('charming') && ch.stat === 'charisma') successChance += 0.2;
+
+        const roll = Math.random();
+
+        // RISK CHECK (Cancellation)
+        // Scales with followers: more fame = more scrutiny
+        // 0.1% base, up to 5% with 1M followers
+        let cancelRisk = FAME_RISKS.find(r => r.id === 'cancellation').prob;
+        if (state.fame.followers > 100000) cancelRisk = 0.02;
+        if (state.fame.followers > 1000000) cancelRisk = 0.05;
+
+        if (Math.random() < cancelRisk) {
+            return this.triggerFameRisk('cancellation');
+        }
+
+        // Bad Post Risk
+        if (Math.random() < 0.05) {
+            return this.triggerFameRisk('bad_post');
+        }
+
+        if (roll < successChance) {
+            // VIRAL
+            const multiplier = 1.5 + (Math.random() * 2); // 1.5x - 3.5x
+            const baseGain = 10 + Math.floor(state.fame.followers * 0.1);
+            const gain = Math.floor(baseGain * multiplier);
+
+            state.fame.followers += gain;
+            UI.log(`🔥 ¡Tu post se hizo viral! +${UI.formatFollowers(gain)} seguidores.`, "good");
+            this.updateStat('happiness', 5);
+        } else if (roll < successChance + 0.4) {
+            // NORMAL
+            const gain = 5 + Math.floor(state.fame.followers * 0.02);
+            state.fame.followers += gain;
+            UI.log(`Publicaste contenido. +${gain} seguidores.`, "normal");
+        } else {
+            // FLOP
+            UI.log("Tu post pasó desapercibido.", "normal");
+            this.updateStat('stress', 2);
+        }
+
+        this.checkFameMilestones();
+        UI.renderSocialMedia();
+        UI.render();
+    },
+
+    collab() {
+        if (state.energy < 30) return UI.log("Necesitas energía.", "bad");
+        if (state.money < 100) return UI.log("Necesitas $100 para la colaboración.", "bad");
+
+        this.updateStat('energy', -30);
+        this.updateStat('money', -100);
+
+        const gain = Math.floor(state.fame.followers * 0.15);
+        state.fame.followers += gain;
+
+        UI.log(`🤝 Colaboración exitosa. +${UI.formatFollowers(gain)} seguidores.`, "good");
+        UI.renderSocialMedia();
+        UI.render();
+    },
+
+    triggerFameRisk(typeId) {
+        const risk = FAME_RISKS.find(r => r.id === typeId);
+        if (!risk) return;
+
+        // Apply effects
+        if (risk.effect.followers) state.fame.followers = Math.floor(state.fame.followers * risk.effect.followers);
+        if (risk.effect.stress) this.updateStat('stress', risk.effect.stress);
+        if (risk.effect.reputation) this.updateStat('status', risk.effect.reputation);
+
+        UI.showAlert("⚠️ ESCÁNDALO", `${risk.name}: ${risk.desc}`);
+        UI.log(`📉 ${risk.name}. Perdiste seguidores.`, "bad");
+
+        state.happiness -= 20;
+        UI.renderSocialMedia();
+        UI.render();
+    },
+
+    checkFameMilestones() {
+        FAME_LEVELS.forEach(level => {
+            // Check if already unlocked (persist unlocked perks in state.fame.perks strings)
+            // Simplified: just check if followers >= level.followers
+            if (state.fame.followers >= level.followers) {
+                // Determine revenue
+                let rev = 0;
+                if (level.followers === 10000) rev = 500;
+                if (level.followers === 100000) rev = 2000;
+                if (level.followers === 1000000) rev = 10000;
+
+                // Update revenue if higher
+                if (rev > state.fame.revenue) state.fame.revenue = rev;
+
+                // Add perks description if not present
+                if (!state.fame.perks.includes(level.perks)) {
+                    state.fame.perks.push(level.perks);
+                    UI.log(`🎉 ¡Nuevo Hito de Fama! ${level.title}`, "good");
+                    UI.showAlert(level.title, `¡Has alcanzado ${UI.formatFollowers(level.followers)} seguidores!\nNuevo Beneficio: ${level.perks}`);
+                }
+            }
+        });
     },
 
     processWorkEvents() {

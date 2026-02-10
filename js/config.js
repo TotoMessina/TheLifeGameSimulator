@@ -176,6 +176,36 @@ const JOBS = [
         desc: 'Presionas a gente desesperada. Moralmente agotador.'
     },
 
+    // === PART TIME JOBS (STUDENTS) ===
+    {
+        id: 'pt_barista',
+        title: 'Barista (Medio Tiempo)',
+        salary: 600,
+        career: 'service',
+        type: 'part_time',
+        req: { health: 20 }, // Minimal reqs
+        stress: 5,
+        boredom: 4,
+        xpGain: 0.2,
+        stressPerMonth: 5,
+        energyCost: 20,
+        desc: 'Preparar café y sonreír. Ideal para estudiantes.'
+    },
+    {
+        id: 'pt_tutor',
+        title: 'Tutor Privado',
+        salary: 800,
+        career: 'education',
+        type: 'part_time',
+        req: { int: 60, isStudent: true }, // Smart students only
+        stress: 3,
+        boredom: 2,
+        xpGain: 0.4,
+        stressPerMonth: 3,
+        energyCost: 15,
+        desc: 'Ayuda a otros alumnos con sus tareas.'
+    },
+
     // === PRODUCT MANAGEMENT CAREER TRACK ===
     {
         id: 'pm_intern',
@@ -794,10 +824,66 @@ const PROJECT_TYPES = [
     { id: 'app', name: 'Desarrollar App', cost: 500, duration: 18, penalty: 30, req: { intelligence: 70 }, desc: 'Alta tecnología. Alto potencial.' }
 ];
 
+
+
+// --- FAME SYSTEM CONFIG ---
+const FAME_CHANNELS = {
+    youtube: {
+        id: 'youtube',
+        name: 'YouTuber',
+        icon: '📹',
+        stat: 'creativity',
+        desc: 'Sube videos editados. Requiere mucha Creatividad.',
+        cost: 20 // Energy cost
+    },
+    twitch: {
+        id: 'twitch',
+        name: 'Streamer',
+        icon: '🎮',
+        stat: 'charisma',
+        desc: 'Transmite en vivo. Requiere Carisma para entretener.',
+        cost: 25
+    },
+    linkedin: {
+        id: 'linkedin',
+        name: 'Influencer LinkedIn',
+        icon: '💼',
+        stat: 'intelligence',
+        desc: 'Escribe posts "inspiradores". Requiere Inteligencia.',
+        cost: 15
+    }
+};
+
+const FAME_LEVELS = [
+    { followers: 1000, title: 'Micro-Influencer', perks: 'Canjes (Gastos -5%)' },
+    { followers: 10000, title: 'Influencer Local', perks: 'Sponsors (Ingreso Mensual $500)' },
+    { followers: 100000, title: 'Famoso', perks: 'Sponsors (Ingreso Mensual $2000) + Eventos VIP' },
+    { followers: 1000000, title: 'Celebridad', perks: 'Sponsors (Ingreso Mensual $10000) + Inmunidad Social' }
+];
+
+const FAME_RISKS = [
+    {
+        id: 'cancellation',
+        name: 'Cancelación Masiva',
+        prob: 0.001, // 0.1% base per post, scales with followers
+        effect: { followers: 0.5, stress: 20, reputation: -50 },
+        desc: 'Un tweet de hace 10 años resurgió. Internet te odia.'
+    },
+    {
+        id: 'bad_post',
+        name: 'Post Polémico',
+        prob: 0.05,
+        effect: { followers: 0.9, stress: 5 },
+        desc: 'Tu opinión no fue bien recibida. Perdiste seguidores.'
+    }
+];
 // --- ELITE EVENTS ---
 const ELITE_EVENTS = [
     {
         id: 'business_dinner',
+        title: 'Cena de Negocios',
+        cost: 500,
+        req: { career: 'corp', level: 3 },
         minStatus: 100,
         text: '🍷 Cena de Negocios: Un CEO te invita a cenar.',
         effect: () => {

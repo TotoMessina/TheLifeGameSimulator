@@ -62,40 +62,16 @@ const PhaseManager = {
             theme: 'theme-university',
             actions: [
                 {
-                    id: 'act-uni-study',
-                    label: '📚 Estudiar',
-                    desc: 'Mejora Notas (-20 E)',
+                    id: 'act-uni-hub',
+                    label: '🏛️ Campus & Vida Uni',
+                    desc: 'Estudios, Pasantías, Eventos',
                     color: '#673AB7',
-                    onClick: () => { School.studyNow(); Game.updateStat('stress', 8); }
-                },
-                {
-                    id: 'act-uni-work',
-                    label: '☕ Cafetería',
-                    desc: 'Trabajo Medio Tiempo (+$)',
-                    color: '#795548',
                     onClick: () => {
-                        if (state.currJobId === 'unemployed') Game.applyJob('pt_barista');
-                        else UI.log("Ya tienes empleo.", "info");
-                        Game.updateStat('stress', 5);
+                        UI.openModal('activity-modal');
+                        UI.switchActTab('university');
                     }
                 },
-                {
-                    id: 'act-uni-job',
-                    label: '💼 Buscar Empleo',
-                    desc: 'Medio tiempo',
-                    color: '#2196F3',
-                    onClick: () => {
-                        UI.openModal('job-modal');
-                        UI.renderJobMarket();
-                    }
-                },
-                {
-                    id: 'act-uni-party',
-                    label: '🎉 Fiesta',
-                    desc: 'Socializa (-Energy)',
-                    color: '#E91E63',
-                    onClick: () => { School.socializeNow(); Game.updateStat('stress', -10); }
-                },
+
                 {
                     id: 'act-rest',
                     label: '😴 Descansar',

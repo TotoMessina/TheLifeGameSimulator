@@ -191,7 +191,8 @@ App.init = async () => {
                     UI.populateVehicleCards();
                     UI.renderMyHome();
                 }
-            }
+            },
+            { modalId: 'social-media-modal', triggerId: 'social-media-trigger', renderFn: UI.renderSocialMedia }
         ]);
 
         Game.init(); // Then initialize Game logic (which calls UI.render)

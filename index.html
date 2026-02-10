@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 
 <head>
@@ -13,6 +13,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Simulador de vida completo - Experimenta diferentes caminos profesionales">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
+    </div>
+
     <!-- Import Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="css/style.css?v=5">
@@ -55,25 +57,25 @@
                         </div>
                     </div>
                     <div class="bar-group">
-                        <div class="bar-label"><span>Felicidad</span> <span id="happiness-val">100%</span></div>
+                        <div class="bar-label"><span>🙂 Felicidad</span> <span id="happiness-val">100%</span></div>
                         <div class="progress-bg">
                             <div class="progress-fill happiness-fill" id="happiness-bar" style="width: 100%;"></div>
                         </div>
                     </div>
                     <div class="bar-group">
-                        <div class="bar-label"><span>Energía</span> <span id="energy-val">100%</span></div>
+                        <div class="bar-label"><span>⚡ Energía</span> <span id="energy-val">100%</span></div>
                         <div class="progress-bg">
                             <div class="progress-fill energy-fill" id="energy-bar" style="width: 100%;"></div>
                         </div>
                     </div>
                     <div class="bar-group">
-                        <div class="bar-label"><span>Inteligencia</span> <span id="intel-val">10</span></div>
+                        <div class="bar-label"><span>🧠 Inteligencia</span> <span id="intel-val">10</span></div>
                         <div class="progress-bg">
                             <div class="progress-fill intelligence-fill" id="intel-bar" style="width: 10%;"></div>
                         </div>
                     </div>
                     <div class="bar-group">
-                        <div class="bar-label"><span>Estrés</span> <span id="stress-val">0%</span></div>
+                        <div class="bar-label"><span>😰 Estrés</span> <span id="stress-val">0%</span></div>
                         <div class="progress-bg">
                             <div class="progress-fill stress-fill" id="stress-bar"
                                 style="width: 0%; background: #ff4757;"></div>
@@ -108,7 +110,7 @@
                         <span id="job-title-display">Mendigo ($0/mes)</span>
                         <button id="btn-job-dashboard"
                             style="background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:10px;">📊</button>
-                        <span style="font-size: 0.8rem; color: #888; margin-left: auto;">ℹ️ Cambiar</span>
+                        <span style="font-size: 0.8rem; color: #888; margin-left: auto;">🔄 Cambiar</span>
                     </div>
                     <div class="job-xp-bg">
                         <div class="job-xp-fill" id="job-xp-bar"></div>
@@ -118,10 +120,10 @@
                 </div>
 
                 <div class="quick-actions">
-                    <button class="settings-btn action-btn" id="school-trigger" style="display:none;">🎒
+                    <button class="settings-btn action-btn" id="school-trigger" style="display:none;">🏫
                         Escuela</button>
                     <button class="settings-btn action-btn" id="profile-trigger">👤 Perfil</button>
-                    <button class="settings-btn action-btn" id="routine-trigger">⏰ Rutina</button>
+                    <button class="settings-btn action-btn" id="routine-trigger">? Rutina</button>
                     <button class="settings-btn action-btn" id="trophy-trigger">🏆 Logros</button>
                 </div>
             </section>
@@ -157,7 +159,7 @@
                 </div>
 
                 <div class="quick-actions">
-                    <button class="settings-btn action-btn" id="shop-trigger">🛒 Shop</button>
+                    <button class="settings-btn action-btn" id="shop-trigger">🛍️ Shop</button>
                     <button class="settings-btn action-btn" id="business-trigger">🏢 Negocio</button>
                     <button class="settings-btn action-btn" id="home-trigger">🏠 Hogar</button>
                 </div>
@@ -173,6 +175,7 @@
             <section class="content-section">
                 <div class="quick-actions">
                     <button class="settings-btn action-btn" id="social-trigger">💬 Actividades</button>
+                    <button class="settings-btn action-btn" id="social-media-trigger">📱 Redes Sociales</button>
                     <button class="settings-btn action-btn" id="athletics-trigger">🏃 Atletismo</button>
                     <button class="settings-btn action-btn" onclick="Travel.openAirport()">✈️ Aeropuerto</button>
                 </div>
@@ -182,7 +185,7 @@
         <!-- Bottom Tab Bar -->
         <nav class="bottom-tab-bar">
             <button class="tab-btn active" data-tab="vida">
-                <span class="tab-icon">📊</span>
+                <span class="tab-icon">👤</span>
                 <span class="tab-label">Vida</span>
             </button>
             <button class="tab-btn" data-tab="trabajo">
@@ -190,7 +193,7 @@
                 <span class="tab-label">Trabajo</span>
             </button>
             <button class="tab-btn" data-tab="inversiones">
-                <span class="tab-icon">💰</span>
+                <span class="tab-icon">📈</span>
                 <span class="tab-label">Inversiones</span>
             </button>
             <button class="tab-btn" data-tab="social">
@@ -205,7 +208,7 @@
     <div id="char-gen-screen" class="modal-overlay hidden"
         style="background: #111; z-index: 2000; flex-direction: column; justify-content: center; align-items: center;">
         <div class="modal-content" style="max-width: 500px; text-align: center;">
-            <h1 style="margin-bottom: 20px;">🧬 Nueva Vida</h1>
+            <h1 style="margin-bottom: 20px;">👶 Nueva Vida</h1>
             <p style="color: #aaa; margin-bottom: 30px;">Tu historia comienza aquí.</p>
 
             <div style="text-align: left; margin-bottom: 20px;">
@@ -261,7 +264,7 @@
     <div class="modal-overlay" id="routine-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <span>⏰ Rutina Diaria</span>
+                <span>? Rutina Diaria</span>
                 <button class="close-btn" id="close-routine">×</button>
             </div>
             <div class="modal-body" id="routine-container">
@@ -362,7 +365,7 @@
                     <button class="settings-btn"
                         style="color:#ff5555; width:100%; border:1px solid #ff5555; border-radius:5px;"
                         onclick="if(confirm('¿Borrar todo y reiniciar? Se perderá el progreso.')) { localStorage.clear(); location.reload(); }">
-                        ⚠️ BORRAR DATOS Y REINICIAR
+                        🗑️ BORRAR DATOS Y REINICIAR
                     </button>
                 </div>
             </div>
@@ -373,7 +376,7 @@
     <div class="modal-overlay" id="welcome-modal" style="z-index: 10000;">
         <div class="modal-content" style="max-width: 650px; text-align: center;">
             <div class="modal-body" style="padding: 40px 30px;">
-                <div style="font-size: 5rem; margin-bottom: 20px;">👶</div>
+                <div style="font-size: 5rem; margin-bottom: 20px;">🌍</div>
                 <h1 style="color: #4dffea; margin-bottom: 15px; font-size: 2rem;">¡Bienvenido a la Vida!</h1>
                 <p style="color: #aaa; font-size: 1.1rem; margin-bottom: 30px; line-height: 1.6;">
                     Estás a punto de nacer. Primero, cuéntanos sobre ti.
@@ -382,11 +385,11 @@
                 <!-- Character Creation Form -->
                 <div
                     style="background: rgba(77, 255, 234, 0.05); border: 2px solid #4dffea; border-radius: 12px; padding: 25px; margin-bottom: 25px; text-align: left;">
-                    <h3 style="color: #4dffea; margin-bottom: 20px; font-size: 1.3rem; text-align: center;">✨ Crea Tu
+                    <h3 style="color: #4dffea; margin-bottom: 20px; font-size: 1.3rem; text-align: center;">? Crea Tu
                         Personaje</h3>
 
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; color: #ccc; margin-bottom: 8px; font-weight: bold;">📝
+                        <label style="display: block; color: #ccc; margin-bottom: 8px; font-weight: bold;">🏷️
                             Nombre:</label>
                         <input type="text" id="character-name-input" placeholder="Ingresa tu nombre..." maxlength="20"
                             style="
@@ -402,7 +405,7 @@
                     </div>
 
                     <div style="margin-bottom: 20px;">
-                        <label style="display: block; color: #ccc; margin-bottom: 12px; font-weight: bold;">⚧️
+                        <label style="display: block; color: #ccc; margin-bottom: 12px; font-weight: bold;">⚧
                             Sexo:</label>
                         <div style="display: flex; gap: 15px; justify-content: center;">
                             <button type="button" id="gender-male-btn" class="gender-btn" data-gender="male" style="
@@ -437,13 +440,13 @@
 
                 <div
                     style="background: rgba(77, 255, 234, 0.1); border: 2px solid #4dffea; border-radius: 12px; padding: 20px; margin-bottom: 20px; text-align: left;">
-                    <h3 style="color: #4dffea; margin-bottom: 15px; font-size: 1.1rem;">📋 Cómo Jugar:</h3>
+                    <h3 style="color: #4dffea; margin-bottom: 15px; font-size: 1.1rem;">📖 Cómo Jugar:</h3>
                     <ul style="color: #ccc; line-height: 1.8; list-style: none; padding: 0; font-size: 0.95rem;">
-                        <li>⏭️ <strong>Avanza meses</strong> con el botón "Siguiente Mes"</li>
+                        <li>📅 <strong>Avanza meses</strong> con el botón "Siguiente Mes"</li>
                         <li>📊 <strong>Gestiona tus estadísticas</strong>: Salud, Felicidad, Energía</li>
                         <li>💼 <strong>Trabaja y estudia</strong> para progresar (desde los 18 años)</li>
                         <li>💰 <strong>Administra tu dinero</strong> sabiamente</li>
-                        <li>🎯 <strong>Toma decisiones</strong> que afectarán tu vida</li>
+                        <li>🤔 <strong>Toma decisiones</strong> que afectarán tu vida</li>
                     </ul>
                 </div>
 
@@ -491,7 +494,7 @@
     <!-- Generic Alert Modal -->
     <div class="modal-overlay" id="end-game-modal" style="z-index: 200;">
         <div class="modal-content">
-            <h2>¡Jubilación! 👴</h2>
+            <h2>¡Jubilación! 🏖️</h2>
             <div id="end-game-summary" style="margin: 20px 0; text-align: left;"></div>
             <h3 id="end-game-score" style="color: var(--gold-color); text-align: center; font-size: 1.5rem;"></h3>
 
@@ -542,6 +545,8 @@
                 <button class="tab-btn" onclick="GameUI.switchActTab('projects')">Proyectos</button>
                 <button class="tab-btn" onclick="GameUI.switchActTab('crime')">Crimen</button>
                 <button class="tab-btn" onclick="GameUI.switchActTab('social')">Social</button>
+                <button class="tab-btn" id="tab-university" onclick="GameUI.switchActTab('university')"
+                    style="display:none; color:#ae81ff; border-color:#ae81ff;">🏛️ Uni</button>
             </div>
 
             <div class="modal-body">
@@ -579,10 +584,14 @@
                     <div id="projects-container"></div>
                 </div>
 
+                <div id="act-tab-university" class="hidden">
+                    <!-- University Hub Content injected via JS -->
+                </div>
+
                 <div id="act-tab-crime" class="hidden">
                     <div
                         style="background:#330000; padding:10px; border-radius:5px; margin-bottom:15px; border:1px solid #ff0000;">
-                        <h4 style="margin:0; color:#ff5555;">⚠️ ZONA ILEGAL</h4>
+                        <h4 style="margin:0; color:#ff5555;">⛔ ZONA ILEGAL</h4>
                         <p style="font-size:0.8rem; color:#aaa;">Alto riesgo. La policía vigila.</p>
                     </div>
                     <button class="act-btn" onclick="Game.commitCrime('scam')">
@@ -627,7 +636,7 @@
                     </button>
                     <button class="act-btn" onclick="Game.doActivity('therapy')">
                         <div class="act-info">
-                            <h4>🛋️ Terapia</h4>
+                            <h4>🧠 Terapia</h4>
                             <p>Sesión profesional para tu salud mental.</p>
                         </div>
                         <div class="act-cost">-$100<br>-5 E</div>
@@ -645,12 +654,12 @@
                     <button class="act-btn" onclick="Game.showLifestyleShop()"
                         style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
                         <div class="act-info">
-                            <h4>🏠 Lifestyle Shop</h4>
+                            <h4>🛍️ Lifestyle Shop</h4>
                             <p>Compra vivienda y vehículos.</p>
                         </div>
                         <div class="act-cost">Estatus: <span id="status-display-btn">0</span></div>
                     </button>
-                    <h4 style="margin-top:20px; color:#4dffea; border-bottom:1px solid #333; padding-bottom:5px;">🌴
+                    <h4 style="margin-top:20px; color:#4dffea; border-bottom:1px solid #333; padding-bottom:5px;">🏖️
                         Vacaciones y Desconexión</h4>
                     <button class="act-btn" onclick="Game.takeVacation('relax')">
                         <div class="act-info">
@@ -690,7 +699,7 @@
     <div class="modal-overlay" id="lifestyle-modal">
         <div class="modal-content" style="max-width: 900px;">
             <div class="modal-header">
-                <h2>🏠 Lifestyle Shop</h2>
+                <h2>🛍️ Lifestyle Shop</h2>
                 <button class="close-modal" id="close-lifestyle">×</button>
             </div>
             <div class="modal-body">
@@ -699,12 +708,12 @@
                     style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center;">
                     <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px;">
                         <div>
-                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">💰 Dinero</div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">💵 Dinero</div>
                             <div style="font-size: 1.3rem; font-weight: bold; color: #fff;" id="lifestyle-money">$0
                             </div>
                         </div>
                         <div>
-                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">⭐ Estatus</div>
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.8);">? Estatus</div>
                             <div style="font-size: 1.3rem; font-weight: bold; color: #fff;" id="lifestyle-status">0
                             </div>
                         </div>
@@ -818,7 +827,7 @@
 
                 <!-- Diet/Lifestyle Section -->
                 <div class="settings-group">
-                    <h4>🍽️ Estilo de Vida</h4>
+                    <h4>🌟 Estilo de Vida</h4>
                     <label style="display:block; margin-bottom:5px; color:#aaa;">Dieta:</label>
                     <select id="diet-selector"
                         style="width:100%; padding: 10px; margin-bottom: 10px; background: #333; color: white; border: none; border-radius: 5px;">
@@ -846,8 +855,8 @@
                 <!-- Save/Load Section -->
                 <div class="settings-group">
                     <h4>Partida</h4>
-                    <button class="btn-full" id="btn-save" disabled>💾 Guardar en Nube</button>
-                    <button class="btn-full" id="btn-load" disabled>📂 Cargar de Nube</button>
+                    <button class="btn-full" id="btn-save" disabled>☁️ Guardar en Nube</button>
+                    <button class="btn-full" id="btn-load" disabled>☁️ Cargar de Nube</button>
                     <div class="status-msg" id="save-msg">Inicia sesión para guardar.</div>
                 </div>
 
@@ -859,7 +868,7 @@
     <div class="modal-overlay" id="job-dashboard-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>📊 Panel Profesional</h2>
+                <h2>💼 Panel Profesional</h2>
                 <button class="close-btn" id="close-job-dashboard">&times;</button>
             </div>
             <div class="modal-body">
@@ -897,27 +906,27 @@
     <div class="modal-overlay" id="dev-modal">
         <div class="dev-panel">
             <div class="dev-header">
-                <span>🔧 DEV MODE</span>
+                <span>🔨 DEV MODE</span>
                 <button class="close-btn" id="close-dev-modal">&times;</button>
             </div>
             <div class="dev-body">
                 <!-- Password section (shown first time) -->
                 <div id="dev-auth" class="hidden">
-                    <p style="margin-bottom: 15px;">🔒 Enter password to unlock Dev Mode</p>
+                    <p style="margin-bottom: 15px;">🔑 Enter password to unlock Dev Mode</p>
                     <input type="password" id="dev-password" placeholder="Password">
                     <button id="dev-auth-btn">UNLOCK</button>
                 </div>
 
                 <!-- Main panel (shown after auth) -->
                 <div id="dev-content" class="hidden">
-                    <h4>⚡ CHEATS</h4>
+                    <h4>? CHEATS</h4>
                     <div class="dev-buttons">
                         <button onclick="DevMode.addMoney()">+$100,000</button>
                         <button onclick="DevMode.maxStats()">Max Stats</button>
                         <button onclick="DevMode.advanceYear()">+1 Year</button>
                     </div>
 
-                    <h4>📊 FULL STAT EDITOR</h4>
+                    <h4>⚡ FULL STAT EDITOR</h4>
 
                     <!-- Money & Time -->
                     <div class="dev-input-row">
@@ -977,7 +986,19 @@
     <script src="js/tabs.js"></script>
     <!-- Core Game Scripts -->
     <script src="js/app.js?v=5.5"></script>
+    <!-- Social Media Modal -->
+    <div class='modal-overlay' id='social-media-modal'>
+        <div class='modal-content'>
+            <div class='modal-header'>
+                <span>Redes Sociales</span>
+                <button class='close-btn' id='close-social-media'>x</button>
+            </div>
+            <div class='modal-body' id='social-media-container'>
+                <!-- Content injected by UI.renderSocialMedia() -->
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>
-```
