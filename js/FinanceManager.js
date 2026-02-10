@@ -246,15 +246,9 @@ const FinanceManager = {
         }
 
         // 4. REALISM: Income Tax
-        // Deduct tax from LAST MONTH'S Income (Approx) or just a flat rate on current cash flow?
-        // Simpler: Apply tax rate to 'activeIncome + passiveIncome' from calculateFinancials
-        // We need to fetch that info.
-        const financeSummary = this.calculateFinancials();
-        // CAREFUL: calculateFinancials returns potential totals.
-        // Let's assume taxes are applied to income generated this month.
-        // Since this processes expenses, let's assume income was already added?
-        // Game loop: Income -> Expenses. So money is already in buffer.
-
+        // FIXED: Taxes are already deducted in processIncome() via calculateNetSalary().
+        // Removing this second deduction to avoid double taxation.
+        /*
         if (typeof Travel !== 'undefined' && state.currentCountry) {
             const country = Travel.getCurrentCountry();
             const taxRate = country.taxRate || 0.15; // default 15
@@ -268,6 +262,7 @@ const FinanceManager = {
                 UI.log(`Impuestos (${(taxRate * 100).toFixed(0)}% en ${country.name}): -$${Math.floor(taxAmount)}`, 'expense');
             }
         }
+        */
 
         // CRISIS CHECK: Can we pay?
         if (state.money < totalExpenses) {

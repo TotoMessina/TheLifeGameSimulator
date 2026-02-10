@@ -584,6 +584,22 @@ const Game = {
             }
         }
 
+        // EDUCATION EFFECTS: Elite School Bonus
+        if (state.school && state.school.universityPrestige === 'elite_private') {
+            wage *= 1.20; // +20% Salary for Elite Grads
+            // Visual indicator of bonus? Maybe in log.
+        }
+
+        // STUDENT DEBT DEDUCTION
+        let debtPayment = 0;
+        if (state.loans > 0) {
+            debtPayment = Math.floor(wage * 0.15); // 15% of monthly wage
+            if (debtPayment > state.loans) debtPayment = state.loans;
+
+            state.loans -= debtPayment;
+            wage -= debtPayment; // Deduct from payout
+        }
+
         // WORLD EFFECTS: Salary
         const effects = World.getEffects();
         if (effects.jobSalary && job.career === 'tech') wage *= effects.jobSalary;
@@ -619,7 +635,7 @@ const Game = {
         state.consecutiveWork++;
 
         AudioSys.playClick(); // Work sound?
-        UI.log(`Trabajaste como ${job.title}. Ganaste $${Math.floor(wage)}.`, "normal");
+        UI.log(`Trabajaste como ${job.title}. Ganaste $${Math.floor(wage)}.${debtPayment > 0 ? ` (Pago Deuda: -$${debtPayment})` : ''}`, "normal");
 
         this.checkAchievements();
 
@@ -680,7 +696,14 @@ const Game = {
 
     applyPerformanceReview() {
         const rand = Math.random();
-        if (rand < 0.2) {
+
+        // EDUCATION EFFECTS: Public School Promotion Boost
+        let promoChance = 0.2;
+        if (state.school && state.school.universityPrestige === 'public') {
+            promoChance += 0.15; // +15% chance (Total 35%)
+        }
+
+        if (rand < promoChance) {
             this.promote();
         } else if (rand < 0.5) {
             const job = JOBS.find(j => j.id === state.currJobId);
@@ -727,9 +750,27 @@ const Game = {
             return;
         }
 
-        if (job.req.deg && !state.education.includes(job.req.deg)) {
-            UI.showAlert("Falta Título", "Necesitas un título específico para esto.");
-            return;
+        if (job.req.deg) {
+            // Check if user has specific degree OR if user has 'university_degree' but job requires specific one?
+            // Logic: strict match if job requires specific major.
+            // But 'university_degree' is the generic one.
+            // If job.req.deg is 'university_degree', any degree works? 
+            // Let's assume strict checking for now based on user request.
+
+            // Allow if player has EXACT degree OR if player has degree and job requires generic 'university_degree'
+            const hasExact = state.education.includes(job.req.deg);
+            const hasGeneric = state.education.includes('university_degree') && job.req.deg === 'university_degree';
+
+            if (!hasExact && !hasGeneric) {
+                // Formatting for display
+                const degName = (job.req.deg === 'business') ? 'Negocios' :
+                    (job.req.deg === 'engineering') ? 'Ingeniería' :
+                        (job.req.deg === 'med_school') ? 'Medicina' :
+                            (job.req.deg === 'law_school') ? 'Derecho' : 'Título Universitario';
+
+                UI.showAlert("Falta Título", `Necesitas un título en ${degName} para este puesto.`);
+                return;
+            }
         }
 
         // NEW: Check career experience requirements
@@ -1022,6 +1063,29 @@ const Game = {
         UI.showEventChoices("Propuesta Indecente", "Un millonario te ofrece dinero por... compañía.", [
             { text: "Aceptar (+$10,000, -Dignidad)", onClick: () => { Game.updateStat('money', 10000); Game.updateStat('happiness', -20); UI.log("Te sientes sucio pero rico.", "bad"); } },
             { text: "Rechazar", onClick: () => UI.log("Tu dignidad no tiene precio.", "good") }
+        ]);
+    },
+
+    triggerAlumniEvent() {
+        // Find a job better than current, or just a high tier one
+        // Sim: Offer a random high tier job without interview
+        const eliteJobs = JOBS.filter(j => j.salary > 5000 && j.id !== state.currJobId);
+        if (eliteJobs.length === 0) return;
+
+        const offer = eliteJobs[Math.floor(Math.random() * eliteJobs.length)];
+
+        UI.showEventChoices("Red de Alumni 🎓", `Un compañero de la universidad te ofrece un puesto de ${offer.title}.`, [
+            {
+                text: `Aceptar Oferta ($${offer.salary})`,
+                onClick: () => {
+                    state.currJobId = offer.id;
+                    state.jobXP = 0;
+                    UI.showAlert("¡Contratado!", `Gracias a tus contactos, ahora eres ${offer.title}.`);
+                    UI.log(`Aceptaste la oferta de alumni: ${offer.title}`, "good");
+                    UI.render();
+                }
+            },
+            { text: "Rechazar", onClick: () => UI.log("Rechazaste la oferta de tu ex-compañero.", "normal") }
         ]);
     },
 
@@ -1344,6 +1408,12 @@ const Game = {
 
         // Work events (sabotage, promotion opportunities)
         this.processWorkEvents();
+
+        // ALUMNI NETWORK EVENT (Elite Private Only)
+        // Offers once a year (modulo 12)
+        if (state.school && state.school.universityPrestige === 'elite_private' && state.totalMonths % 12 === 0) {
+            this.triggerAlumniEvent();
+        }
     },
 
     /**

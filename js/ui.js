@@ -1304,6 +1304,50 @@ const UI = {
         });
     },
 
+    renderSportsContent() {
+        if (!state.school.sport) {
+            return `
+                <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">Únete a un equipo para ganar becas y estatus.</div>
+                <div style="display:flex; gap:10px;">
+                    <button class="act-btn" onclick="School.joinSport('football')">
+                        <div class="act-info"><h4>⚽ Fútbol</h4><p>Equipo, Popularidad.</p></div>
+                    </button>
+                    <button class="act-btn" onclick="School.joinSport('track')">
+                        <div class="act-info"><h4>🏃 Atletismo</h4><p>Resistencia, Salud.</p></div>
+                    </button>
+                </div>
+            `;
+        }
+
+        const s = state.school.sport;
+        const sportName = s.type === 'football' ? 'Fútbol' : 'Atletismo';
+
+        return `
+            <div style="background:#222; padding:10px; border-radius:8px; border:1px solid ${s.scholarship ? '#FFD700' : '#444'};">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="font-weight:bold; color:#fff;">Equipo de ${sportName}</div>
+                    <button onclick="School.quitSport()" style="font-size:0.7rem; color:#ff5555; background:none; border:none; cursor:pointer;">Abandonar</button>
+                </div>
+                
+                <div style="display:flex; gap:15px; font-size:0.9rem; color:#ccc; margin-bottom:10px;">
+                    <div>Fitness: <span style="color:#4dffea">${s.fitness}%</span></div>
+                    <div>Rendimiento: <span style="color:${s.performance > 80 ? '#FFD700' : '#fff'}">${s.performance}%</span></div>
+                    <div>Estado: <span style="color:${s.injured ? '#ff5555' : '#8BC34A'}">${s.injured ? `LESIÓN (${s.injuryTimeout}m)` : 'Activo'}</span></div>
+                </div>
+
+                ${s.scholarship ? '<div style="color:#FFD700; font-size:0.8rem; margin-bottom:10px;">★ Beca Deportiva Activa ($500/mes)</div>' : ''}
+
+                <button class="act-btn" onclick="School.trainSport()" ${s.injured ? 'disabled style="opacity:0.5"' : ''}>
+                    <div class="act-info">
+                        <h4>🏋️ Entrenar con el Equipo</h4>
+                        <p>${s.injured ? 'Recuperándose...' : 'Mejora Fitness y Rendimiento.'}</p>
+                    </div>
+                     <div class="act-cost">-30 E</div>
+                </button>
+            </div>
+        `;
+    },
+
     switchActTab(tab) {
         const courses = document.getElementById('act-tab-courses');
         const projects = document.getElementById('act-tab-projects');
@@ -1410,6 +1454,11 @@ const UI = {
             <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">
                 <p>⚠️ <b>Exámenes Semestrales:</b> Cada 6 meses. ¡No repruebes!</p>
                 <p>🎉 <b>Fiestas y Ferias:</b> Ocurren aleatoriamente al avanzar el mes.</p>
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">🏃 Deportes Universitarios</h4>
+            <div id="uni-sports-section">
+                ${this.renderSportsContent()}
             </div>
         `;
     },

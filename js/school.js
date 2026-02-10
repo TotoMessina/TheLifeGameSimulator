@@ -436,6 +436,152 @@ const School = {
         UI.showEventChoices("🎓 Graduación", text, choices);
     },
 
+
+    // --- SPORTS SYSTEM ---
+    joinSport(type) {
+        if (state.school.sport && state.school.sport.type !== 'none') {
+            return UI.showAlert("Ya tienes equipo", "Debes dejar tu equipo actual antes de unirte a otro.");
+        }
+
+        state.school.sport = {
+            type: type,
+            fitness: 50,
+            performance: 50,
+            injured: false,
+            injuryTimeout: 0,
+            scholarship: false
+        };
+
+        const sportName = type === 'football' ? 'Fútbol' : 'Atletismo';
+        UI.log(`Te uniste al equipo de ${sportName}.`, "good");
+        UI.render();
+        UI.renderUniversityTab();
+    },
+
+    quitSport() {
+        if (!state.school.sport) return;
+        state.school.sport = null;
+        UI.log("Dejaste el equipo universitario.", "normal");
+        UI.render();
+        UI.renderUniversityTab();
+    },
+
+    trainSport() {
+        const s = state.school.sport;
+        if (!s) return;
+
+        if (s.injured) {
+            return UI.showAlert("Lesionado", `Estás lesionado. Tiempo de recuperación: ${s.injuryTimeout} meses.`);
+        }
+
+        // Energy Cost
+        const energyCost = 30; // High effort
+        if (state.energy < energyCost) {
+            return UI.showAlert("Agotado", "Estás demasiado cansado para entrenar.");
+        }
+
+        // INJURY RISK Check
+        // If energy is low (but enough to start), risk increases massively
+        let injuryChance = 0.02; // Base 2%
+        if (state.energy < 40) injuryChance = 0.15; // 15% if tired
+        if (state.energy < 20) injuryChance = 0.40; // 40% if exhausted (shouldn't happen due to check above, but logic safety)
+
+        Game.updateStat('energy', -energyCost);
+
+        if (Math.random() < injuryChance) {
+            s.injured = true;
+            s.injuryTimeout = 3;
+            Game.updateStat('physicalHealth', -15);
+            Game.updateStat('happiness', -10);
+            Haptics.error();
+            UI.showAlert("¡LESIÓN!", "Te has lesionado durante el entrenamiento. Quedas fuera por 3 meses.");
+            UI.log("🤕 Te lesionaste entrenando.", "bad");
+        } else {
+            // Success
+            s.fitness = Math.min(100, s.fitness + 5);
+            s.performance = Math.min(100, s.performance + 4);
+            Game.updateStat('physicalHealth', 2);
+            Game.updateStat('stress', -5); // Exercise reduces stress
+
+            // Team camaraderie
+            if (s.type === 'football') state.network += 1; // Team sports build network
+
+            UI.log(`Entrenamiento completado via ${s.type === 'football' ? 'Fútbol' : 'Running'}.`, "good");
+        }
+
+        UI.render();
+    },
+
+    processSports() {
+        const s = state.school.sport;
+        if (!s || s.type === 'none') return;
+
+        // 1. Injury Recovery
+        if (s.injured) {
+            s.injuryTimeout--;
+            if (s.injuryTimeout <= 0) {
+                s.injured = false;
+                UI.log("Te has recuperado de tu lesión deportiva.", "good");
+            }
+            // Performance decay while injured
+            s.performance = Math.max(0, s.performance - 10);
+            return; // Skip rest
+        }
+
+        // 2. Monthly Decay (if not trained this month - assuming this runs after actions)
+        // Hard to track specifically "trained this month" without a flag. 
+        // Let's just apply small decay always, training offsets it.
+        s.performance = Math.max(0, s.performance - 2);
+        s.fitness = Math.max(0, s.fitness - 1);
+
+        // 3. Scholarship Check
+        // If performance > 80, get stipend
+        if (s.performance >= 80) {
+            if (!s.scholarship) {
+                s.scholarship = true;
+                UI.showAlert("Beca Deportiva", "¡Tu rendimiento es excelente! Has obtenido una beca de manutención de $500/mes.");
+            }
+            Game.updateStat('money', 500);
+            UI.log("💰 Beca Deportiva: +$500", "good");
+        } else {
+            if (s.scholarship) {
+                s.scholarship = false;
+                UI.log("⚠️ Perdiste tu beca deportiva por bajo rendimiento.", "warning");
+            }
+        }
+    },
+
+    triggerSportCompetition() {
+        const s = state.school.sport;
+        if (!s || s.type === 'none' || s.injured) return;
+
+        // Calc Win Chance
+        // Base 30% + (Fitness * 0.4)% + (Performance * 0.3)%
+        // Max stats: 100 fit, 100 perf -> 30 + 40 + 30 = 100% win rate? Maybe too easy.
+        // Let's make it: Difficulty check.
+
+        const score = (s.fitness * 0.6) + (s.performance * 0.4); // 0-100 score
+        // Random "Opponent" score 50-90
+        const opponent = 50 + Math.random() * 40;
+
+        const sportName = s.type === 'football' ? 'Torneo de Fútbol' : 'Competencia de Atletismo';
+
+        if (score > opponent) {
+            // WIN
+            const reward = 15; // Status
+            Game.updateStat('status', reward);
+            Game.updateStat('happiness', 10);
+            state.network += 5; // Networking boost
+            s.performance = Math.min(100, s.performance + 10);
+            UI.showAlert("¡VICTORIA! 🏆", `Tu equipo ganó el ${sportName}. \n+${reward} Estatus, +5 Red.`);
+            UI.log(`🏆 Ganaste en ${sportName}.`, "good");
+        } else {
+            // LOSS
+            Game.updateStat('stress', 5);
+            s.performance = Math.max(0, s.performance - 5);
+            UI.log(`Perdieron el ${sportName}. A seguir entrenando.`, "normal");
+        }
+    },
     enrollUniversity(type, scholarship) {
         // Define available majors mapping to degree IDs
         const majors = [
