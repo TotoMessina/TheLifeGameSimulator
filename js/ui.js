@@ -82,9 +82,11 @@ const UI = {
         };
 
         this.els.modals = {
-            job: document.getElementById('job-modal'),
+            job: document.getElementById('job-modal'), // Dashboard
+            jobMarket: document.getElementById('job-market-modal'), // Market
             jobList: document.getElementById('job-list-container'),
             closeJob: document.getElementById('close-job-modal'),
+            closeJobMarket: document.getElementById('close-job-market-modal'),
             settings: document.getElementById('settings-modal'),
             closeSettings: document.getElementById('close-settings-modal'),
             event: document.getElementById('event-modal'),
@@ -1348,6 +1350,88 @@ const UI = {
         `;
     },
 
+    renderClubsContent() {
+        if (!state.school.club) {
+            return `
+                <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">Acelera tu carrera uniéndote a un club. Requiere Energía.</div>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <button class="act-btn" onclick="School.joinClub('coding')">
+                        <div class="act-info"><h4>💻 Programación</h4><p>Exp Tech, Hackathons.</p></div>
+                    </button>
+                    <button class="act-btn" onclick="School.joinClub('investment')">
+                        <div class="act-info"><h4>📈 Inversión</h4><p>Tips Mercado, Finanzas.</p></div>
+                    </button>
+                    <button class="act-btn" onclick="School.joinClub('consulting')">
+                        <div class="act-info"><h4>📊 Consultoría</h4><p>Exp Gestión, Proyectos.</p></div>
+                    </button>
+                    <button class="act-btn" onclick="School.joinClub('networking')">
+                        <div class="act-info"><h4>🥂 Elite Network</h4><p>Contactos VIP. ($500)</p></div>
+                    </button>
+                </div>
+            `;
+        }
+
+        const c = state.school.club;
+        let clubName = '';
+        let actName = '';
+        let actDesc = '';
+
+        switch (c) {
+            case 'coding':
+                clubName = 'Club de Programación'; actName = 'Participar en Hackathon'; actDesc = '+Exp Tech. Chance Cofundador.'; break;
+            case 'investment':
+                clubName = 'Sociedad de Inversión'; actName = 'Análisis de Mercado'; actDesc = '+Inteligencia. Tips de Inversión.'; break;
+            case 'consulting':
+                clubName = 'Consultora Estudiantil'; actName = 'Proyecto Real'; actDesc = '+Exp Gestión/Producto.'; break;
+            case 'networking':
+                clubName = 'Networking de Élite'; actName = 'Asistir a Gala ($100)'; actDesc = '++Red, ++Estatus. Contactos VIP.'; break;
+        }
+
+        return `
+            <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #9C27B0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="font-weight:bold; color:#E1BEE7;">${clubName}</div>
+                    <button onclick="School.quitClub()" style="font-size:0.7rem; color:#ff5555; background:none; border:none; cursor:pointer;">Abandonar</button>
+                </div>
+                
+                <button class="act-btn" onclick="School.performClubActivity()">
+                    <div class="act-info">
+                        <h4>⚡ ${actName}</h4>
+                        <p>${actDesc}</p>
+                    </div>
+                     <div class="act-cost">-25 E</div>
+                </button>
+            </div>
+        `;
+    },
+
+    renderHousingContent() {
+        const h = state.school.housing || 'parents';
+        const housingName = {
+            'parents': "Casa de Padres (Gratis)",
+            'dorm': "Dormitorios ($500/m)",
+            'shared': "Depto Compartido ($800/m)"
+        };
+
+        return `
+            <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #555;">
+                <div style="margin-bottom:10px; color:#ddd;">Actual: <b>${housingName[h]}</b></div>
+                
+                <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:5px;">
+                    <button class="act-btn ${h === 'parents' ? 'disabled' : ''}" onclick="School.setHousing('parents')" ${h === 'parents' ? 'disabled' : ''}>
+                        <div class="act-info"><p>🏠 Padres</p><p style="font-size:0.7em">-Happy, -Energy</p></div>
+                    </button>
+                    <button class="act-btn ${h === 'dorm' ? 'disabled' : ''}" onclick="School.setHousing('dorm')" ${h === 'dorm' ? 'disabled' : ''}>
+                        <div class="act-info"><p>🏫 Dorms</p><p style="font-size:0.7em">+Pop, +Estudio</p></div>
+                    </button>
+                    <button class="act-btn ${h === 'shared' ? 'disabled' : ''}" onclick="School.setHousing('shared')" ${h === 'shared' ? 'disabled' : ''}>
+                        <div class="act-info"><p>🏢 Depto</p><p style="font-size:0.7em">Eventos Social</p></div>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
     switchActTab(tab) {
         const courses = document.getElementById('act-tab-courses');
         const projects = document.getElementById('act-tab-projects');
@@ -1409,7 +1493,37 @@ const UI = {
                     <div>🤝 Red: <b>${state.network || 0}</b></div>
                     <div>😫 Estrés: <b>${state.stress.toFixed(0)}%</b></div>
                 </div>
+                </div>
             </div>
+
+            <!-- EXAM MODE OVERRIDE -->
+            <div id="exam-mode-ui" style="display: ${state.school.examMode ? 'block' : 'none'}; background:#222; padding:15px; border-radius:10px; border:2px solid #FFC107;">
+                <h3 style="color:#FFC107; text-align:center; margin-bottom:10px;">📚 SEMANA DE EXÁMENES</h3>
+                <div style="text-align:center; font-size:1.1rem; margin-bottom:15px;">
+                    Horas de Estudio: <span style="color:#4dffea; font-weight:bold;">${state.school.examStudyHours || 0} hrs</span>
+                </div>
+                
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button class="act-btn" onclick="School.examAction('study')">
+                        <div class="act-info"><h4>📖 Estudiar Intensamente</h4><p>+5 Horas. Aumenta estrés.</p></div>
+                        <div class="act-cost">-20 E</div>
+                    </button>
+                    <button class="act-btn" onclick="School.examAction('coffee')">
+                        <div class="act-info"><h4>☕ Tomar Café</h4><p>Recupera Energía. Daña Salud.</p></div>
+                        <div class="act-cost">-$5</div>
+                    </button>
+                    <button class="act-btn" onclick="School.examAction('rest')">
+                        <div class="act-info"><h4>💤 Descansar</h4><p>Recuperar Energía.</p></div>
+                        <div class="act-cost">Time</div>
+                    </button>
+                </div>
+
+                <button onclick="School.takeExams()" style="width:100%; border:none; padding:15px; background:#4CAF50; color:white; font-size:1.2rem; font-weight:bold; border-radius:8px; margin-top:20px; cursor:pointer;">
+                    📝 RENDIR EXÁMENES FINALES
+                </button>
+            </div>
+
+            <div id="normal-uni-ui" style="display: ${state.school.examMode ? 'none' : 'block'};">
 
             <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:10px;">⚡ Acciones Académicas</h4>
             <div class="university-actions" style="display:grid; gap:10px;">
@@ -1441,7 +1555,7 @@ const UI = {
                     </div>
                     <div class="act-cost">-E ++Happy</div>
                 </button>
-                 <button class="act-btn" onclick="UI.openModal('job-modal'); UI.renderJobMarket();">
+                 <button class="act-btn" onclick="UI.openModal('job-market-modal'); UI.renderJobMarket();">
                         <div class="act-info">
                         <h4>📰 Bolsa de Trabajo</h4>
                         <p>Busca empleos de medio tiempo.</p>
@@ -1460,6 +1574,34 @@ const UI = {
             <div id="uni-sports-section">
                 ${this.renderSportsContent()}
             </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">🚀 Clubes Extracurriculares</h4>
+            <div id="uni-clubs-section">
+                ${this.renderClubsContent()}
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">📅 Eventos y Vida Social</h4>
+            <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">
+                <p>⚠️ <b>Exámenes Semestrales:</b> Cada 6 meses. ¡No repruebes!</p>
+                <p>🎉 <b>Fiestas y Ferias:</b> Ocurren aleatoriamente al avanzar el mes.</p>
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">🏃 Deportes Universitarios</h4>
+            <div id="uni-sports-section">
+                ${this.renderSportsContent()}
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">🚀 Clubes Extracurriculares</h4>
+            <div id="uni-clubs-section">
+                ${this.renderClubsContent()}
+            </div>
+
+            <h4 style="border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:10px;">🏠 Alojamiento Universitario</h4>
+            <div id="uni-housing-section">
+                ${this.renderHousingContent()}
+            </div>
+            
+            </div> <!-- End Normal UI -->
         `;
     },
 
@@ -1727,6 +1869,7 @@ const UI = {
             return;
         }
 
+
         // --- NORMAL SCHOOL UI ---
         let focusHtml = '';
         Object.keys(School.FOCUS).forEach(key => {
@@ -1770,6 +1913,167 @@ const UI = {
         // Update Dashboard GPA if element exists
         const gpaEl = document.getElementById('gpa-display');
         if (gpaEl) gpaEl.innerText = s.grades.toFixed(1);
+    },
+
+    renderJob() {
+        const container = document.getElementById('job-container');
+        const jobId = state.currJobId;
+
+        // 1. UNEMPLOYED VIEW
+        if (jobId === 'unemployed') {
+            container.innerHTML = `
+                <div class="glass-panel" style="text-align:center; padding:40px;">
+                    <div style="font-size:4rem; margin-bottom:20px; opacity:0.5;">🛋️</div>
+                    <h2 style="color:#aaa;">Desempleado</h2>
+                    <p style="color:#666; margin-bottom:20px;">Actualmente no tienes un empleo formal.</p>
+                    <button class="console-btn" onclick="UI.openModal('job-market-modal'); UI.renderJobMarket();" style="text-align:center; padding:15px; border-color:var(--accent-color);">
+                        <span class="btn-title">📰 Buscar Empleo</span>
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
+        const job = JOBS.find(j => j.id === jobId);
+        if (!job) return;
+
+        // Stats
+        // Stats
+        const perf = state.work_relations.performance || 50;
+        const rep = (state.work_relations.boss + state.work_relations.colleagues) / 2;
+        const stress = state.stress;
+
+        // Advanced Job Info
+        const jobLevelIdx = state.jobLevel || 0;
+        const currentLevel = JOB_LEVELS[jobLevelIdx];
+        const nextLevel = JOB_LEVELS[jobLevelIdx + 1];
+        const scaledSalary = Math.floor(job.salary * currentLevel.salaryMult);
+
+        // Render HTML
+        container.innerHTML = `
+            <div class="job-dashboard-container">
+                
+                <!-- 1. MAIN JOB CARD -->
+                <div class="glass-panel job-card-header">
+                    <div style="display:flex; align-items:center;">
+                        <div class="job-icon">🏢</div>
+                        <div class="job-details">
+                            <div style="font-size:0.7rem; color:#888; letter-spacing:2px; margin-bottom:5px;">
+                                ${currentLevel.name.toUpperCase()}
+                            </div>
+                            <h2>${job.title}</h2>
+                            <div class="job-salary">
+                                $${scaledSalary.toLocaleString()} / mes
+                                ${state.lastMonthBonus ? '<span style="color:#00e5ff; font-size:0.8em;"> (+BONO)</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="font-size:3rem; font-weight:900; color:rgba(255,255,255,0.05);">${state.jobMonths || 0}</div>
+                        <div style="font-size:0.7rem; color:#666; margin-top:-10px;">MESES</div>
+                    </div>
+                </div>
+
+                <!-- PROMOTION TRACKER (If next level exists) -->
+                ${nextLevel ? `
+                <div style="margin-bottom:20px; padding:10px; background:rgba(0,0,0,0.3); border-radius:8px;">
+                    <div style="font-size:0.75rem; color:#aaa; margin-bottom:5px; display:flex; justify-content:space-between;">
+                        <span>Siguiente Nivel: ${nextLevel.name}</span>
+                        <span>Req: XP ${nextLevel.req.xp}m | Rep ${nextLevel.req.rep}% | Int ${nextLevel.req.int}</span>
+                    </div>
+                    <div style="height:4px; background:#333; border-radius:2px; overflow:hidden;">
+                        <div style="width:${Math.min(100, (state.jobMonths / nextLevel.req.xp) * 100)}%; height:100%; background:var(--gold-color);"></div>
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- 2. STATUS BARS -->
+                <div class="status-grid">
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>Rendimiento ${perf >= 90 ? '🔥' : ''}</span>
+                            <span>${perf.toFixed(0)}%</span>
+                        </div>
+                        <div class="status-track">
+                            <div class="status-fill bar-perf" style="width:${perf}%"></div>
+                        </div>
+                        <!-- Bonus Marker -->
+                        <div style="position:absolute; bottom:-15px; right:10%; font-size:0.6rem; color:#00e5ff;">Goal 90%</div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>Reputación</span>
+                            <span>${rep.toFixed(0)}%</span>
+                        </div>
+                        <div class="status-track">
+                            <div class="status-fill bar-rep" style="width:${rep}%"></div>
+                        </div>
+                    </div>
+
+                    <div class="status-item">
+                        <div class="status-label">
+                            <span>Burnout Risk</span>
+                            <span style="color:${stress > 80 ? '#ff3d71' : '#aaa'}">${stress.toFixed(0)}%</span>
+                        </div>
+                        <div class="status-track">
+                            <div class="status-fill bar-stress" style="width:${stress}%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. ACTION CONSOLE -->
+                <div class="console-grid">
+                    
+                    <!-- Core Ops -->
+                    <div class="console-col">
+                        <h4>Core Ops</h4>
+                        <button class="console-btn" onclick="Game.work()">
+                            <span class="btn-title">⚙️ Cumplir</span>
+                            <span class="btn-desc">Trabajo estándar</span>
+                        </button>
+                        <button class="console-btn" onclick="Game.workHard()">
+                            <span class="btn-title">🔥 Intenso</span>
+                            <span class="btn-desc">+Perf, ++$$$, +Stress</span>
+                        </button>
+                    </div>
+
+                    <!-- Social Link -->
+                    <div class="console-col">
+                        <h4>Social Link</h4>
+                        <button class="console-btn" onclick="Game.socializeColleagues()">
+                            <span class="btn-title">👥 Colegas</span>
+                            <span class="btn-desc">+Reputación, -Stress</span>
+                        </button>
+                        <button class="console-btn" onclick="Game.socializeBoss()">
+                            <span class="btn-title">👔 Jefe</span>
+                            <span class="btn-desc">+Relación Jefe</span>
+                        </button>
+                        <button class="console-btn" onclick="Game.attendAfterOffice()" style="border-color:#a29bfe;">
+                            <span class="btn-title" style="color:#a29bfe;">🍺 After Office</span>
+                            <span class="btn-desc">+Red, $$$</span>
+                        </button>
+                    </div>
+
+                    <!-- Maintenance -->
+                    <div class="console-col">
+                        <h4>Maintenance</h4>
+                        <button class="console-btn" onclick="Game.takeBreak()">
+                            <span class="btn-title">☕ Pausa</span>
+                            <span class="btn-desc">-Stress, +Energía</span>
+                        </button>
+                        <button class="console-btn" onclick="Game.askForPromotion()" style="border-color:gold;">
+                            <span class="btn-title" style="color:gold;">📈 Ascenso</span>
+                            <span class="btn-desc">${nextLevel ? 'Aplicar a ' + nextLevel.name : 'Nivel Máximo'}</span>
+                        </button>
+                        <button class="console-btn" onclick="Game.quitJob()" style="margin-top:20px; border-color:#ff3d71;">
+                            <span class="btn-title" style="color:#ff3d71;">🚫 Renunciar</span>
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        `;
     },
 
     renderActions() {
@@ -2237,42 +2541,132 @@ const UI = {
     renderJobMarket() {
         const list = this.els.modals.jobList;
         list.innerHTML = '';
+        list.className = 'job-market-root';
 
-        JOBS.forEach(job => {
-            // FILTER: Students can only see Part-Time jobs
-            if (state.isStudent) {
-                if (job.type !== 'part_time' && job.id !== 'unemployed') return;
-            }
+        // 1. Get Careers
+        const careers = Object.keys(CAREER_TRACKS);
 
-            // Check requirements logic for display
+        // Render Career Grid
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px;';
+
+        careers.forEach(careerId => {
+            const track = CAREER_TRACKS[careerId];
+
+            // Count available jobs
+            const trackJobs = JOBS.filter(j => j.career === careerId);
+            const visibleCount = trackJobs.filter(job => !state.isStudent || job.type === 'part_time').length;
+
+            if (visibleCount === 0) return;
+
+            const card = document.createElement('div');
+            card.className = 'career-card';
+            // Compact, clickable styling with hover effect
+            card.style.cssText = `
+                background: rgba(255,255,255,0.05);
+                border: 1px solid rgba(255,255,255,0.1);
+                border-radius: 8px;
+                padding: 15px;
+                cursor: pointer;
+                text-align: center;
+                display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+                transition: background 0.2s, transform 0.1s;
+            `;
+            card.innerHTML = `
+                <div style="font-size:2rem; margin-bottom:5px;">${track.icon}</div>
+                <div style="font-weight:bold; color:#fff; font-size:0.9rem;">${track.label}</div>
+                <div style="font-size:0.7rem; color:#888;">${visibleCount} Puestos</div>
+            `;
+
+            card.onmouseover = () => { card.style.background = 'rgba(255,255,255,0.1)'; card.style.transform = 'translateY(-2px)'; };
+            card.onmouseout = () => { card.style.background = 'rgba(255,255,255,0.05)'; card.style.transform = 'translateY(0)'; };
+            card.onclick = () => UI.renderCareerJobs(careerId);
+
+            grid.appendChild(card);
+        });
+
+        list.appendChild(grid);
+    },
+
+    renderCareerJobs(careerId) {
+        const list = this.els.modals.jobList;
+        list.innerHTML = ''; // Clear main list
+
+        const track = CAREER_TRACKS[careerId];
+
+        // Header with Back Button
+        const header = document.createElement('div');
+        header.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #333;';
+        header.innerHTML = `
+            <button class="act-btn" style="width:auto; padding:5px 12px; font-size:1.2rem; background:transparent; border:1px solid #444;" onclick="UI.renderJobMarket()">⬅</button>
+            <div>
+                <h3 style="margin:0; display:flex; align-items:center; gap:8px;">${track.icon} ${track.label}</h3>
+                <div style="font-size:0.75rem; color:#aaa;">${track.desc}</div>
+            </div>
+        `;
+        list.appendChild(header);
+
+        // Filter Jobs
+        const trackJobs = JOBS.filter(j => j.career === careerId);
+        const visibleJobs = trackJobs.filter(job => !state.isStudent || job.type === 'part_time');
+
+        visibleJobs.sort((a, b) => a.salary - b.salary);
+
+        // Job Grid (List view)
+        const grid = document.createElement('div');
+        grid.style.cssText = 'display:flex; flex-direction:column; gap:8px;';
+
+        visibleJobs.forEach(job => {
+            const isCurrent = state.currJobId === job.id;
+
+            // Requirements
             const hasInt = state.intelligence >= (job.req.int || 0);
             const hasHealth = state.physicalHealth >= (job.req.health || 0);
             const hasDeg = !job.req.deg || state.education.includes(job.req.deg);
-
             const canApply = hasInt && hasHealth && hasDeg;
-            const isCurrent = state.currJobId === job.id;
 
-            const el = document.createElement('div');
-            el.className = 'market-card';
-            if (isCurrent) el.style.borderColor = '#4dffea';
+            let reqHtml = '';
+            if (job.req.int) reqHtml += `<span style="color:${hasInt ? '#aaa' : '#f55'}; font-size:0.7rem; margin-right:8px;">🧠 ${job.req.int}</span>`;
+            if (job.req.deg) reqHtml += `<span style="color:${hasDeg ? '#aaa' : '#f55'}; font-size:0.7rem;">🎓 ${job.req.deg}</span>`;
 
-            let reqText = [];
-            if (job.req.int) reqText.push('Int: ' + job.req.int);
-            if (job.req.health) reqText.push('Salud: ' + job.req.health);
-            if (job.req.deg) reqText.push('Título: ' + job.req.deg);
+            const card = document.createElement('div');
+            // Specific Compact Style
+            card.style.cssText = `
+                background: ${isCurrent ? 'rgba(77, 255, 234, 0.05)' : 'rgba(255,255,255,0.03)'};
+                border: 1px solid ${isCurrent ? 'var(--primary-color)' : 'rgba(255,255,255,0.08)'};
+                border-radius: 6px; 
+                padding: 8px 12px; 
+                display: flex; justify-content: space-between; align-items: center;
+                transition: transform 0.1s;
+            `;
 
-            el.innerHTML =
-                '<div>' +
-                '<div style="font-weight:bold; color:#fff;">' + job.title + (isCurrent ? ' (Actual)' : '') + '</div>' +
-                '<div style="font-size:0.8rem; color:#aaa;">Salario: $' + job.salary + '/mes</div>' +
-                '<div style="font-size:0.75rem; color:#888;">Req: ' + (reqText.join(', ') || 'Ninguno') + '</div>' +
-                '</div>' +
-                '<button class="act-btn" style="min-height:30px; width:auto; font-size:0.8rem; padding: 5px 10px;" ' + (isCurrent ? 'disabled' : '') + ' data-action="apply-job" data-params=\'{"jobId":"' + job.id + '"}\'>' +
-                (isCurrent ? 'Tuy' : 'Aplicar') +
-                '</button>';
-            list.appendChild(el);
+            // Compact Layout: Title/Salary on left, Req/Btn on right
+            card.innerHTML = `
+                <div style="flex:1;">
+                    <div style="display:flex; align-items:baseline; gap:8px;">
+                        <span style="font-weight:bold; font-size:0.95rem; color:${isCurrent ? 'var(--primary-color)' : '#eee'};">${job.title}</span>
+                        ${isCurrent ? '<span style="font-size:0.6rem; background:var(--primary-color); color:#000; padding:1px 4px; border-radius:3px;">ACTUAL</span>' : ''}
+                    </div>
+                    <div style="font-family:monospace; color:#4dffea; font-size:0.85rem; margin-top:2px;">$${job.salary.toLocaleString()} <span style="color:#666; font-family:sans-serif; font-size:0.75rem;">/mes</span></div>
+                </div>
+                
+                <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:100px;">
+                    <div style="text-align:right;">${reqHtml || '<span style="color:#666; font-size:0.7rem;">Sin Requisitos</span>'}</div>
+                    <button class="act-btn" style="width:auto; padding:4px 12px; font-size:0.8rem; min-height:0;" 
+                        ${isCurrent ? 'disabled' : ''} 
+                        onclick="UI.handleJobApplication('${job.id}')">
+                        ${canApply ? (isCurrent ? '✓' : 'Aplicar') : '🔒'}
+                    </button>
+                </div>
+            `;
+
+            grid.appendChild(card);
         });
+
+        list.appendChild(grid);
     },
+
+
 
     renderTrophies() {
         // Target settings-modal .modal-body
@@ -2304,6 +2698,22 @@ const UI = {
                     '<div style="font-size:0.75rem; color:#aaa;">' + t.desc + '</div>';
                 grid.appendChild(el);
             });
+        }
+    },
+
+    handleJobApplication(jobId) {
+        const job = JOBS.find(j => j.id === jobId);
+        if (!job) return;
+
+        // Re-check requirements for security
+        const hasInt = state.intelligence >= (job.req.int || 0);
+        const hasHealth = state.physicalHealth >= (job.req.health || 0);
+        const hasDeg = !job.req.deg || state.education.includes(job.req.deg);
+
+        if (hasInt && hasHealth && hasDeg) {
+            Game.applyJob(jobId);
+        } else {
+            UI.showAlert("Requisitos Insuficientes", "No cumples con los requisitos para este trabajo.");
         }
     }
 };

@@ -298,12 +298,20 @@ const FinanceManager = {
     calculateCostOfLiving() {
         let cost = 500; // Base survival cost
 
-        // Housing costs
-        if (state.housing) {
-            const housing = HOUSING.find(h => h.id === state.housing);
-            if (housing) {
-                cost += housing.upkeep || 0;
+        // Housing
+        if (state.housing !== 'couch' && state.housing !== 'parents') {
+            const h = HOUSING.find(h => h.id === state.housing);
+            if (h) {
+                cost += h.rent || 0; // Add rent
+                cost += h.upkeep || 0; // Add upkeep
             }
+        }
+
+        // University Housing (Overrides standard housing if student)
+        if (state.isStudent && state.school && state.school.housing) {
+            if (state.school.housing === 'dorm') cost += 500;
+            if (state.school.housing === 'shared') cost += 800;
+            // 'parents' housing for students means no cost, already handled by not adding rent/upkeep
         }
 
         // Vehicle costs

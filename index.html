@@ -105,18 +105,29 @@
             </header>
 
             <section class="content-section">
-                <div class="job-display-card" id="job-trigger">
-                    <div class="job-row-top">
-                        <span id="job-title-display">Mendigo ($0/mes)</span>
-                        <button id="btn-job-dashboard"
-                            style="background:none; border:none; cursor:pointer; font-size:1.2rem; margin-left:10px;">📊</button>
-                        <span style="font-size: 0.8rem; color: #888; margin-left: auto;">🔄 Cambiar</span>
+                <!-- Job Overview Container -->
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <!-- Job Card Info -->
+                    <div class="job-display-card" id="job-trigger" style="flex: 1; margin-bottom: 0; cursor: default;">
+                        <div class="job-row-top">
+                            <span id="job-title-display">Mendigo ($0/mes)</span>
+                            <!-- Button removed from here -->
+                            <span style="font-size: 0.8rem; color: #888; margin-left: auto; cursor: pointer;"
+                                onclick="UI.openModal('job-market-modal'); UI.renderJobMarket()">🔄 Cambiar</span>
+                        </div>
+                        <div class="job-xp-bg">
+                            <div class="job-xp-fill" id="job-xp-bar"></div>
+                        </div>
+                        <div id="diploma-display"
+                            style="font-size: 0.7rem; color: var(--accent-color); margin-top: 2px;">
+                        </div>
                     </div>
-                    <div class="job-xp-bg">
-                        <div class="job-xp-fill" id="job-xp-bar"></div>
-                    </div>
-                    <div id="diploma-display" style="font-size: 0.7rem; color: var(--accent-color); margin-top: 2px;">
-                    </div>
+
+                    <!-- Separate Dashboard Button -->
+                    <button id="btn-job-dashboard" onclick="UI.openModal('job-modal'); UI.renderJob()"
+                        style="width: 50px; background: #222; border: 1px solid #444; border-radius: 4px; color: #fff; font-size: 1.5rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;">
+                        📊
+                    </button>
                 </div>
 
                 <div class="quick-actions">
@@ -312,6 +323,19 @@
         </div>
     </div>
 
+    <!-- Job Dashboard Modal -->
+    <div class="modal-overlay" id="job-modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <span>🏢 Estación de Mando</span>
+                <button class="close-btn" id="close-job-modal" onclick="UI.closeModal('job-modal')">×</button>
+            </div>
+            <div class="modal-body" id="job-container">
+                <!-- Content injected by UI.renderJob() -->
+            </div>
+        </div>
+    </div>
+
     <!-- International Airport Modal -->
     <div class="modal-overlay" id="airport-modal">
         <div class="modal-content">
@@ -479,11 +503,13 @@
 
     <!-- Job Modal -->
 
-    <div class="modal-overlay" id="job-modal">
+    <!-- Job Market Modal -->
+    <div class="modal-overlay" id="job-market-modal">
         <div class="modal-content">
             <div class="modal-header">
                 <span>Oportunidades de Empleo</span>
-                <button class="close-btn" id="close-job-modal">&times;</button>
+                <button class="close-btn" id="close-job-market-modal"
+                    onclick="UI.closeModal('job-market-modal')">&times;</button>
             </div>
             <div class="modal-body" id="job-list-container">
                 <!-- Job items injected here -->

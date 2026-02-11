@@ -57,6 +57,9 @@ const state = {
     education: [],
 
     // JOB SYSTEM EXPANSION
+    jobLevel: 0, // 0=Trainee, 1=Junior, 2=SSr, 3=Senior, 4=Lead
+    lastMonthBonus: false, // Track if bonus was received
+    headhuntingOffers: [], // Array of job offers
     workedThisMonth: false, // Track if player worked this month (reset monthly)
     jobMonths: 0, // Months in current job
     careerExperience: { // Experience by career (in months)

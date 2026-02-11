@@ -178,6 +178,24 @@ const Game = {
                 }
             }
         });
+
+        // JOB PERFORMANCE BONUS
+        if (state.currJobId !== 'unemployed' && state.work_relations.performance > 90) {
+            const job = JOBS.find(j => j.id === state.currJobId);
+            const level = JOB_LEVELS[state.jobLevel || 0];
+            const baseSalary = job ? job.salary : 0;
+            const currentSalary = baseSalary * level.salaryMult;
+
+            const bonus = Math.floor(currentSalary * 0.15);
+            Game.updateStat('money', bonus);
+            state.lastMonthBonus = true;
+            UI.log(`¡Bono de Alto Rendimiento! +$${bonus.toLocaleString()}`, "good");
+        } else {
+            state.lastMonthBonus = false;
+        }
+
+        // Reset work flag
+        state.workedThisMonth = false;
     },
 
     /**
@@ -310,7 +328,11 @@ const Game = {
         // 1. Active Income (Job)
         if (state.currJobId !== 'unemployed') {
             const job = JOBS.find(j => j.id === state.currJobId);
-            if (job) activeIncome += job.salary;
+            if (job) {
+                // Apply Level Multiplier
+                const level = JOB_LEVELS[state.jobLevel || 0];
+                activeIncome += Math.floor(job.salary * level.salaryMult);
+            }
         }
 
         // 2. Passive Income
@@ -553,9 +575,267 @@ const Game = {
         this.updateStat('energy', 100); // Fully rested
 
         UI.log(`Disfrutaste de ${days} días libres.`, "good");
-        UI.render(); // Refreshes dashboard if open
+        UI.render(); // Refreshes dashboard        UI.render();
         UI.renderJobDashboard();
     },
+
+    // --- NEW JOB ACTIONS (Command Station) ---
+
+    workHard() {
+        const job = JOBS.find(j => j.id === state.currJobId);
+        if (!job) return;
+
+        // Apply Level Multiplier to Costs
+        const level = JOB_LEVELS[state.jobLevel || 0];
+        const energyCost = (job.energyCost || 20) * 1.5 * level.energyMult;
+        const stressGain = (job.stress || 5) * 1.5 * level.stressMult;
+
+        if (state.energy < energyCost) return UI.showAlert("Agotado", "No tienes energía para trabajar intenso.");
+
+        Game.updateStat('energy', -energyCost);
+        Game.updateStat('stress', stressGain);
+
+        // Performance Boost
+        state.work_relations.performance = Math.min(100, state.work_relations.performance + 5);
+        state.jobXP += (job.xpGain || 1) * 1.5;
+
+        // Money Bonus (Overtime?)
+        const overtimePay = Math.floor((job.salary * level.salaryMult) / 20); // 1 day approx of scaled salary
+        Game.updateStat('money', overtimePay);
+
+        UI.log(`Trabajo Intenso: +Rendimiento, +$${overtimePay}. Estrés aumentado.`, "good");
+        if (Math.random() < 0.1) this.triggerWorkEvent();
+
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    slackOff() {
+        if (state.energy < 5) return UI.showAlert("Zzz...", "Estás demasiado cansado incluso para fingir trabajar.");
+
+        Game.updateStat('energy', -5); // Minimal cost
+        Game.updateStat('stress', -5); // Relax
+
+        // Performance Hit
+        state.work_relations.performance = Math.max(0, state.work_relations.performance - 5);
+
+        UI.log("Te tomaste el día con calma. -Estrés, -Rendimiento.", "normal");
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    socializeBoss() {
+        if (state.energy < 15) return UI.showAlert("Cansado", "Necesitas energía para adular al jefe.");
+
+        Game.updateStat('energy', -15);
+
+        if (Math.random() > 0.3) {
+            state.work_relations.boss = Math.min(100, state.work_relations.boss + 5);
+            UI.log("Jefe: 'Buen trabajo equipo'. (+Relación)", "good");
+        } else {
+            UI.log("Jefe: 'Ahora no tengo tiempo'. (Sin efecto)", "normal");
+        }
+
+        // Chance of random work event (10%)
+        if (Math.random() < 0.1) this.triggerWorkEvent();
+
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    socializeColleagues() {
+        if (state.energy < 15) return UI.showAlert("Cansado", "Demasiado cansado para socializar.");
+        Game.updateStat('energy', -15);
+        state.work_relations.colleagues = Math.min(100, state.work_relations.colleagues + 4);
+        Game.updateStat('stress', -5); // Venting helps
+        UI.log("Charla en la máquina de café. +Colegas, -Estrés.", "good");
+
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    takeBreak() {
+        Game.updateStat('energy', 10);
+        Game.updateStat('stress', -5);
+        // Costs time? assume instant for now or minimal
+        UI.log("Breve descanso. +10E, -5 Estrés.", "good");
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    askForRaise() {
+        const p = state.work_relations.performance;
+        const b = state.work_relations.boss;
+
+        if (p > 90 && b > 80) {
+            // Success
+            // Increase salary multiplier? Or one time cash?
+            // Let's implement salary raise logic later or simple bonus now
+            Game.updateStat('money', 5000);
+            UI.showAlert("¡Aumento Aprobado!", "Tu jefe valora tu excelencia. Tienes un bono de $5,000.");
+        } else {
+            state.work_relations.boss -= 10;
+            UI.showAlert("Denegado", "Tu jefe se molestó por pedir un aumento sin merecerlo. -Relación.");
+        }
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    askForPromotion() {
+        const currentLevel = state.jobLevel || 0;
+        if (currentLevel >= JOB_LEVELS.length - 1) {
+            return UI.showAlert("Techo de Cristal", "Has alcanzado el nivel más alto posible en esta jerarquía.");
+        }
+
+        const nextLevel = JOB_LEVELS[currentLevel + 1];
+        const req = nextLevel.req;
+
+        // Check Requirements
+        const hasXP = state.jobMonths >= req.xp;
+        const hasRep = state.work_relations.boss >= req.rep;
+        const hasInt = state.intelligence >= req.int;
+
+        if (hasXP && hasRep && hasInt) {
+            state.jobLevel++;
+            state.jobMonths = 0; // Optional: Reset months or keep accum? better keep specific level months? Simpler to keep total time.
+            // Actually, req.xp is usually "total experience" or "time in grade"?
+            // Let's assume time in current job is enough for now, or total career xp.
+            // Config said "xp: 6", likely months.
+
+            Game.updateStat('happiness', 10);
+            Game.updateStat('status', 15);
+            AudioSys.playSuccess();
+            UI.showAlert("¡ASCENSO CONCEDIDO! 🌟", `Has sido promovido a ${nextLevel.name}. Tu salario ha aumentado considerablemente.`);
+        } else {
+            state.work_relations.boss -= 5;
+            state.work_relations.happiness -= 5;
+            let missing = [];
+            if (!hasXP) missing.push(`Tiempo (${state.jobMonths}/${req.xp} meses)`);
+            if (!hasRep) missing.push(`Reputación (${state.work_relations.boss}/${req.rep})`);
+            if (!hasInt) missing.push(`Inteligencia (${state.intelligence}/${req.int})`);
+
+            UI.showAlert("Solicitud Rechazada", `Aún no estás listo para ser ${nextLevel.name}.\nTe falta: ${missing.join(', ')}.`);
+        }
+        UI.render();
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    // --- WORK EVENTS & NETWORKING ---
+
+    attendAfterOffice() {
+        if (state.energy < 25) return UI.showAlert("Agotado", "Demasiado cansado para ir al After Office.");
+        if (state.money < 50) return UI.showAlert("Sin Fondos", "Necesitas $50 para las bebidas.");
+
+        Game.updateStat('energy', -25);
+        Game.updateStat('money', -50);
+        Game.updateStat('stress', -10); // Relaxing
+        state.work_relations.colleagues = Math.min(100, state.work_relations.colleagues + 8);
+
+        // Network Gain
+        const netGain = 5 + (state.charisma * 0.1);
+        if (!state.network) state.network = 0;
+        state.network += netGain;
+
+        UI.log(`🍺 After Office: +Colegas, -Estrés, +Red de Contactos (${Math.floor(netGain)}).`, "good");
+
+        // Headhunting Chance
+        this.checkHeadhunting();
+
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    checkHeadhunting() {
+        // Requires Network > 50 and Good Reputation
+        if (state.network < 50) return;
+        if (state.work_relations.performance < 70) return;
+
+        // Chance bases on network
+        const chance = (state.network - 40) * 0.005; // 50->5%, 100->30%
+        if (Math.random() < chance) {
+            // GENERATE OFFER
+            const currentJob = JOBS.find(j => j.id === state.currJobId);
+            if (!currentJob) return;
+
+            const level = JOB_LEVELS[state.jobLevel || 0];
+            const offerSalary = Math.floor(currentJob.salary * level.salaryMult * 1.2);
+            const signingBonus = offerSalary * 2;
+
+            const offer = {
+                id: 'headhunt_' + Date.now(),
+                title: `Oferta: ${currentJob.title} (Competencia)`,
+                salary: offerSalary,
+                bonus: signingBonus,
+                desc: 'Una empresa rival ha oído hablar de ti y te quiere en su equipo.',
+                expires: 3 // Months
+            };
+
+            if (!state.headhuntingOffers) state.headhuntingOffers = [];
+            state.headhuntingOffers.push(offer);
+
+            UI.showAlert("¡RASTREADO! 🦅", `Un headhunter te ha contactado.\nOferta: ${offer.title}\nSalario: $${offerSalary}/mes\nBono: $${signingBonus}`);
+            AudioSys.playSuccess();
+        }
+    },
+
+    triggerWorkEvent() {
+        if (!WORK_EVENTS || WORK_EVENTS.length === 0) return;
+
+        const event = WORK_EVENTS[Math.floor(Math.random() * WORK_EVENTS.length)];
+
+        // UI for Event choice - Using specific modal structure or fallback
+        const modal = document.getElementById('event-modal');
+        if (modal) {
+            // Fallback if specific IDs don't exist, just blast innerHTML of body
+            const body = modal.querySelector('.modal-body');
+            if (body) {
+                let html = `<h3>${event.title}</h3><p>${event.desc}</p><div style="display:flex; flex-direction:column; gap:10px; margin-top:15px;">`;
+                event.choices.forEach((c, idx) => {
+                    html += `<button class="act-btn" onclick="Game.handleWorkEventChoice('${event.id}', ${idx})">${c.text}</button>`;
+                });
+                html += `</div>`;
+                body.innerHTML = html;
+                modal.classList.add('active');
+            }
+        }
+    },
+
+    handleWorkEventChoice(eventId, choiceIdx) {
+        const event = WORK_EVENTS.find(e => e.id === eventId);
+        if (!event) return;
+        const choice = event.choices[choiceIdx];
+        const effect = choice.effect;
+
+        // Close Modal
+        document.getElementById('event-modal').classList.remove('active');
+
+        // Apply Effects
+        if (effect.bossRep) state.work_relations.boss = Math.max(0, Math.min(100, state.work_relations.boss + effect.bossRep));
+        if (effect.colleagueRep) state.work_relations.colleagues = Math.max(0, Math.min(100, state.work_relations.colleagues + effect.colleagueRep));
+
+        if (effect.stress) Game.updateStat('stress', effect.stress);
+        if (effect.energy) Game.updateStat('energy', effect.energy);
+
+        // Complex effects (Probabilistic)
+        if (effect.chance) {
+            if (Math.random() < effect.chance) {
+                if (effect.success && effect.success.bossRep) state.work_relations.boss += effect.success.bossRep;
+                if (effect.success && effect.success.money) Game.updateStat('money', effect.success.money);
+                UI.log("Resultado: Éxito. " + choice.text, "good");
+            } else {
+                if (effect.fail && effect.fail.bossRep) state.work_relations.boss += effect.fail.bossRep;
+                UI.log("Resultado: Fallo.", "bad");
+            }
+        } else {
+            UI.log(`Decisión: ${choice.text}`, "normal");
+        }
+
+        UI.render();
+        UI.renderJobDashboard();
+    },
+
+    // ----------------------------
 
     work() {
         if (state.consecutiveWork > 2) {
@@ -653,7 +933,11 @@ const Game = {
 
         // Decay logic is handled in nextMonth (neglect)
 
+        // Chance of random work event (5%)
+        if (Math.random() < 0.05) this.triggerWorkEvent();
+
         UI.render();
+        UI.renderJobDashboard();
     },
 
     promote(arg) {

@@ -35,14 +35,9 @@ const App = {
         const closeJd = document.getElementById('close-job-dashboard');
         if (closeJd) closeJd.onclick = () => document.getElementById('job-dashboard-modal').classList.remove('active');
 
-        // New Dashboard Open (Static Button)
-        const openJd = document.getElementById('btn-job-dashboard');
-        if (openJd) {
-            openJd.onclick = () => {
-                UI.renderJobDashboard();
-                document.getElementById('job-dashboard-modal').classList.add('active');
-            };
-        }
+        // New Dashboard Open (Static Button) - Handled inline in HTML or UI.js
+        // Removed conflicting listener that broke the UI
+
 
         if (UI.els.modals.closeSettings) UI.els.modals.closeSettings.onclick = () => UI.els.modals.settings.classList.remove('active');
         if (UI.els.modals.closeShop) UI.els.modals.closeShop.onclick = () => UI.els.modals.shop.classList.remove('active');
@@ -52,10 +47,12 @@ const App = {
 
 
         // Modal Triggers
+        // Modal Triggers
         if (UI.els.jobTrigger) {
             UI.els.jobTrigger.onclick = () => {
-                UI.els.modals.job.classList.add('active');
-                UI.renderJobMarket();
+                // Now opens Dashboard instead of Market
+                UI.openModal('job-modal');
+                UI.renderJob();
             };
         }
 

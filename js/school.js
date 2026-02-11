@@ -191,7 +191,9 @@ const School = {
         if (s.grades < 60) {
             s.pressure += 2;
             UI.log("Tus padres te exigen mejores notas.", "bad");
-        } else if (s.grades > 90) {
+        } else if (state.school.grades > 90) {
+            state.intelligence += 0.5;
+            state.fame.followers += 5; // Smart kids get some respect?
             s.pressure -= 2;
             if (s.pressure < 0) s.pressure = 0;
         }
@@ -200,6 +202,9 @@ const School = {
             Game.updateStat('mentalHealth', -5);
             UI.log("⚠️ La presión parental te está estresando.", "bad");
         }
+
+        // Process Housing Effects
+        this.processHousingEffects();
 
         // 3. Events
         this.EVENTS.forEach(ev => {
@@ -212,15 +217,63 @@ const School = {
         this.checkProdigy();
     },
 
+    processHousingEffects() {
+        if (!state.isStudent) return;
+
+        // Default to parents if not set
+        if (!state.school.housing) state.school.housing = 'parents';
+
+        const h = state.school.housing;
+
+        if (h === 'parents') {
+            Game.updateStat('happiness', -2); // Lack of independence
+            Game.updateStat('energy', -5); // Commute
+        } else if (h === 'dorm') {
+            Game.updateStat('energy', 5); // Close to class
+            state.school.popularity = Math.min(100, (state.school.popularity || 0) + 1);
+        } else if (h === 'shared') {
+            // Random Roommate Event
+            if (Math.random() < 0.2) {
+                if (Math.random() > 0.5) {
+                    UI.showAlert("Drama de Roommates", "Tus compañeros de departamento tuvieron una pelea a gritos. -5 Salud Mental.");
+                    Game.updateStat('mentalHealth', -5);
+                    Game.updateStat('stress', 10);
+                } else {
+                    UI.showAlert("Noche de Películas", "Pasaste una gran noche con tus roommates. +10 Felicidad.");
+                    Game.updateStat('happiness', 10);
+                    state.network += 2;
+                }
+            }
+        }
+    },
+
+    setHousing(type) {
+        state.school.housing = type;
+        const names = {
+            'parents': "Casa de los Padres",
+            'dorm': "Dormitorios del Campus",
+            'shared': "Departamento Compartido"
+        };
+        UI.log(`Te has mudado a: ${names[type]}`, "normal");
+        UI.render();
+        UI.renderUniversityTab();
+    },
+
     universityTick() {
         const s = state.school;
 
+        // Skip normal tick if exam mode?
+        // Actually, let standard tick run for housing costs etc,
+        // but maybe suppress some random events?
+        // For simplicity, let it run.
+
+        const monthsInUni = state.totalMonths - (18 * 12); // Approx
         // Decay
         s.grades -= 1.5; // University is harder
         s.pressure += 0.5;
 
         // Exams every 6 months (Month 6 and 12 of the year? state.totalMonths % 6 === 0?)
-        // Assuming totalMonths starts at 144 (12yo). 
+        // Assuming totalMonths starts at 144 (12yo).
         if ((state.totalMonths - 216) % 6 === 0 && (state.totalMonths > 216)) {
             this.triggerSemesterExams();
         }
@@ -434,6 +487,101 @@ const School = {
         ];
 
         UI.showEventChoices("🎓 Graduación", text, choices);
+    },
+
+    // --- EXAM MODE SYSTEM ---
+    triggerSemesterExams() {
+        state.school.examMode = true;
+        state.school.examStudyHours = 0;
+        state.school.examStress = 0;
+
+        UI.showAlert("📚 ¡SEMANA DE EXÁMENES!", "Ha llegado el final del semestre. Todas las actividades de ocio están bloqueadas.\n\nDedícate a ESTUDIAR para aprobar. Tu nota depende de tu Inteligencia y las Horas de Estudio acumuladas.");
+        UI.render();
+        // Force switch to University tab
+        UI.switchActTab('university');
+    },
+
+    examAction(action) {
+        if (!state.school.examMode) return;
+
+        const s = state.school;
+
+        if (action === 'study') {
+            const cost = 20;
+            if (state.energy < cost) return UI.showAlert("Agotado", "Necesitas descansar o tomar café.");
+
+            Game.updateStat('energy', -cost);
+            Game.updateStat('stress', 5);
+            s.examStudyHours = (s.examStudyHours || 0) + 5;
+
+            // Intelligence variance
+            const efficiency = 1 + (state.intelligence / 100);
+
+            UI.log(`Estudiaste intensamente (+5 horas).`, "good");
+
+        } else if (action === 'coffee') {
+            if (state.money < 5) return UI.showAlert("Sin Dinero", "No te alcanza para el café.");
+            Game.updateStat('money', -5);
+            Game.updateStat('energy', 25);
+            Game.updateStat('physicalHealth', -2); // Too much caffeine
+            Game.updateStat('stress', 2);
+            UI.log("Café cargado. ¡Energía a tope! (+25 E)", "normal");
+
+        } else if (action === 'rest') {
+            Game.updateStat('energy', 30);
+            Game.updateStat('stress', -5);
+            // Costs time? For simplicty, just action.
+            UI.log("Descansaste un poco. (+30 E)", "good");
+        }
+
+        UI.render();
+        UI.renderUniversityTab();
+    },
+
+    takeExams() {
+        const s = state.school;
+        // Formula: (Int * 0.4) + (Hours * 1.5) + Luck(0-10)
+        // Target: 100 Int * 0.4 = 40. Need 60 pts from hours/luck.
+        // Hours needed approx: 30-40 hours (30 * 1.5 = 45). 
+        // 40 + 45 + 5 = 90 (Honors).
+
+        const luck = Math.random() * 10;
+        const score = (state.intelligence * 0.4) + ((s.examStudyHours || 0) * 1.5) + luck;
+        const finalGrade = Math.min(100, Math.max(0, score));
+
+        // Update average grades
+        s.grades = (s.grades + finalGrade) / 2;
+
+        let honors = false;
+        let fail = false;
+        let msg = `Tu nota final es: ${finalGrade.toFixed(1)}/100.`;
+
+        if (finalGrade >= 90) {
+            honors = true;
+            s.honors = true; // Unlock logic
+            s.scholarship = 'academic_honors'; // Upgrade scholarship?
+            state.careerExperience['education'] = (state.careerExperience['education'] || 0) + 5;
+            state.happiness += 10;
+            msg += "\n\n¡APROBADO CON HONORES! 🎓🌟\nHas desbloqueado mejores oportunidades.";
+            UI.log("Exámenes: HONORES", "good");
+        } else if (finalGrade < 50) {
+            fail = true;
+            s.scholarship = null; // Lose scholarship
+            Game.updateStat('money', -1000); // Retake fee
+            Game.updateStat('happiness', -20);
+            msg += "\n\n❌ REPROBADO.\nPerdiste tu beca y pagas $1000 por cursos de verano.";
+            UI.log("Exámenes: REPROBADO", "bad");
+        } else {
+            msg += "\n\nHas aprobado el semestre.";
+            UI.log("Exámenes: Aprobado", "normal");
+        }
+
+        s.examMode = false;
+        s.examStudyHours = 0;
+
+        UI.showAlert(honors ? "¡HONORES!" : (fail ? "REPROBADO" : "SEMESTRE TERMINADO"), msg);
+        UI.render();
+        UI.renderUniversityTab();
     },
 
 
@@ -678,5 +826,104 @@ const School = {
 
         // Force render to ensure UI updates immediately
         UI.render();
+    },
+
+    // --- CLUBS SYSTEM ---
+    joinClub(type) {
+        if (state.school.club && state.school.club !== 'none') {
+            return UI.showAlert("Ya estás en un club", "Debes dejar tu club actual antes de unirte a otro.");
+        }
+
+        // Define clubs
+        const clubs = {
+            'coding': { name: 'Club de Programación 💻', cost: 0 },
+            'investment': { name: 'Sociedad de Inversión 📈', cost: 0 },
+            'consulting': { name: 'Consultora Estudiantil 📊', cost: 0 },
+            'networking': { name: 'Networking de Élite 🥂', cost: 500 } // Initiation fee?
+        };
+
+        const fees = clubs[type].cost;
+        if (fees > 0) {
+            if (state.money < fees) return UI.showAlert("Fondos Insuficientes", `Necesitas $${fees} para unirte a este club exclusivo.`);
+            Game.updateStat('money', -fees);
+        }
+
+        state.school.club = type;
+
+        UI.log(`Te uniste al ${clubs[type].name}.`, "good");
+        UI.render();
+        UI.renderUniversityTab();
+    },
+
+    quitClub() {
+        if (!state.school.club) return;
+        state.school.club = null;
+        UI.log("Dejaste tu club extracurricular.", "normal");
+        UI.render();
+        UI.renderUniversityTab();
+    },
+
+    performClubActivity() {
+        const club = state.school.club;
+        if (!club) return;
+
+        const energyCost = 25;
+        if (state.energy < energyCost) return UI.showAlert("Cansado", "Necesitas más energía para participar en actividades del club.");
+
+        Game.updateStat('energy', -energyCost);
+        Game.updateStat('happiness', 2); // Socializing usually fun
+
+        switch (club) {
+            case 'coding':
+                // Hackathon
+                state.careerExperience['tech'] = (state.careerExperience['tech'] || 0) + 5;
+                UI.log("Participaste en un Hackathon. +5 Exp Tech.", "good");
+                if (Math.random() < 0.05) {
+                    UI.showAlert("Socio Encontrado (Tech)", "Conociste a un programador brillante que quiere armar una startup contigo en el futuro.");
+                    // logic to store co-founder?
+                    if (!state.network.coFounders) state.network.coFounders = [];
+                    state.network.coFounders.push({ type: 'tech', skill: 80 });
+                }
+                break;
+            case 'investment':
+                // Market Analysis
+                state.intelligence += 1; // Small int boost
+                // Market Tips - Reduces investment risk?
+                // Let's enable a temporary flag
+                state.marketTips = (state.marketTips || 0) + 3; // 3 months of tips
+                UI.log("Análisis de Mercado: Inteligencia +1. Has recibido tips de inversión por 3 meses.", "good");
+                break;
+            case 'consulting':
+                // Real Project
+                if (Math.random() > 0.5) {
+                    state.careerExperience['product'] = (state.careerExperience['product'] || 0) + 5;
+                    UI.log("Proyecto de Consultoría: +5 Exp Producto.", "good");
+                } else {
+                    state.careerExperience['management'] = (state.careerExperience['management'] || 0) + 5; // Assuming mgmt track exists or general
+                    UI.log("Proyecto de Consultoría: +5 Exp Gestión.", "good");
+                }
+                break;
+            case 'networking':
+                // Elite Gala
+                const cost = 100; // Expensive events
+                if (state.money < cost) {
+                    UI.log("No pudiste pagar la entrada al evento de networking.", "bad");
+                    Game.updateStat('energy', 25); // Refund energy
+                    return;
+                }
+                Game.updateStat('money', -cost);
+                state.network = (state.network || 0) + 8;
+                Game.updateStat('status', 3);
+                UI.log("Asististe a una Gala Exclusiva. +8 Red, +3 Estatus.", "good");
+
+                if (Math.random() < 0.1) {
+                    UI.showAlert("Contacto VIP", "Conociste al hijo de un CEO importante.");
+                    state.network += 15;
+                }
+                break;
+        }
+
+        UI.render();
+        UI.renderUniversityTab();
     }
 };

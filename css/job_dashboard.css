@@ -1,0 +1,151 @@
+
+/* --- JOB DASHBOARD (GLASSMORPHISM) --- */
+.job-dashboard-container {
+    padding: 10px;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.glass-panel:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Job Card Specifics */
+.job-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.job-icon {
+    font-size: 3rem;
+    margin-right: 15px;
+    filter: drop-shadow(0 0 10px rgba(0, 229, 255, 0.3));
+}
+
+.job-details h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    background: linear-gradient(90deg, #fff, #aaa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.job-salary {
+    font-family: 'Courier Prime', 'Courier New', monospace;
+    color: #4dffea;
+    font-size: 1.1rem;
+    margin-top: 5px;
+    letter-spacing: 1px;
+}
+
+/* Status Bars */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.status-item {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.status-label {
+    font-size: 0.7rem;
+    color: #aaa;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.status-track {
+    height: 6px;
+    background: #222;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.status-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.5s ease-out;
+}
+
+/* Console Grid */
+.console-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.console-col h4 {
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #333;
+    padding-bottom: 5px;
+}
+
+.console-btn {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 10px;
+    color: #eee;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.console-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    border-color: var(--accent-color);
+}
+
+.console-btn:active {
+    transform: translateY(0);
+}
+
+.btn-title {
+    display: block;
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 2px;
+}
+
+.btn-desc {
+    display: block;
+    font-size: 0.75rem;
+    color: #888;
+}
+
+/* Specific Bar Colors */
+.bar-perf { background: #00e5ff; box-shadow: 0 0 10px rgba(0, 229, 255, 0.4); }
+.bar-rep { background: #d4af37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.4); }
+.bar-stress { background: #ff3d71; box-shadow: 0 0 10px rgba(255, 61, 113, 0.4); }
+
+@media (max-width: 768px) {
+    .status-grid { grid-template-columns: 1fr; gap: 10px; }
+    .console-grid { grid-template-columns: 1fr; gap: 20px; }
+}

@@ -43,6 +43,46 @@ const RARE_ITEMS = [
     { id: 'limited_watch', name: 'Patek Philippe', price: 250000, desc: 'Edición limitada. (+20 Estatus)', icon: '⌚', maint: 100, effect: { type: 'status', val: 20 } }
 ];
 
+const JOB_LEVELS = [
+    { id: 0, name: 'Trainee', salaryMult: 1.0, req: { xp: 0, rep: 0, int: 0 }, energyMult: 1.0, stressMult: 1.0 },
+    { id: 1, name: 'Junior', salaryMult: 1.5, req: { xp: 6, rep: 60, int: 20 }, energyMult: 1.2, stressMult: 1.2 },
+    { id: 2, name: 'Semi-Senior', salaryMult: 2.2, req: { xp: 18, rep: 75, int: 40 }, energyMult: 1.5, stressMult: 1.5 },
+    { id: 3, name: 'Senior', salaryMult: 3.5, req: { xp: 36, rep: 85, int: 60 }, energyMult: 1.8, stressMult: 1.8 },
+    { id: 4, name: 'Lead', salaryMult: 5.0, req: { xp: 60, rep: 95, int: 80 }, energyMult: 2.5, stressMult: 2.5 }
+];
+
+const WORK_EVENTS = [
+    {
+        id: 'dilemma_mistake',
+        title: 'Error de un Colega',
+        desc: 'Un compañero de trabajo ha borrado accidentalmente una base de datos importante. Nadie más lo sabe todavía.',
+        choices: [
+            { text: 'Reportarlo al Jefe', effect: { bossRep: 10, colleagueRep: -20, stress: -5 } },
+            { text: 'Ayudarlo a arreglarlo (Coste: Energía)', effect: { bossRep: 0, colleagueRep: 15, energy: -20, stress: 5 } },
+            { text: 'Ignorarlo', effect: { bossRep: -5, colleagueRep: -5, stress: 0 } }
+        ]
+    },
+    {
+        id: 'dilemma_credit',
+        title: 'Robo de Crédito',
+        desc: 'Tu jefe te felicita por un proyecto que en realidad hizo tu equipo, pero él cree que fuiste tú solo.',
+        choices: [
+            { text: 'Aceptar el elogio', effect: { bossRep: 5, colleagueRep: -15, stress: 2 } },
+            { text: 'Dar crédito al equipo', effect: { bossRep: 2, colleagueRep: 10, stress: -2 } }
+        ]
+    },
+    {
+        id: 'review_performance',
+        title: 'Evaluación de Desempeño',
+        desc: 'Es hora de tu revisión trimestral con RRHH y tu supervisor.',
+        type: 'review',
+        choices: [
+            { text: 'Destacar mis logros', effect: { chance: 0.7, success: { bossRep: 10, money: 500 }, fail: { bossRep: -5 } } },
+            { text: 'Ser humilde', effect: { bossRep: 5, stress: -5 } }
+        ]
+    }
+];
+
 const CAREER_TRACKS = {
     'service': { label: 'Servicios Básicos', icon: '🧹', desc: 'Empleos de entrada y servicios esenciales.' },
     'trade': { label: 'Oficios', icon: '🛠️', desc: 'Trabajos manuales calificados.' },
