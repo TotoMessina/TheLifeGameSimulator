@@ -61,6 +61,8 @@ const Game = {
             state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
         }
         if (!state.careerExperience) state.careerExperience = {};
+        if (!state.companyBlacklist) state.companyBlacklist = {};
+        if (!state.sectorReputation) state.sectorReputation = {};
         if (!state.fame) {
             state.fame = {
                 followers: 0,
@@ -526,6 +528,7 @@ const Game = {
             }
         }
         // Add more crimes here...
+        if (UI.closeModal) UI.closeModal('activity-modal');
         UI.render();
     },
 
@@ -607,7 +610,8 @@ const Game = {
         if (Math.random() < 0.1) this.triggerWorkEvent();
 
         UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     slackOff() {
@@ -621,7 +625,8 @@ const Game = {
 
         UI.log("Te tomaste el día con calma. -Estrés, -Rendimiento.", "normal");
         UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     socializeBoss() {
@@ -640,7 +645,8 @@ const Game = {
         if (Math.random() < 0.1) this.triggerWorkEvent();
 
         UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     socializeColleagues() {
@@ -651,7 +657,8 @@ const Game = {
         UI.log("Charla en la máquina de café. +Colegas, -Estrés.", "good");
 
         UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     takeBreak() {
@@ -660,7 +667,8 @@ const Game = {
         // Costs time? assume instant for now or minimal
         UI.log("Breve descanso. +10E, -5 Estrés.", "good");
         UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     askForRaise() {
@@ -678,7 +686,8 @@ const Game = {
             UI.showAlert("Denegado", "Tu jefe se molestó por pedir un aumento sin merecerlo. -Relación.");
         }
         UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     askForPromotion() {
@@ -717,8 +726,8 @@ const Game = {
             UI.showAlert("Solicitud Rechazada", `Aún no estás listo para ser ${nextLevel.name}.\nTe falta: ${missing.join(', ')}.`);
         }
         UI.render();
-        UI.render();
-        UI.renderJobDashboard();
+        // UI.renderJobDashboard();
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
     },
 
     // --- WORK EVENTS & NETWORKING ---
@@ -746,37 +755,97 @@ const Game = {
         UI.renderJobDashboard();
     },
 
-    checkHeadhunting() {
-        // Requires Network > 50 and Good Reputation
-        if (state.network < 50) return;
-        if (state.work_relations.performance < 70) return;
+    checkHeadhunterEvent() {
+        // Vibe Check: Recessions make headhunters more aggressive
+        let baseChance = 0.2; // 20% base chance per month after streak
+        if (state.world && state.world.economicState === 'recession') {
+            baseChance = 0.4;
+        }
 
-        // Chance bases on network
-        const chance = (state.network - 40) * 0.005; // 50->5%, 100->30%
-        if (Math.random() < chance) {
-            // GENERATE OFFER
+        if (Math.random() < baseChance) {
             const currentJob = JOBS.find(j => j.id === state.currJobId);
             if (!currentJob) return;
 
+            // Select a rival company
+            const rivalCompanies = COMPANIES.filter(c => c.id !== currentJob.companyId && c.sector === (currentJob.sector || 'fastfood'));
+            if (rivalCompanies.length === 0) return;
+            const rival = rivalCompanies[Math.floor(Math.random() * rivalCompanies.length)];
+
             const level = JOB_LEVELS[state.jobLevel || 0];
-            const offerSalary = Math.floor(currentJob.salary * level.salaryMult * 1.2);
+            const offerSalary = Math.floor(currentJob.salary * level.salaryMult * 1.2); // 20% more
             const signingBonus = offerSalary * 2;
 
             const offer = {
                 id: 'headhunt_' + Date.now(),
-                title: `Oferta: ${currentJob.title} (Competencia)`,
+                companyId: rival.id,
+                companyName: rival.name,
+                companyLogo: rival.logo,
+                title: currentJob.title,
                 salary: offerSalary,
                 bonus: signingBonus,
-                desc: 'Una empresa rival ha oído hablar de ti y te quiere en su equipo.',
-                expires: 3 // Months
+                desc: `¡Hola! Hemos visto tu increíble desempeño en ${currentJob.companyId}. En **${rival.name}** valoramos el talento y queremos ofrecerte el puesto de **${currentJob.title}** con un **20% más de salario** y un bono de contratación.`
             };
 
-            if (!state.headhuntingOffers) state.headhuntingOffers = [];
-            state.headhuntingOffers.push(offer);
-
-            UI.showAlert("¡RASTREADO! 🦅", `Un headhunter te ha contactado.\nOferta: ${offer.title}\nSalario: $${offerSalary}/mes\nBono: $${signingBonus}`);
-            AudioSys.playSuccess();
+            UI.showHeadhunterModal(offer);
         }
+    },
+
+    acceptHeadhuntOffer(offer) {
+        state.currJobId = offer.id; // Or however jobs are indexed? Wait, JOBS are templates.
+        // Actually, we need to find the job template and assign the companyId.
+        const template = JOB_TEMPLATES.find(t => t.title === offer.title);
+        if (template) {
+            // Logic for switching job (similar to applyJob but forced)
+            state.currJobId = template.id + '_' + offer.companyId;
+            // Create the job if it doesn't exist in global list? 
+            // Better: just set state and update totals.
+
+            // Apply bonus
+            Game.updateStat('money', offer.bonus);
+            Game.updateStat('happiness', 15);
+            Game.updateStat('status', 10);
+
+            // Rivalry penalty? (Reputation with old company resets)
+            state.work_relations.boss = 50;
+            state.work_relations.performance = 50;
+            state.work_relations.performanceStreak = 0;
+
+            UI.log(`Te has unido a ${offer.companyName}. +$${offer.bonus} de bono.`, "good");
+            UI.showAlert("NUEVO COMIENZO", `Bienvenido a ${offer.companyName}. Tu nuevo salario es de $${offer.salary}/mes.`);
+        }
+        if (UI.closeModal) UI.closeModal('headhunter-modal');
+        UI.render();
+    },
+
+    counterHeadhuntOffer(offer) {
+        // Skill check: Intelligence + Experience + Charisma
+        const successChance = (state.intelligence + (state.careerExperience[offer.career] || 0) + state.charisma) / 300;
+
+        if (Math.random() < successChance) {
+            // Success: Raise current salary + Reputation
+            const job = JOBS.find(j => j.id === state.currJobId);
+            if (job) {
+                const raise = Math.floor(job.salary * 0.15);
+                job.salary += raise; // Permanente for this instance
+                state.work_relations.boss = Math.min(100, state.work_relations.boss + 15);
+                UI.showAlert("NEGOCIACIÓN EXITOSA", `Tu empresa actual ha igualado la oferta para retenerte. +$${raise} de salario base.`);
+            }
+        } else {
+            // Fail: Boss gets annoyed
+            state.work_relations.boss = Math.max(0, state.work_relations.boss - 20);
+            UI.showAlert("NEGOCIACIÓN FALLIDA", `A tu jefe no le gustó que usaras otra oferta como palanca. -20 Relación con el Jefe.`);
+        }
+
+        if (UI.closeModal) UI.closeModal('headhunter-modal');
+        UI.render();
+    },
+
+    rejectHeadhuntOffer(offer) {
+        // Sube Lealtad/Reputación
+        state.work_relations.boss = Math.min(100, state.work_relations.boss + 10);
+        UI.log(`Has rechazado la oferta de ${offer.companyName}. Tu lealtad ha sido notada.`, "good");
+        if (UI.closeModal) UI.closeModal('headhunter-modal');
+        UI.render();
     },
 
     triggerWorkEvent() {
@@ -917,7 +986,10 @@ const Game = {
         }
 
         // Reset UI
-        UI.renderJobDashboard(); // Will re-enable buttons
+        // Reset UI
+        // UI.renderJobDashboard(); // Return to home
+        if (UI.closeModal) UI.closeModal('job-dashboard-modal');
+        UI.render();
     },
 
     failWorkSession() {
@@ -1165,6 +1237,13 @@ const Game = {
 
         UI.log(`Renunciaste a tu puesto de ${state.currJobId}.`, "normal");
 
+        // Blacklist current company
+        const currentJob = JOBS.find(j => j.id === state.currJobId);
+        if (currentJob && currentJob.companyId) {
+            state.companyBlacklist[currentJob.companyId] = state.totalMonths + 24; // 2 years ban
+            UI.log(`Has sido vetado de ${currentJob.companyId} por 24 meses.`, "warning");
+        }
+
         state.currJobId = 'unemployed';
         state.jobXP = 0;
         state.jobMonths = 0;
@@ -1186,6 +1265,24 @@ const Game = {
         // Restriction: Students can only take Part-Time jobs
         if (state.isStudent && job.type !== 'part_time' && jobId !== 'unemployed') {
             return UI.showAlert("Estudiante", "No puedes tener un empleo a tiempo completo mientras estudias. Acepta un trabajo de medio tiempo.");
+        }
+
+        // CORPORATE LOGIC
+        if (job.companyId) {
+            const company = COMPANIES.find(c => c.id === job.companyId);
+
+            // 1. Blacklist Check
+            if (state.companyBlacklist[job.companyId] && state.companyBlacklist[job.companyId] > state.totalMonths) {
+                const remaining = state.companyBlacklist[job.companyId] - state.totalMonths;
+                return UI.showAlert("Lista Negra", `Esta empresa te ha vetado. Podrás volver a postularte en ${remaining} meses.`);
+            }
+
+            // 2. Reputation Check
+            const requiredRep = Math.floor(company.prestige / 2);
+            const currentRep = state.sectorReputation[company.sector] || 0;
+            if (currentRep < requiredRep) {
+                return UI.showAlert("Reputación Insuficiente", `Necesitas ${requiredRep} de Reputación en el sector ${company.sector.toUpperCase()} (Tienes: ${currentRep}).`);
+            }
         }
 
         // TRAVEL CHECK: Visa Requirements
@@ -1238,6 +1335,41 @@ const Game = {
                     const yearsNeeded = Math.ceil(requiredMonths / 12);
                     UI.showAlert("Falta Experiencia", `Necesitas al menos ${yearsNeeded} año(s) de experiencia en ${career}.`);
                     return;
+                }
+            }
+        }
+
+
+
+        // RIVALRY & SWITCHING LOGIC
+        if (state.currJobId !== 'unemployed') {
+            const prevJob = JOBS.find(j => j.id === state.currJobId);
+            if (prevJob && prevJob.companyId) {
+                const prevCompany = COMPANIES.find(c => c.id === prevJob.companyId);
+
+                if (prevJob.companyId === job.companyId) {
+                    // Internal Promotion (No penalty)
+                }
+                else if (prevCompany && prevCompany.rivals && prevCompany.rivals.includes(job.companyId)) {
+                    // TRAITOR! Rival Jump
+                    state.companyBlacklist[prevJob.companyId] = state.totalMonths + 48; // 4 years ban
+
+                    // Reputation Hit
+                    if (state.sectorReputation[prevCompany.sector]) {
+                        state.sectorReputation[prevCompany.sector] = Math.floor(state.sectorReputation[prevCompany.sector] * 0.5);
+                    }
+
+                    // SIGNING BONUS
+                    const bonus = prevJob.salary * 3;
+                    state.money += bonus;
+
+                    UI.showAlert("¡Traición Corporativa!", `Has saltado a la competencia.\n\nRecibes un Bono de Fichaje de $${bonus.toLocaleString()}.\nPero tu reputación en el sector ha caído y ${prevCompany.name} te ha vetado por 4 años.`);
+                    AudioSys.playMoney();
+                }
+                else {
+                    // Standard Switch
+                    state.companyBlacklist[prevJob.companyId] = state.totalMonths + 24; // 2 years ban
+                    UI.log(`Te fuiste de ${prevCompany.name}. Vetado por 24 meses.`, "normal");
                 }
             }
         }
@@ -1304,6 +1436,7 @@ const Game = {
             msg = "Un paseo refrescante. -Estrés";
         }
 
+        if (UI.closeModal) UI.closeModal('activity-modal');
         UI.log(msg, "normal");
         UI.render();
     },
@@ -1338,6 +1471,7 @@ const Game = {
             }
         }
 
+        if (UI.closeModal) UI.closeModal('activity-modal');
         UI.log("¡Qué buena fiesta! +Felicidad", "good");
         UI.render();
     },
@@ -1493,6 +1627,7 @@ const Game = {
         this.updateStat('happiness', 10);
         this.updateStat('energy', 100); // Recharged
 
+        if (UI.closeModal) UI.closeModal('activity-modal');
         UI.showAlert("✈️ Vacaciones", `${msg} Te sientes renovado.`);
         UI.render();
     },
@@ -1963,6 +2098,14 @@ const Game = {
         let xpGain = 2;
         if (state.work_relations && state.work_relations.performance > 80) {
             xpGain += 2;
+            state.work_relations.performanceStreak = (state.work_relations.performanceStreak || 0) + 1;
+
+            // Trigger Headhunter if streak >= 6
+            if (state.work_relations.performanceStreak >= 6) {
+                this.checkHeadhunterEvent();
+            }
+        } else {
+            state.work_relations.performanceStreak = 0;
         }
         this.updateStat('jobXP', xpGain);
 
@@ -2715,44 +2858,59 @@ const Game = {
             id: Date.now().toString(),
             typeId: typeId,
             name: name || type.name,
-            progress: 0,
-            quality: 0,
+            loc: 0,
+            targetLoc: type.targetLoc || 1000,
             status: 'dev',
-            income: 0,
-            marketing: 0
+            users: 0,
+            reviews: 5.0,
+            lastWorkedMonth: state.totalMonths,
+            income: 0
         });
 
-        UI.showAlert("Proyecto Iniciado", `Has comenzado a desarrollar: ${name}. \n¡Usa tu energía libre para avanzar!`);
+        UI.showAlert("Proyecto Iniciado", `Has comenzado a desarrollar: ${name}. \nObjetivo: ${type.targetLoc || 1000} Líneas de Código.`);
         UI.render();
         if (UI.renderProjects) UI.renderProjects();
     },
 
     workOnProject(projectId) {
         const project = state.projects.find(p => p.id === projectId);
-        if (!project || project.status !== 'dev') return;
+        if (!project) return;
 
-        const energyCost = 20;
-        if (state.energy < energyCost) return UI.showAlert("Agotado", "Necesitas más energía para desarrollar.");
+        const energyCost = 25;
+        if (state.energy < energyCost) return UI.showAlert("Agotado", "Necesitas más energía para trabajar en tu proyecto.");
 
-        const type = PROJECT_TYPES.find(t => t.id === project.typeId);
+        // Update Last Worked
+        project.lastWorkedMonth = state.totalMonths;
 
-        // Progress Calculation
-        let progressGain = 5 + (state.intelligence * 0.1) + ((state.creativity || 0) * 0.1);
-        progressGain *= (0.8 + Math.random() * 0.4);
+        if (project.status === 'dev') {
+            // CODING PHASE
+            // LOC Gain formula
+            let baseLoc = 20 + (state.intelligence * 0.5);
+            // Random flux
+            let locGain = Math.floor(baseLoc * (0.8 + Math.random() * 0.5));
 
-        // Quality Calculation
-        let qualityGain = (state.intelligence + (state.creativity || 0)) / 20;
+            project.loc += locGain;
+            this.updateStat('energy', -energyCost);
+            this.updateStat('stress', 3);
+            this.updateStat('intelligence', 0.1); // Coding makes you smarter
 
-        project.progress += progressGain;
-        project.quality = Math.min(100, project.quality + qualityGain);
+            UI.log(`Escribiste ${locGain} líneas de código.`, "action");
 
-        this.updateStat('energy', -energyCost);
-        this.updateStat('stress', 2);
+            if (project.loc >= project.targetLoc) {
+                UI.showAlert("¡Código Completado!", `Has alcanzado las ${project.targetLoc} líneas de código. \n¡El proyecto está listo para lanzarse!`);
+            }
 
-        UI.log(`Trabajo en ${project.name}: +${progressGain.toFixed(1)} Pts.`, "action");
+        } else if (project.status === 'live') {
+            // MAINTENANCE PHASE
+            this.updateStat('energy', -energyCost);
+            this.updateStat('stress', 2);
 
-        if (project.progress >= type.cost) {
-            UI.showAlert("¡Desarrollo Completado!", `Has terminado la fase de desarrollo de ${project.name}. \n¡Es hora de lanzarlo!`);
+            // Improve reviews/minimize churn
+            const reviewBoost = 0.2;
+            project.reviews = Math.min(5.0, project.reviews + reviewBoost);
+
+            // Fix bugs / small feature
+            UI.log("Realizaste mantenimiento y mejoras.", "action");
         }
 
         UI.render();
@@ -2763,7 +2921,18 @@ const Game = {
         const project = state.projects.find(p => p.id === projectId);
         if (!project || project.status !== 'dev') return;
 
-        const type = PROJECT_TYPES.find(t => t.id === project.typeId);
+        if (project.loc < project.targetLoc) {
+            return UI.showAlert("Código Incompleto", `Necesitas ${project.targetLoc} líneas de código. Tienes ${project.loc}.`);
+        }
+
+        project.status = 'live';
+        project.launchDate = state.totalMonths;
+        project.users = 50; // Initial users
+        project.reviews = 5.0; // Fresh app feeling
+        project.lastWorkedMonth = state.totalMonths;
+
+        UI.showAlert("🚀 ¡Lanzamiento!", `¡${project.name} está en vivo! \nEmpieza con 50 usuarios. \n¡No olvides darle mantenimiento mensual!`);
+        UI.log(`Lanzaste ${project.name}.`, "success");
         UI.render();
         if (UI.renderProjects) UI.renderProjects();
     },
@@ -2813,17 +2982,9 @@ const Game = {
 
         UI.showAlert(title, msg);
         UI.log(`KPI Review: ${msg}`, type);
-    }
+    },
 
-        project.status = 'live';
-    project.marketing = 10; // Initial marketing
-    project.launchDate = state.totalMonths;
 
-    UI.showAlert("🚀 ¡Lanzamiento!", `Tu proyecto ${project.name} está en vivo. \nEmpezará a generar ingresos pasivos.`);
-    UI.log(`Lanzaste ${project.name}.`, "success");
-    UI.render();
-    if(UI.renderProjects) UI.renderProjects();
-},
 
     processProjects() {
         if (!state.projects) return;
@@ -2834,41 +2995,63 @@ const Game = {
             if (p.status === 'live') {
                 const type = PROJECT_TYPES.find(t => t.id === p.typeId);
 
-                const qualityFactor = p.quality / 100;
-                const marketFactor = (p.marketing || 10) / 100;
+                // 1. Check Maintenance (Neglect)
+                const monthsSinceWork = state.totalMonths - p.lastWorkedMonth;
+                if (monthsSinceWork > 1) {
+                    // Decay
+                    p.reviews = Math.max(1.0, p.reviews - 0.5); // Drops fast
+                    UI.log(`Reseñas de ${p.name} caen por falta de updates.`, "bad");
+                }
 
-                // Income Calculation
-                let income = type.potential * qualityFactor * (0.8 + Math.random() * 0.4);
+                // 2. User Growth / Churn
+                // Growth depends on reviews
+                let growthRate = 0;
+                if (p.reviews >= 4.0) growthRate = 0.10 + (Math.random() * 0.1); // +10-20%
+                else if (p.reviews >= 3.0) growthRate = 0.02; // Stagnant
+                else growthRate = -0.10; // Churn if bad reviews
 
-                // Marketing decay slightly
-                if (p.marketing > 0 && Math.random() > 0.7) p.marketing--;
+                // Apply growth
+                p.users = Math.floor(p.users * (1 + growthRate));
+                if (p.users < 0) p.users = 0;
 
-                income = Math.floor(income);
+                // 3. Income Calc
+                // Avg revenue per user (ARPU) - vary by type?
+                // Delivery App: High volume, low margin ($0.50 per user/mo?)
+                // CRM: Low volume, high margin ($10 per user/mo?)
+                let arpu = 0.5;
+                if (p.typeId === 'crm_system') arpu = 5.0;
+
+                let income = Math.floor(p.users * arpu);
                 p.income = income;
                 totalIncome += income;
+
+                // 4. Investor Event Logic
+                if (p.users > 5000 && Math.random() < 0.05) { // 5% chance if >5k users
+                    const offer = income * 24; // 2 years revenue valuation
+                    UI.showEventChoices("💼 Oferta de Inversor",
+                        `Un fondo de inversión quiere comprar "${p.name}". \nOferta: $${offer.toLocaleString()}`, [
+                        {
+                            text: "Vender (Jubilarse de este proyecto)",
+                            onClick: () => {
+                                Game.updateStat('money', offer);
+                                p.status = 'sold';
+                                p.income = 0; // No more passive
+                                UI.showAlert("¡Vendido!", `Has vendido ${p.name} por $${offer.toLocaleString()}.`);
+                                UI.render();
+                            }
+                        },
+                        {
+                            text: "Rechazar (Seguir creciendo)",
+                            onClick: () => UI.log("Rechazaste la oferta de compra.", "normal")
+                        }
+                    ]);
+                }
             }
         });
 
         if (totalIncome > 0) {
             this.updateStat('money', totalIncome);
-            UI.log(`Proyectos: +$${totalIncome}`, "money");
-
-            // Notification Check: "Big Leap"
-            const currentJob = JOBS.find(j => j.id === state.currJobId);
-            const salary = currentJob ? (currentJob.salary || 0) : 0;
-
-            if (salary > 0 && totalIncome > salary) {
-                UI.showEventChoices("🚀 El Gran Salto", `¡Tus proyectos generan más ($${totalIncome}) que tu sueldo ($${salary})! \n¿Es hora de renunciar?`, [
-                    {
-                        text: "Renunciar y ser mi Jefe", onClick: () => {
-                            state.currJobId = 'unemployed';
-                            UI.render();
-                            UI.showAlert("¡Libertad!", "Has renunciado para dedicarte a tus proyectos.");
-                        }
-                    },
-                    { text: "Seguir en ambos (Más seguro)", onClick: () => UI.log("Decidiste mantener tu empleo por seguridad.", "normal") }
-                ]);
-            }
+            UI.log(`Proyectos: +$${totalIncome.toLocaleString()} (Pasivo)`, "money");
         }
     }
 };

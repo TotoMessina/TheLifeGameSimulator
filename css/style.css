@@ -2055,3 +2055,125 @@
 
 .working-active { pointer-events: none; position: relative; overflow: hidden; transition: background 0.1s linear; } .working-active .btn-title { animation: workPulse 1s infinite; } @keyframes workPulse { 0% { transform: scale(1); } 50% { transform: scale(1.02); } 100% { transform: scale(1); } }
 .console-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; } .console-col { display: flex; flex-direction: column; gap: 10px; } .console-col h4 { font-size: 0.8rem; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 5px; } .console-btn { background: #222; border: 1px solid #444; border-radius: 6px; padding: 12px; text-align: left; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; width: 100%; min-height: 70px; } .console-btn:hover { background: #333; border-color: var(--accent-color); transform: translateY(-2px); box-shadow: 0 4px 10px rgba(0,0,0,0.3); } .console-btn:active { transform: translateY(0); } .btn-title { font-size: 1rem; font-weight: bold; color: #fff; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px rgba(255,255,255,0.1); } .btn-desc { font-size: 0.75rem; color: #888; }
+
+/* --- JOB DASHBOARD THEMES --- */
+
+/* Tech Theme (Terminal Style) */
+.job-theme-tech .job-dashboard-container {
+    font-family: 'Consolas', 'Courier New', monospace;
+    background-color: #0d0d0d;
+    border: 1px solid #33ff00;
+    color: #33ff00;
+}
+.job-theme-tech .glass-panel, 
+.job-theme-tech .status-item, 
+.job-theme-tech .console-btn {
+    background: rgba(0, 20, 0, 0.8);
+    border: 1px solid #33ff00;
+    box-shadow: 0 0 5px rgba(51, 255, 0, 0.2);
+}
+.job-theme-tech h2, .job-theme-tech h4, .job-theme-tech .btn-title {
+    color: #33ff00;
+    text-shadow: 0 0 5px rgba(51, 255, 0, 0.5);
+}
+.job-theme-tech .status-fill {
+    background: #33ff00;
+    box-shadow: 0 0 5px #33ff00;
+}
+
+/* Construction Theme (Hazard Style) */
+.job-theme-construction .job-dashboard-container {
+    background: repeating-linear-gradient(
+        45deg,
+        #1a1a1a,
+        #1a1a1a 10px,
+        #2a2a2a 10px,
+        #2a2a2a 20px
+    );
+    border: 2px solid #ffd700;
+}
+.job-theme-construction .glass-panel {
+    background: rgba(0, 0, 0, 0.8);
+    border-left: 5px solid #ffd700;
+}
+.job-theme-construction h2, .job-theme-construction .console-btn {
+    color: #ffd700;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+.job-theme-construction .console-btn {
+    border: 2px solid #ffd700;
+    background: #111;
+}
+.job-theme-construction .status-fill {
+    background: #ffd700;
+}
+
+/* Corporate Theme (Clean Professional) */
+.job-theme-corp .job-dashboard-container {
+    font-family: 'Inter', sans-serif;
+    background: #f0f2f5;
+    color: #333;
+    border: 1px solid #ccc;
+}
+.job-theme-corp .glass-panel, .job-theme-corp .status-item {
+    background: #fff;
+    border: 1px solid #dde1e7;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    color: #333;
+}
+.job-theme-corp h2, .job-theme-corp h4 {
+    color: #1a73e8;
+}
+.job-theme-corp .console-btn {
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.job-theme-corp .btn-desc {
+    color: rgba(255,255,255,0.8);
+}
+.job-theme-corp .status-label {
+    color: #555;
+}
+.job-theme-corp .status-track {
+    background: #e0e0e0;
+}
+
+/* Delivery Theme (Map Style) */
+.job-theme-delivery .job-dashboard-container {
+    background-color: #e5e3df;
+    background-image: 
+        linear-gradient(rgba(0,0,0,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,0,0,0.05) 1px, transparent 1px);
+    background-size: 20px 20px;
+    color: #333;
+    position: relative;
+    overflow: hidden;
+}
+.job-theme-delivery .glass-panel {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    color: #333;
+}
+.job-theme-delivery .gps-icon {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2rem;
+    opacity: 0.3;
+}
+.job-theme-delivery.working .gps-icon {
+    opacity: 1;
+    animation: blink 1s infinite;
+    color: #ff3d71;
+}
+@keyframes blink {
+    0% { opacity: 0.2; transform: scale(0.8); }
+    50% { opacity: 1; transform: scale(1.2); }
+    100% { opacity: 0.2; transform: scale(0.8); }
+}
+

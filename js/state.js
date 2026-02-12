@@ -84,7 +84,8 @@ const state = {
     work_relations: {
         boss: 50,       // 0-100 Relationship
         colleagues: 50, // 0-100 Relationship
-        performance: 50 // 0-100 Job Performance
+        performance: 50, // 0-100 Job Performance
+        performanceStreak: 0 // Consecutive months with performance > 80
     },
     activeCourse: null,
     activeProject: null, // { id, name, typeId, progress, duration, penalty }

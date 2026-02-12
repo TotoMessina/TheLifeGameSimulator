@@ -92,10 +92,46 @@ const CAREER_TRACKS = {
     'medical': { label: 'Salud & Medicina', icon: '🏥', desc: 'Cuidado de pacientes y cirugía.' },
     'law': { label: 'Leyes & Justicia', icon: '⚖️', desc: 'Abogacía y sistema judicial.' },
     'sport': { label: 'Deportes', icon: '⚽', desc: 'Carrera atlética profesional.' },
-    'education': { label: 'Educación', icon: '🎓', desc: 'Enseñanza y academia.' }
+    'education': { label: 'Educación', icon: '🎓', desc: 'Enseñanza y academia.' },
+    'product': { label: 'Producto', icon: '🎯', desc: 'Gestión y estrategia de productos digitales.' }
 };
 
-const JOBS = [
+const COMPANIES = [
+    // === TECH SECTOR ===
+    { id: 'tech_goggle', name: 'Goggle', logo: '🔵', sector: 'tech', prestige: 90, salaryMult: 1.2, rivals: ['tech_amazone', 'tech_macrohard'] },
+    { id: 'tech_amazone', name: 'Amazone', logo: '📦', sector: 'tech', prestige: 85, salaryMult: 1.1, rivals: ['tech_goggle', 'tech_macrohard'] },
+    { id: 'tech_macrohard', name: 'Macrohard', logo: '🪟', sector: 'tech', prestige: 88, salaryMult: 1.15, rivals: ['tech_goggle', 'tech_amazone'] },
+
+    // === FINANCE / CORP SECTOR ===
+    { id: 'fin_goldman', name: 'Goldman Sax', logo: '💰', sector: 'corp', prestige: 95, salaryMult: 1.5, rivals: ['fin_jp'] },
+    { id: 'fin_jp', name: 'JP Moregain', logo: '🏦', sector: 'corp', prestige: 92, salaryMult: 1.4, rivals: ['fin_goldman'] },
+
+    // === MEDIA / CREATIVE ===
+    { id: 'media_ny', name: 'The NY Times', logo: '📰', sector: 'creative', prestige: 90, salaryMult: 1.0, rivals: ['media_daily'] },
+    { id: 'media_daily', name: 'Daily Planet', logo: '🌍', sector: 'creative', prestige: 80, salaryMult: 0.9, rivals: ['media_ny'] },
+
+    // === SERVICE / RETAIL ===
+    { id: 'svc_mcd', name: 'McRonalds', logo: '🍔', sector: 'service', prestige: 30, salaryMult: 0.8, rivals: ['svc_burger'] },
+    { id: 'svc_burger', name: 'Burger Queen', logo: '👑', sector: 'service', prestige: 30, salaryMult: 0.8, rivals: ['svc_mcd'] },
+
+    // === MEDICAL ===
+    { id: 'med_public', name: 'Hospital General', logo: '🏥', sector: 'medical', prestige: 70, salaryMult: 1.0, rivals: ['med_private'] },
+    { id: 'med_private', name: 'Clínica Privada St. Mary', logo: '⚕️', sector: 'medical', prestige: 90, salaryMult: 1.5, rivals: ['med_public'] },
+
+    // === LAW ===
+    { id: 'law_shady', name: 'Saul Good & Assoc.', logo: '⚖️', sector: 'law', prestige: 60, salaryMult: 0.9, rivals: ['law_elite'] },
+    { id: 'law_elite', name: 'Pearson Specter', logo: '👔', sector: 'law', prestige: 95, salaryMult: 1.8, rivals: ['law_shady'] },
+
+    // === EDUCATION ===
+    { id: 'edu_public', name: 'Escuela Pública N°1', logo: '🏫', sector: 'education', prestige: 60, salaryMult: 0.9, rivals: ['edu_private'] },
+    { id: 'edu_private', name: 'Elite University', logo: '🎓', sector: 'education', prestige: 92, salaryMult: 1.3, rivals: ['edu_public'] },
+
+    // === SPORTS ===
+    { id: 'sport_local', name: 'Club Local', logo: '⚽', sector: 'sport', prestige: 50, salaryMult: 0.8, rivals: ['sport_national'] },
+    { id: 'sport_national', name: 'Selección Nacional', logo: '🏆', sector: 'sport', prestige: 95, salaryMult: 2.0, rivals: ['sport_local'] }
+];
+
+const JOB_TEMPLATES = [
     // === UNEMPLOYED ===
     {
         id: 'unemployed',
@@ -107,10 +143,11 @@ const JOBS = [
         boredom: 10,
         xpGain: 0,
         stressPerMonth: 5,
-        energyCost: 0
+        energyCost: 0,
+        isIndependent: true
     },
 
-    // === SURVIVAL JOBS (Bajo sueldo, altos requisitos de energía) ===
+    // === SURVIVAL JOBS ===
     {
         id: 'survival_delivery',
         title: 'Repartidor de Comida',
@@ -123,11 +160,12 @@ const JOBS = [
         xpGain: 0.5,
         stressPerMonth: 8,
         energyCost: 35,
-        desc: 'Entregas en bici todo el día. Agotador pero flexible.'
+        desc: 'Entregas en bici todo el día. Agotador pero flexible.',
+        isIndependent: true
     },
     {
         id: 'survival_cashier',
-        title: 'Cajero de Supermercado',
+        title: 'Cajero',
         salary: 1000,
         career: 'service',
         type: 'full_time',
@@ -137,11 +175,12 @@ const JOBS = [
         xpGain: 0.5,
         stressPerMonth: 6,
         energyCost: 30,
-        desc: 'Escanear productos 8 horas. Muy monótono.'
+        // Removed explicit companyId, will generate for Service companies
+        desc: 'Atención al cliente y manejo de caja.'
     },
     {
         id: 'survival_janitor',
-        title: 'Operario de Limpieza',
+        title: 'Personal de Limpieza',
         salary: 900,
         career: 'service',
         type: 'full_time',
@@ -151,24 +190,25 @@ const JOBS = [
         xpGain: 0.5,
         stressPerMonth: 5,
         energyCost: 40,
-        desc: 'Trabajo duro físicamente. Poco reconocimiento.'
+        desc: 'Mantener la higiene del local.'
     },
     {
         id: 'survival_security',
-        title: 'Sereno Nocturno',
+        title: 'Guardia de Seguridad',
         salary: 1100,
         career: 'service',
         type: 'full_time',
-        req: { health: 30 },
+        req: { health: 60 },
         stress: 10,
         boredom: 10,
         xpGain: 0.3,
         stressPerMonth: 10,
         energyCost: 25,
-        desc: 'Turnos nocturnos. Arruina tu ciclo de sueño.'
+        isIndependent: true,
+        desc: 'Vigilancia nocturna.'
     },
 
-    // === DEAD-END JOBS (Buen sueldo, sin progresión, alto estrés) ===
+    // === DEAD-END JOBS ===
     {
         id: 'deadend_telemarketer',
         title: 'Vendedor Telefónico',
@@ -178,10 +218,11 @@ const JOBS = [
         req: { int: 20 },
         stress: 20,
         boredom: 10,
-        xpGain: 0, // SIN EXPERIENCIA
+        xpGain: 0,
         stressPerMonth: 20,
         energyCost: 30,
         deadEnd: true,
+        isIndependent: true,
         desc: 'Comisiones variables. Te rechazan todo el día.'
     },
     {
@@ -197,7 +238,8 @@ const JOBS = [
         stressPerMonth: 18,
         energyCost: 25,
         deadEnd: true,
-        desc: 'Clientes enojados. Scripts repetitivos.'
+        isIndependent: true,
+        desc: 'Resolución de reclamos.'
     },
     {
         id: 'deadend_collector',
@@ -213,23 +255,24 @@ const JOBS = [
         energyCost: 30,
         deadEnd: true,
         mentalHealthCost: 8,
-        desc: 'Presionas a gente desesperada. Moralmente agotador.'
+        isIndependent: true,
+        desc: 'Presionas a gente desesperada.'
     },
 
-    // === PART TIME JOBS (STUDENTS) ===
+    // === PART TIME JOBS ===
     {
         id: 'pt_barista',
-        title: 'Barista (Medio Tiempo)',
+        title: 'Barista',
         salary: 600,
         career: 'service',
         type: 'part_time',
-        req: { health: 20 }, // Minimal reqs
+        req: { health: 20 },
         stress: 5,
         boredom: 4,
         xpGain: 0.2,
         stressPerMonth: 5,
         energyCost: 20,
-        desc: 'Preparar café y sonreír. Ideal para estudiantes.'
+        desc: 'Preparar café y sonreír.'
     },
     {
         id: 'pt_tutor',
@@ -237,27 +280,28 @@ const JOBS = [
         salary: 800,
         career: 'education',
         type: 'part_time',
-        req: { int: 60, isStudent: true }, // Smart students only
+        req: { int: 60, isStudent: true },
         stress: 3,
         boredom: 2,
         xpGain: 0.4,
         stressPerMonth: 3,
         energyCost: 15,
-        desc: 'Ayuda a otros alumnos con sus tareas.'
+        isIndependent: true,
+        desc: 'Ayuda escolar para niños.'
     },
 
-    // === PRODUCT MANAGEMENT CAREER TRACK ===
+    // === PRODUCT MANAGEMENT ===
     {
         id: 'pm_intern',
-        title: 'Product Intern / Becario PM',
-        salary: 800,
+        title: 'Product Intern',
+        salary: 1000,
         career: 'product',
         type: 'part_time',
         req: { int: 40, isStudent: true },
-        stress: 3,
+        stress: 5,
         boredom: 3,
         xpGain: 1.2,
-        stressPerMonth: 3,
+        stressPerMonth: 5,
         energyCost: 20,
         desc: 'Aprende los fundamentos del Product Management.'
     },
@@ -326,48 +370,7 @@ const JOBS = [
         desc: 'Diriges toda la organización de producto.'
     },
 
-    // === STUDENT / PART-TIME ===
-    {
-        id: 'pt_barista',
-        title: 'Barista (Part-Time)',
-        salary: 600,
-        career: 'service',
-        type: 'part_time',
-        req: { energy: 30 },
-        stress: 4,
-        boredom: 6,
-        xpGain: 0.8,
-        stressPerMonth: 4,
-        energyCost: 15
-    },
-    {
-        id: 'pt_tutor',
-        title: 'Tutor Académico',
-        salary: 900,
-        career: 'education',
-        type: 'part_time',
-        req: { int: 60 },
-        stress: 3,
-        boredom: 4,
-        xpGain: 1.0,
-        stressPerMonth: 3,
-        energyCost: 18
-    },
-    {
-        id: 'pt_delivery',
-        title: 'Repartidor',
-        salary: 700,
-        career: 'service',
-        type: 'part_time',
-        req: { health: 50 },
-        stress: 5,
-        boredom: 7,
-        xpGain: 0.6,
-        stressPerMonth: 5,
-        energyCost: 20
-    },
-
-    // === MEDICAL ===
+    // === MEDICAL (Independent for now) ===
     {
         id: 'med_student',
         title: 'Residente Médico',
@@ -379,19 +382,19 @@ const JOBS = [
         boredom: 2,
         xpGain: 1.5,
         stressPerMonth: 15,
-        energyCost: 40
+        energyCost: 40,
     },
     {
         id: 'med_nurse',
         title: 'Enfermero/a',
         salary: 2500,
         career: 'medical',
-        req: { int: 60, deg: 'nursing' },
-        stress: 10,
-        boredom: 4,
-        xpGain: 1.0,
-        stressPerMonth: 10,
-        energyCost: 30
+        req: { int: 60, deg: 'university_degree' },
+        stress: 12,
+        boredom: 3,
+        xpGain: 1.2,
+        stressPerMonth: 12,
+        energyCost: 35,
     },
     {
         id: 'med_doctor',
@@ -403,7 +406,7 @@ const JOBS = [
         boredom: 3,
         xpGain: 1.0,
         stressPerMonth: 18,
-        energyCost: 35
+        energyCost: 35,
     },
     {
         id: 'med_surgeon',
@@ -415,10 +418,10 @@ const JOBS = [
         boredom: 2,
         xpGain: 0.5,
         stressPerMonth: 25,
-        energyCost: 40
+        energyCost: 40,
     },
 
-    // === LAW ===
+    // === LAW (Independent) ===
     {
         id: 'law_paralegal',
         title: 'Paralegal',
@@ -429,7 +432,7 @@ const JOBS = [
         boredom: 6,
         xpGain: 1.0,
         stressPerMonth: 8,
-        energyCost: 22
+        energyCost: 22,
     },
     {
         id: 'law_associate',
@@ -441,7 +444,7 @@ const JOBS = [
         boredom: 5,
         xpGain: 1.0,
         stressPerMonth: 15,
-        energyCost: 30
+        energyCost: 30,
     },
     {
         id: 'law_partner',
@@ -453,7 +456,7 @@ const JOBS = [
         boredom: 4,
         xpGain: 0.6,
         stressPerMonth: 20,
-        energyCost: 32
+        energyCost: 32,
     },
     {
         id: 'law_judge',
@@ -465,10 +468,10 @@ const JOBS = [
         boredom: 3,
         xpGain: 0.3,
         stressPerMonth: 10,
-        energyCost: 25
+        energyCost: 25,
     },
 
-    // === TRADES (Oficios) ===
+    // === TRADES (Independent) ===
     {
         id: 'trade_plumber',
         title: 'Plomero',
@@ -480,7 +483,7 @@ const JOBS = [
         boredom: 5,
         xpGain: 1.0,
         stressPerMonth: 5,
-        energyCost: 28
+        energyCost: 28,
     },
     {
         id: 'trade_electrician',
@@ -493,11 +496,11 @@ const JOBS = [
         boredom: 4,
         xpGain: 1.0,
         stressPerMonth: 6,
-        energyCost: 26
+        energyCost: 26,
     },
     {
         id: 'trade_carpenter',
-        title: 'Carpintero Artesano',
+        title: 'Carpintero',
         salary: 2200,
         career: 'trade',
         type: 'full_time',
@@ -506,7 +509,7 @@ const JOBS = [
         boredom: 3,
         xpGain: 1.0,
         stressPerMonth: 4,
-        energyCost: 30
+        energyCost: 30,
     },
     {
         id: 'trade_mechanic',
@@ -519,13 +522,13 @@ const JOBS = [
         boredom: 5,
         xpGain: 1.0,
         stressPerMonth: 7,
-        energyCost: 27
+        energyCost: 27,
     },
 
     // === CREATIVE ===
     {
         id: 'creat_writer',
-        title: 'Escritor Freelance',
+        title: 'Escritor',
         salary: 1500,
         career: 'creative',
         req: { int: 60, happy: 50 },
@@ -563,7 +566,7 @@ const JOBS = [
     // === SERVICE EXPANSION ===
     {
         id: 'svc_security',
-        title: 'Guardia de Seguridad',
+        title: 'Guardia de Seguridad Privada',
         salary: 1100,
         career: 'service',
         req: { health: 60 },
@@ -571,7 +574,7 @@ const JOBS = [
         boredom: 9,
         xpGain: 0.4,
         stressPerMonth: 6,
-        energyCost: 20
+        energyCost: 20,
     },
     {
         id: 'svc_warehouse',
@@ -587,7 +590,7 @@ const JOBS = [
     },
     {
         id: 'svc_driver',
-        title: 'Chofer de Colectivo',
+        title: 'Chofer',
         salary: 1800,
         career: 'service',
         req: { health: 40 },
@@ -595,7 +598,7 @@ const JOBS = [
         boredom: 7,
         xpGain: 0.6,
         stressPerMonth: 12,
-        energyCost: 25
+        energyCost: 25,
     },
     {
         id: 'svc_chef',
@@ -610,7 +613,7 @@ const JOBS = [
         energyCost: 32
     },
 
-    // === TECH EXPANSION ===
+    // === TECH ===
     {
         id: 'tech_qa',
         title: 'QA Tester',
@@ -684,7 +687,7 @@ const JOBS = [
         energyCost: 30
     },
 
-    // === CORPORATE PATH ===
+    // === CORPORATE ===
     {
         id: 'corp_assist',
         title: 'Asistente',
@@ -734,7 +737,7 @@ const JOBS = [
         energyCost: 32
     },
 
-    // === SPORTS PATH ===
+    // === SPORTS ===
     {
         id: 'sport_amateur',
         title: 'Amateur Deport.',
@@ -745,7 +748,7 @@ const JOBS = [
         boredom: 2,
         xpGain: 1.2,
         stressPerMonth: 5,
-        energyCost: 30
+        energyCost: 30,
     },
     {
         id: 'sport_pro',
@@ -757,7 +760,7 @@ const JOBS = [
         boredom: 1,
         xpGain: 1.0,
         stressPerMonth: 8,
-        energyCost: 35
+        energyCost: 35,
     },
     {
         id: 'sport_star',
@@ -769,21 +772,87 @@ const JOBS = [
         boredom: 1,
         xpGain: 0.6,
         stressPerMonth: 12,
-        energyCost: 38
+        energyCost: 35,
+    },
+
+    // === EDUCATION ===
+    {
+        id: 'edu_teacher',
+        title: 'Maestro de Escuela',
+        salary: 1800,
+        career: 'education',
+        req: { int: 50, happy: 40 },
+        stress: 10,
+        boredom: 4,
+        xpGain: 1.0,
+        stressPerMonth: 10,
+        energyCost: 28,
     },
     {
-        id: 'sport_legend',
-        title: 'Leyenda',
-        salary: 25000,
-        career: 'sport',
-        req: { health: 100, exp: 80, deg: 'sport_cert' },
-        stress: 10,
-        boredom: 1,
-        xpGain: 0.3,
-        stressPerMonth: 10,
-        energyCost: 40
+        id: 'edu_prof',
+        title: 'Profesor Universitario',
+        salary: 3500,
+        career: 'education',
+        req: { int: 80, exp: 20, deg: 'university_degree' },
+        stress: 6,
+        boredom: 3,
+        xpGain: 0.8,
+        stressPerMonth: 6,
+        energyCost: 20,
+        isIndependent: true
     }
 ];
+
+// --- GENERATE PROCEDURAL JOBS ---
+const JOBS = [];
+
+JOB_TEMPLATES.forEach(template => {
+    // If it's explicitly independent or has no career, just add it
+    if (template.isIndependent || template.career === 'none') {
+        JOBS.push(template);
+        return;
+    }
+
+    // Attempt to find companies in this sector
+    const sectorCompanies = COMPANIES.filter(c => c.sector === template.career);
+
+    // Also include Tech companies for Product roles if not explicitly defined
+    let companiesToUse = [...sectorCompanies];
+    if (template.career === 'product' && sectorCompanies.length === 0) {
+        companiesToUse = COMPANIES.filter(c => c.sector === 'tech');
+    }
+
+    if (companiesToUse.length > 0) {
+        companiesToUse.forEach(comp => {
+            // Create a specialized instance of this job for the company
+            const newJob = JSON.parse(JSON.stringify(template)); // Deep copy
+
+            newJob.id = `${template.id}_${comp.id}`;
+            newJob.companyId = comp.id;
+            // newJob.title = `${template.title}`; // Keep title clean, UI handles company name
+
+            // Adjust Salary based on Company Multiplier
+            newJob.salary = Math.floor(template.salary * comp.salaryMult);
+
+            // Adjust Requirements based on Prestige
+            // Prestige 0-100. Base is 50.
+            // > 50 increases reqs, < 50 decreases them slightly
+            const prestigeFactor = comp.prestige / 50; // e.g. 90/50 = 1.8 (too high?), maybe 1.0 + (prestige-50)/100
+            const reqMult = 1.0 + ((comp.prestige - 50) / 100); // 90 -> 1.4x, 30 -> 0.8x
+
+            if (newJob.req) {
+                if (newJob.req.int) newJob.req.int = Math.min(100, Math.ceil(newJob.req.int * reqMult));
+                if (newJob.req.exp) newJob.req.exp = Math.ceil(newJob.req.exp * reqMult);
+                // Health/Happiness usually standard, but maybe stress impacts them? Leave for now.
+            }
+
+            JOBS.push(newJob);
+        });
+    } else {
+        // No companies found for this sector, add as independent default
+        JOBS.push(template);
+    }
+});
 
 const FREELANCE_GIGS = [
     // Tech / Dev
@@ -1140,8 +1209,7 @@ const EVENTS = [
 ];
 
 const PROJECT_TYPES = [
-    { id: 'blog', name: 'Blog / Newsletter ✍️', cost: 100, potential: 200, difficulty: 0.8, req: { intelligence: 10 }, penalty: 5, desc: 'Bajo costo, crecimiento lento.' },
-    { id: 'app', name: 'App Móvil 📱', cost: 300, potential: 1500, difficulty: 1.2, req: { intelligence: 40 }, penalty: 10, desc: 'Alta demanda, requiere mantenimiento.' },
-    { id: 'game', name: 'Indie Game 🎮', cost: 600, potential: 5000, difficulty: 2.0, req: { intelligence: 60 }, penalty: 15, desc: 'Alto riesgo, alta recompensa.' },
-    { id: 'saas', name: 'Plataforma SaaS ☁️', cost: 1200, potential: 12000, difficulty: 3.0, req: { intelligence: 80 }, penalty: 20, desc: 'Ingreso recurrente masivo para expertos.' }
+    { id: 'delivery_app', name: 'App de Delivery 🍔', cost: 0, targetLoc: 1000, potential: 800, difficulty: 1.0, req: { intelligence: 20 }, desc: 'Alta demanda. Ingresos pasivos variables. Requiere mantenimiento mensual.' },
+    { id: 'crm_system', name: 'Sistema CRM 📊', cost: 0, targetLoc: 1000, potential: 500, difficulty: 1.5, req: { intelligence: 40 }, desc: 'Ingresos B2B estables. Menor mantenimiento, crecimiento lento.' },
+    { id: 'game', name: 'Indie Game 🎮', cost: 0, targetLoc: 2000, potential: 5000, difficulty: 2.0, req: { intelligence: 60 }, desc: 'Alto riesgo, alta recompensa. Hit or miss.' }
 ];

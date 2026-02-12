@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sim-vida-v5'; // Bump version to forcefuly update
+const CACHE_NAME = 'sim-vida-v8'; // Bump version to forcefuly update
 const ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,7 @@ const ASSETS = [
 
 self.addEventListener('install', (e) => {
   // Force this SW to become the active one, kicking out the old one
-  self.skipWaiting(); 
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
