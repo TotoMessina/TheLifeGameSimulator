@@ -1,0 +1,7 @@
+
+const PROJECT_TYPES = [
+    { id: 'blog', name: 'Blog / Newsletter ✍️', cost: 100, potential: 200, difficulty: 0.8, req: { intelligence: 10 }, penalty: 5, desc: 'Bajo costo, crecimiento lento.' },
+    { id: 'app', name: 'App Móvil 📱', cost: 300, potential: 1500, difficulty: 1.2, req: { intelligence: 40 }, penalty: 10, desc: 'Alta demanda, requiere mantenimiento.' },
+    { id: 'game', name: 'Indie Game 🎮', cost: 600, potential: 5000, difficulty: 2.0, req: { intelligence: 60 }, penalty: 15, desc: 'Alto riesgo, alta recompensa.' },
+    { id: 'saas', name: 'Plataforma SaaS ☁️', cost: 1200, potential: 12000, difficulty: 3.0, req: { intelligence: 80 }, penalty: 20, desc: 'Ingreso recurrente masivo para expertos.' }
+];

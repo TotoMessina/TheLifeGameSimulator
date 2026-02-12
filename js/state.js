@@ -44,6 +44,12 @@ const state = {
         race: null,
         medals: []
     },
+    // Projects
+    projects: [], // { id, type, name, progress(0-cost), quality(0-100), status('dev','live'), income, marketing }
+    // Work
+    workStreak: 0,
+    isWorking: false,
+
     // Routine
     routine: { work: 8, sleep: 8, study: 0, exercise: 1, leisure: 7 },
     upgrades: {},
@@ -104,8 +110,18 @@ const state = {
         activeOpps: [],
         economicState: 'stable', // stable, boom, recession, depression
         inflation: 1.0, // Multiplier for expenses
-        econTimer: 24 // Months until next economic state change check
-    }, // Init explicitly
+        inflation: 1.0, // Multiplier for expenses
+        econTimer: 24, // Months until next economic state change check
+        weather: 'clear' // clear, rain, storm
+    },
+
+    // Sector Specific State
+    corp: {
+        monthsSinceReview: 0,
+        kpiScore: 50
+    },
+
+    // Init explicitly
     unlockedTrophies: [], // Init empty array
     traits: [], // Init empty array
 

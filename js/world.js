@@ -132,7 +132,11 @@ const World = {
         const w = state.world;
 
         // 0. Update Economy
+        // 0. Update Economy
         this.updateEconomy();
+
+        // 0.5 Update Weather
+        if (this.updateWeather) this.updateWeather();
 
         // 1. Manage Trend
         if (w.currentTrend) {

@@ -837,6 +837,103 @@ const Game = {
 
     // ----------------------------
 
+    // --- WORK FOCUS TIMER ---
+
+    startWorkSession(isHard) {
+        // 1. Checks
+        const job = JOBS.find(j => j.id === state.currJobId);
+        if (!job) return;
+
+        const energyCost = isHard ? (job.energyCost || 20) * 1.5 : 20;
+        if (state.energy < energyCost) return UI.showAlert("Agotado", "No tienes energía para trabajar.");
+
+        if (state.consecutiveWork > 2 && !isHard) { // Allow hard work to bypass? No, generally strict.
+            // Actually, work() has this check.
+            if (state.consecutiveWork > 2) {
+                Haptics.error();
+                return UI.log("¡Estás agotado! Descansa.", "bad");
+            }
+        }
+
+        // 2. Initialize Timer
+        // Check Flow State
+        const flowBonus = (state.workStreak >= 3);
+        const duration = flowBonus ? 4000 : 5000;
+
+        state.workTimer = {
+            active: true,
+            duration: duration,
+            startTime: Date.now(),
+            isHard: isHard,
+            progress: 0
+        };
+
+        // 3. Start Loop
+        this._workInterval = setInterval(() => {
+            if (!state.workTimer.active) return clearInterval(this._workInterval);
+
+            const elapsed = Date.now() - state.workTimer.startTime;
+            const progress = Math.min(100, (elapsed / state.workTimer.duration) * 100);
+            state.workTimer.progress = progress;
+
+            if (elapsed >= state.workTimer.duration) {
+                clearInterval(this._workInterval);
+                this.completeWorkSession(isHard);
+            } else {
+                UI.renderWorkTimer(); // Updates just the button
+            }
+        }, 50); // 20fps update for smooth enough bar
+
+        // 4. Anti-Cheat / Focus Check
+        this._focusHandler = () => {
+            if (document.hidden && state.workTimer.active) {
+                this.failWorkSession();
+            }
+        };
+        document.addEventListener('visibilitychange', this._focusHandler);
+
+        // Update UI to show timer state
+        UI.renderWorkTimer();
+    },
+
+    completeWorkSession(isHard) {
+        state.workTimer.active = false;
+        clearInterval(this._workInterval);
+        document.removeEventListener('visibilitychange', this._focusHandler);
+
+        // Execute Actual Work
+        if (isHard) {
+            this.workHard();
+        } else {
+            this.work();
+        }
+
+        // Streak Logic
+        if (!state.workStreak) state.workStreak = 0;
+        state.workStreak++;
+
+        if (state.workStreak === 3) {
+            UI.log("🌊 ¡FLOW STATE! Tu trabajo es más eficiente (Timer rápido).", "good");
+        }
+
+        // Reset UI
+        UI.renderJobDashboard(); // Will re-enable buttons
+    },
+
+    failWorkSession() {
+        state.workTimer.active = false;
+        clearInterval(this._workInterval);
+        document.removeEventListener('visibilitychange', this._focusHandler);
+
+        // Penalty
+        Game.updateStat('energy', -10);
+        Game.updateStat('stress', 5);
+        state.workStreak = 0; // Break streak
+
+        UI.showAlert("¡DISTRAÍDO!", "Te has distraído y perdiste el hilo. Perdiste tiempo y energía.");
+        UI.renderJobDashboard();
+    },
+
     work() {
         if (state.consecutiveWork > 2) {
             Haptics.error();
@@ -847,7 +944,67 @@ const Game = {
         const job = JOBS.find(j => j.id === state.currJobId);
         if (!job) return;
 
+        // --- SECTOR MECHANICS ---
+
+        // 1. CONSTRUCTION / TRADE: Injury Risk & Health Gate
+        if (job.career === 'trade') {
+            if (state.physicalHealth < 30) {
+                return UI.showAlert("Salud Baja", "Estás demasiado herido para trabajar en la obra. Descansa.");
+            }
+            // Injury Chance 10%
+            if (Math.random() < 0.10) {
+                const dmg = 15;
+                Game.updateStat('physicalHealth', -dmg);
+                Game.updateStat('stress', 10);
+                UI.log("🤕 ¡ACCIDENTE! Te golpeaste en el trabajo. -Salud", "bad");
+            }
+        }
+
+        // 2. TECH: Bugs & Debugging
+        if (job.career === 'tech') {
+            // 15% Chance of Bug
+            if (Math.random() < 0.15) {
+                Game.updateStat('energy', -25); // Extra draining
+                Game.updateStat('intelligence', 2); // Learned a lot
+                Game.updateStat('stress', 15);
+
+                UI.showAlert("🐛 BUG CRÍTICO", "El sistema colapsó. Pasaste el día arreglando código.\nNo cobraste, pero aprendiste mucho (+2 Int).");
+                state.consecutiveWork++;
+                this.checkAchievements();
+                UI.render();
+                UI.renderJobDashboard();
+                return; // NO SALARY
+            }
+        }
+
         let wage = job.salary;
+
+        // 3. SERVICE / EDUCATION: Weather Effects
+        if (job.career === 'service' || job.career === 'education') {
+            if (state.world && state.world.weather === 'storm') {
+                wage *= 3.0;
+                Game.updateStat('physicalHealth', -10);
+                Game.updateStat('stress', 10);
+                UI.log("⛈️ Tarifa Tormenta: ¡Triple Paga! (Pero te empapaste)", "good");
+            } else if (state.world && state.world.weather === 'rain') {
+                wage *= 1.5;
+                Game.updateStat('physicalHealth', -5);
+                UI.log("🌧️ Tarifa Lluvia: +50% Paga.", "good");
+            }
+        }
+
+        // 4. CORPORATE: KPI & Stress
+        if (job.career === 'corp') {
+            Game.updateStat('stress', 5); // Extra stress on top of normal
+            if (!state.corp) state.corp = { monthsSinceReview: 0, kpiScore: 50 };
+            state.corp.monthsSinceReview++;
+
+            // Check Review
+            if (state.corp.monthsSinceReview >= 3) {
+                this.kpiReview();
+            }
+        }
+
         // Suit bonus
         if (state.inventory.includes('suit')) wage *= 1.1;
         // Laptop bonus for tech
@@ -999,6 +1156,22 @@ const Game = {
         } else {
             UI.log("Buen trabajo hoy. Sigues ganando experiencia.", "normal");
         }
+    },
+
+    quitJob() {
+        if (state.currJobId === 'unemployed') return;
+
+        if (!confirm("¿Estás seguro de que quieres renunciar a tui trabajo? Perderás tu progreso de antigüedad.")) return;
+
+        UI.log(`Renunciaste a tu puesto de ${state.currJobId}.`, "normal");
+
+        state.currJobId = 'unemployed';
+        state.jobXP = 0;
+        state.jobMonths = 0;
+        state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
+
+        UI.render();
+        UI.renderJobDashboard();
     },
 
     applyJob(jobId) {
@@ -1558,6 +1731,113 @@ const Game = {
         UI.render();
     },
 
+
+    // --- WORK FOCUS TIMER ---
+
+    startWorkSession() {
+        if (state.currJobId === 'unemployed') return UI.log("No tienes empleo.", "bad");
+        if (state.energy < 20) return UI.log("Demasiado cansado para trabajar.", "bad");
+
+        // UI Setup
+        state.isWorking = true;
+        const overlay = document.getElementById('focus-overlay');
+        const circle = document.getElementById('focus-circle');
+        const text = document.getElementById('focus-text');
+        const sub = document.getElementById('focus-sub');
+
+        if (overlay) overlay.classList.add('active');
+
+        // Flow check
+        const isFlow = state.workStreak >= 3;
+        const duration = isFlow ? 4000 : 5000;
+
+        if (isFlow) {
+            if (circle) circle.classList.add('flow');
+            if (text) text.innerText = "⚡ MODO FLOW ⚡";
+            if (sub) sub.innerText = "¡Estás en racha! (4s)";
+        } else {
+            if (circle) circle.classList.remove('flow');
+            if (text) text.innerText = "TRABAJANDO...";
+            if (sub) sub.innerText = "Mantén la app abierta (5s)";
+        }
+
+        // Visibility Listener
+        this._visibilityHandler = () => {
+            if (document.hidden && state.isWorking) {
+                this.failWorkSession();
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+
+        // Timer
+        this._workTimer = setTimeout(() => {
+            this.completeWorkSession(isFlow);
+        }, duration);
+    },
+
+    completeWorkSession(isFlow) {
+        state.isWorking = false;
+        document.removeEventListener('visibilitychange', this._visibilityHandler);
+
+        const overlay = document.getElementById('focus-overlay');
+        if (overlay) overlay.classList.remove('active');
+
+        state.workStreak++;
+
+        // Execute actual work logic
+        this.performWork(isFlow); // Extracted logic
+    },
+
+    failWorkSession() {
+        if (!state.isWorking) return;
+        state.isWorking = false;
+
+        clearTimeout(this._workTimer);
+        document.removeEventListener('visibilitychange', this._visibilityHandler);
+
+        const overlay = document.getElementById('focus-overlay');
+        if (overlay) overlay.classList.remove('active');
+
+        // Penalty
+        this.updateStat('energy', -10);
+        state.workStreak = 0;
+
+        UI.showAlert("⚠️ ¡Distracción!", "Perdiste el enfoque al salir de la app.\nPerdiste energía y no cobraste.");
+        UI.log("Te distrajiste y no trabajaste nada.", "bad");
+        Haptics.error();
+        UI.render();
+    },
+
+    performWork(isFlow) {
+        const job = JOBS.find(j => j.id === state.currJobId);
+        if (!job) return;
+
+        // Calculate gains
+        const level = JOB_LEVELS[state.jobLevel || 0];
+        let xpGain = (job.xpGain || 2) * level.xpMult;
+        let salary = (job.salary / 22); // Day rate approx
+
+        // Flow Bonus
+        if (isFlow) {
+            xpGain *= 1.2;
+            this.updateStat('stress', 3); // More stress in flow? Or less? Request said "stress increases a bit more"
+        }
+
+        this.updateStat('energy', -20);
+        this.updateStat('jobXP', xpGain);
+        this.updateStat('money', Math.floor(salary));
+
+        // Boss/Perf impact
+        state.work_relations.performance = Math.min(100, state.work_relations.performance + 1);
+        state.workedThisMonth = true;
+
+        UI.log(`Trabajo completado. +$${Math.floor(salary)}`, "good");
+        if (isFlow) UI.log("⚡ Racha de trabajo: Flow!", "good");
+
+        UI.render();
+        UI.renderJob();
+    },
+
     flatterBoss() {
         if (state.currJobId === 'unemployed') return;
 
@@ -1622,6 +1902,7 @@ const Game = {
 
         // 4. Tick all systems
         this.processSystemTicks();
+        this.processProjects(); // Personal Projects
 
         // 5. Process finances
         FinanceManager.processMonthlyFinances();
@@ -2419,6 +2700,176 @@ const Game = {
     showLifestyleShop() {
         const btn = document.getElementById('home-trigger');
         if (btn) btn.click();
+    },
+
+    // --- PROJECTS SYSTEM ---
+
+    startProject(typeId, name) {
+        const existingDev = state.projects.find(p => p.status === 'dev');
+        if (existingDev) return UI.showAlert("Proyecto en curso", "Termina tu proyecto actual antes de empezar otro.");
+
+        const type = PROJECT_TYPES.find(t => t.id === typeId);
+        if (!type) return;
+
+        state.projects.push({
+            id: Date.now().toString(),
+            typeId: typeId,
+            name: name || type.name,
+            progress: 0,
+            quality: 0,
+            status: 'dev',
+            income: 0,
+            marketing: 0
+        });
+
+        UI.showAlert("Proyecto Iniciado", `Has comenzado a desarrollar: ${name}. \n¡Usa tu energía libre para avanzar!`);
+        UI.render();
+        if (UI.renderProjects) UI.renderProjects();
+    },
+
+    workOnProject(projectId) {
+        const project = state.projects.find(p => p.id === projectId);
+        if (!project || project.status !== 'dev') return;
+
+        const energyCost = 20;
+        if (state.energy < energyCost) return UI.showAlert("Agotado", "Necesitas más energía para desarrollar.");
+
+        const type = PROJECT_TYPES.find(t => t.id === project.typeId);
+
+        // Progress Calculation
+        let progressGain = 5 + (state.intelligence * 0.1) + ((state.creativity || 0) * 0.1);
+        progressGain *= (0.8 + Math.random() * 0.4);
+
+        // Quality Calculation
+        let qualityGain = (state.intelligence + (state.creativity || 0)) / 20;
+
+        project.progress += progressGain;
+        project.quality = Math.min(100, project.quality + qualityGain);
+
+        this.updateStat('energy', -energyCost);
+        this.updateStat('stress', 2);
+
+        UI.log(`Trabajo en ${project.name}: +${progressGain.toFixed(1)} Pts.`, "action");
+
+        if (project.progress >= type.cost) {
+            UI.showAlert("¡Desarrollo Completado!", `Has terminado la fase de desarrollo de ${project.name}. \n¡Es hora de lanzarlo!`);
+        }
+
+        UI.render();
+        if (UI.renderProjects) UI.renderProjects();
+    },
+
+    launchProject(projectId) {
+        const project = state.projects.find(p => p.id === projectId);
+        if (!project || project.status !== 'dev') return;
+
+        const type = PROJECT_TYPES.find(t => t.id === project.typeId);
+        UI.render();
+        if (UI.renderProjects) UI.renderProjects();
+    },
+
+    kpiReview() {
+        if (!state.corp) return;
+        state.corp.monthsSinceReview = 0;
+
+        const perf = state.work_relations.performance;
+        let title = "REUNIÓN DE KPI";
+        let msg = "";
+        let type = "normal";
+
+        if (perf > 85) {
+            const bonus = 2000;
+            Game.updateStat('money', bonus);
+            Game.updateStat('stress', -10);
+            state.work_relations.boss += 10;
+            title = "¡EXCELENTE DESEMPEÑO! 📈";
+            msg = "Tu revisión trimestral fue un éxito absoluto. Recibes un bono de $2,000 y felicitaciones de la gerencia.";
+            type = "good";
+            AudioSys.playSuccess();
+        } else if (perf < 40) {
+            // Risk of Firing
+            if (Math.random() < 0.4) {
+                // Fired
+                state.currJobId = 'unemployed';
+                state.jobXP = 0;
+                title = "DESPEDIDO 📉";
+                msg = "Tu rendimiento ha estado por debajo de los estándares corporativos. Has sido desvinculado de la empresa.";
+                type = "bad";
+                Haptics.error();
+            } else {
+                // Warning
+                Game.updateStat('stress', 20);
+                state.work_relations.boss -= 15;
+                title = "ADVERTENCIA DE RENDIMIENTO ⚠️";
+                msg = "Estás en la cuerda floja. Mejora tus números o serás despedido en la próxima revisión.";
+                type = "warning";
+                Haptics.warning();
+            }
+        } else {
+            // Average
+            Game.updateStat('stress', 5);
+            msg = "Tu desempeño es adecuado, pero se espera más iniciativa si quieres ascender.";
+        }
+
+        UI.showAlert(title, msg);
+        UI.log(`KPI Review: ${msg}`, type);
+    }
+
+        project.status = 'live';
+    project.marketing = 10; // Initial marketing
+    project.launchDate = state.totalMonths;
+
+    UI.showAlert("🚀 ¡Lanzamiento!", `Tu proyecto ${project.name} está en vivo. \nEmpezará a generar ingresos pasivos.`);
+    UI.log(`Lanzaste ${project.name}.`, "success");
+    UI.render();
+    if(UI.renderProjects) UI.renderProjects();
+},
+
+    processProjects() {
+        if (!state.projects) return;
+
+        let totalIncome = 0;
+
+        state.projects.forEach(p => {
+            if (p.status === 'live') {
+                const type = PROJECT_TYPES.find(t => t.id === p.typeId);
+
+                const qualityFactor = p.quality / 100;
+                const marketFactor = (p.marketing || 10) / 100;
+
+                // Income Calculation
+                let income = type.potential * qualityFactor * (0.8 + Math.random() * 0.4);
+
+                // Marketing decay slightly
+                if (p.marketing > 0 && Math.random() > 0.7) p.marketing--;
+
+                income = Math.floor(income);
+                p.income = income;
+                totalIncome += income;
+            }
+        });
+
+        if (totalIncome > 0) {
+            this.updateStat('money', totalIncome);
+            UI.log(`Proyectos: +$${totalIncome}`, "money");
+
+            // Notification Check: "Big Leap"
+            const currentJob = JOBS.find(j => j.id === state.currJobId);
+            const salary = currentJob ? (currentJob.salary || 0) : 0;
+
+            if (salary > 0 && totalIncome > salary) {
+                UI.showEventChoices("🚀 El Gran Salto", `¡Tus proyectos generan más ($${totalIncome}) que tu sueldo ($${salary})! \n¿Es hora de renunciar?`, [
+                    {
+                        text: "Renunciar y ser mi Jefe", onClick: () => {
+                            state.currJobId = 'unemployed';
+                            UI.render();
+                            UI.showAlert("¡Libertad!", "Has renunciado para dedicarte a tus proyectos.");
+                        }
+                    },
+                    { text: "Seguir en ambos (Más seguro)", onClick: () => UI.log("Decidiste mantener tu empleo por seguridad.", "normal") }
+                ]);
+            }
+        }
     }
 };
 

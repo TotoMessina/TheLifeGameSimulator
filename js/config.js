@@ -858,11 +858,7 @@ const VEHICLES = [
     { id: 'jet', name: '✈️ Jet Privado', cost: 5000000, maint: 50000, energyReduction: 15, status: 150, desc: 'El cielo es el límite' }
 ];
 
-const PROJECT_TYPES = [
-    { id: 'youtube', name: 'Canal de YouTube', cost: 100, duration: 6, penalty: 10, req: { intelligence: 10 }, desc: 'Diversión y vlog. Bajo costo.' },
-    { id: 'book', name: 'Escribir Libro', cost: 50, duration: 12, penalty: 20, req: { intelligence: 40 }, desc: 'Novela o ensayo. Requiere dedicación.' },
-    { id: 'app', name: 'Desarrollar App', cost: 500, duration: 18, penalty: 30, req: { intelligence: 70 }, desc: 'Alta tecnología. Alto potencial.' }
-];
+
 
 
 
@@ -1141,4 +1137,11 @@ const EVENTS = [
         condition: s => s.visaStatus && s.visaStatus.expiryMonths < 6,
         effect: (s) => ({ stress: 10, msg: "Tu visa está por vencer. ¡Estrés!", type: 'bad' })
     }
+];
+
+const PROJECT_TYPES = [
+    { id: 'blog', name: 'Blog / Newsletter ✍️', cost: 100, potential: 200, difficulty: 0.8, req: { intelligence: 10 }, penalty: 5, desc: 'Bajo costo, crecimiento lento.' },
+    { id: 'app', name: 'App Móvil 📱', cost: 300, potential: 1500, difficulty: 1.2, req: { intelligence: 40 }, penalty: 10, desc: 'Alta demanda, requiere mantenimiento.' },
+    { id: 'game', name: 'Indie Game 🎮', cost: 600, potential: 5000, difficulty: 2.0, req: { intelligence: 60 }, penalty: 15, desc: 'Alto riesgo, alta recompensa.' },
+    { id: 'saas', name: 'Plataforma SaaS ☁️', cost: 1200, potential: 12000, difficulty: 3.0, req: { intelligence: 80 }, penalty: 20, desc: 'Ingreso recurrente masivo para expertos.' }
 ];
