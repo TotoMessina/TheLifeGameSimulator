@@ -88,7 +88,11 @@ const DevMode = {
                 <button class="tab-btn active" onclick="window.DevMode.switchTab('general', event)">General</button>
                 <button class="tab-btn" onclick="window.DevMode.switchTab('economy', event)">Economy</button>
                 <button class="tab-btn" onclick="window.DevMode.switchTab('career', event)">Career</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('edu', event)">Edu</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('fam', event)">Fam</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('fame', event)">Fame</button>
                 <button class="tab-btn" onclick="window.DevMode.switchTab('assets', event)">Assets</button>
+                <button class="tab-btn" onclick="window.DevMode.switchTab('trav', event)">Trav</button>
                 <button class="tab-btn" onclick="window.DevMode.switchTab('world', event)">World</button>
             </div>
 
@@ -151,7 +155,11 @@ const DevMode = {
                 case 'general': html = this.renderGeneralTab(); break;
                 case 'economy': html = this.renderEconomyTab(); break;
                 case 'career': html = this.renderCareerTab(); break;
+                case 'edu': html = this.renderEduTab(); break;
+                case 'fam': html = this.renderFamTab(); break;
+                case 'fame': html = this.renderFameTab(); break;
                 case 'assets': html = this.renderAssetsTab(); break;
+                case 'trav': html = this.renderTravTab(); break;
                 case 'world': html = this.renderWorldTab(); break;
                 default: html = '<p>Tab not found</p>';
             }
@@ -181,8 +189,18 @@ const DevMode = {
                 ${this.renderSlider('Health', 'physicalHealth', s.physicalHealth || 50, 0, 100)}
                 ${this.renderSlider('Happiness', 'happiness', s.happiness || 50, 0, 100)}
                 ${this.renderSlider('Intelligence', 'intelligence', s.intelligence || 10, 0, 100)}
+                ${this.renderSlider('Charisma', 'charisma', s.charisma || 10, 0, 100)}
+                ${this.renderSlider('Creativity', 'creativity', s.creativity || 10, 0, 100)}
                 ${this.renderSlider('Energy', 'energy', s.energy || 100, 0, 100)}
                 ${this.renderSlider('Stress', 'stress', s.stress || 0, 0, 100)}
+            </div>
+            <div class="dev-section">
+                <h4>🏥 Health</h4>
+                <div class="btn-group">
+                    <button onclick="DevMode.setStat('physicalHealth', 100)">💖 Full Health</button>
+                    <button onclick="DevMode.setStat('mentalHealth', 100)">🧠 Full Mental</button>
+                    <button onclick="DevMode.setStat('physicalHealth', 10)" style="color:#ff5555">🤒 Force Sick</button>
+                </div>
             </div>
             <div class="dev-section">
                 <h4>💰 Quick Money</h4>
@@ -258,8 +276,19 @@ const DevMode = {
                 <h4>📈 Job Stats</h4>
                 ${this.renderSlider('Job XP', 'jobXP', s.jobXP || 0, 0, 500)}
                 ${this.renderSlider('Performance', 'performance', work.performance || 50, 0, 100)}
+                ${this.renderSlider('Perf. Streak', 'performanceStreak', work.performanceStreak || 0, 0, 24)}
                 ${this.renderSlider('Boss Relation', 'boss', work.boss || 50, 0, 100)}
                  ${this.renderSlider('Colleagues', 'colleagues', work.colleagues || 50, 0, 100)}
+            </div>
+            <div class="dev-section">
+                <h4>🎖️ Job Level</h4>
+                <select onchange="DevMode.setStat('jobLevel', this.value)">
+                    <option value="0" ${s.jobLevel === 0 ? 'selected' : ''}>Trainee</option>
+                    <option value="1" ${s.jobLevel === 1 ? 'selected' : ''}>Junior</option>
+                    <option value="2" ${s.jobLevel === 2 ? 'selected' : ''}>Semi-Senior</option>
+                    <option value="3" ${s.jobLevel === 3 ? 'selected' : ''}>Senior</option>
+                    <option value="4" ${s.jobLevel === 4 ? 'selected' : ''}>Lead</option>
+                </select>
             </div>
             <div class="dev-section">
                 <h4>🎓 Career XP</h4>
@@ -306,6 +335,111 @@ const DevMode = {
         `;
     },
 
+    renderEduTab() {
+        const s = window.state || {};
+        const edu = s.school || { grades: 70, popularity: 50 };
+
+        return `
+            <div class="dev-section">
+                <h4>🎓 Academic Status</h4>
+                <label class="dev-checkbox">
+                    <input type="checkbox" onchange="DevMode.toggleStat('isStudent')" ${s.isStudent ? 'checked' : ''}> Soy Estudiante
+                </label>
+                ${this.renderSlider('Grades', 'school_grades', edu.grades, 0, 100)}
+                ${this.renderSlider('Popularity', 'school_popularity', edu.popularity, 0, 100)}
+            </div>
+            <div class="dev-section">
+                <h4>🏫 Degree & Major</h4>
+                <select onchange="DevMode.setSchoolStat('major', this.value)">
+                    <option value="">-- No Major --</option>
+                    <option value="Engineering" ${edu.major === 'Engineering' ? 'selected' : ''}>Engineering</option>
+                    <option value="Business" ${edu.major === 'Business' ? 'selected' : ''}>Business</option>
+                    <option value="Arts" ${edu.major === 'Arts' ? 'selected' : ''}>Arts</option>
+                    <option value="Medicine" ${edu.major === 'Medicine' ? 'selected' : ''}>Medicine</option>
+                </select>
+            </div>
+            <div class="dev-section">
+                <button onclick="DevMode.finishSchool()" style="width:100%; border-color:#00ffcc;">🎓 Force Graduation</button>
+            </div>
+        `;
+    },
+
+    renderFamTab() {
+        const s = window.state || {};
+        const partner = s.partner;
+        const children = s.children || [];
+
+        return `
+            <div class="dev-section">
+                <h4>❤️ Relationship</h4>
+                ${partner ? `
+                    <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:5px; margin-bottom:10px;">
+                        <div><b>${partner.name}</b> (${partner.status})</div>
+                        <div style="font-size:0.8rem; color:#aaa">${partner.jobTitle}</div>
+                    </div>
+                    ${this.renderSlider('Relation', 'partner_relation', partner.relation, 0, 100)}
+                    <button onclick="DevMode.removePartner()" style="width:100%; color:#ff5555; border-color:#ff5555">💔 Break Up</button>
+                ` : `
+                    <p style="color:#666">No partner</p>
+                    <button onclick="DevMode.spawnPartner()" style="width:100%">💖 Spawn Partner</button>
+                `}
+            </div>
+            <div class="dev-section">
+                <h4>👶 Children (${children.length})</h4>
+                <button onclick="DevMode.addChild()" style="width:100%">➕ Add Child</button>
+                <div style="margin-top:10px; font-size:0.8rem; color:#aaa;">
+                    ${children.map(c => `• ${c.name} (${Math.floor(c.ageMonths / 12)}y)`).join('<br>')}
+                </div>
+            </div>
+        `;
+    },
+
+
+    renderFameTab() {
+        const s = window.state || {};
+        const fame = s.fame || { followers: 0, status: 'active' };
+
+        return `
+            <div class="dev-section">
+                <h4>📈 Social Media</h4>
+                <select onchange="DevMode.setFameStat('channel', this.value)">
+                    <option value="">-- No Channel --</option>
+                    <option value="youtube" ${fame.channel === 'youtube' ? 'selected' : ''}>YouTube</option>
+                    <option value="twitch" ${fame.channel === 'twitch' ? 'selected' : ''}>Twitch</option>
+                    <option value="linkedin" ${fame.channel === 'linkedin' ? 'selected' : ''}>LinkedIn</option>
+                </select>
+                ${this.renderSlider('Followers', 'fame_followers', fame.followers, 0, 10000000, 1000)}
+            </div>
+            <div class="dev-section">
+                <h4>🚫 Status</h4>
+                <button onclick="DevMode.setFameStat('status', 'cancelled')" style="width:100%; color:#ff5555;">❌ Force Cancelled</button>
+                <button onclick="DevMode.setFameStat('status', 'active')" style="width:100%; margin-top:5px;">✅ Restore Status</button>
+            </div>
+        `;
+    },
+
+    renderTravTab() {
+        const s = window.state || {};
+        return `
+            <div class="dev-section">
+                <h4>✈️ Migration</h4>
+                <div style="margin-bottom:10px;">Current: <b>${s.currentCountry || 'Home'}</b></div>
+                <div class="btn-group-wrap">
+                    <button onclick="DevMode.travel('usa')">🇺🇸 USA</button>
+                    <button onclick="DevMode.travel('canada')">🇨🇦 Canada</button>
+                    <button onclick="DevMode.travel('spain')">🇪🇸 Spain</button>
+                    <button onclick="DevMode.travel('japan')">🇯🇵 Japan</button>
+                    <button onclick="DevMode.travel('mexico')">🇲🇽 Mexico</button>
+                    <button onclick="DevMode.travel('home')">🏠 Home</button>
+                </div>
+            </div>
+            <div class="dev-section">
+                <h4>🛂 Visa</h4>
+                <button onclick="DevMode.setVisa('working')" style="width:100%">Grant Work Visa</button>
+            </div>
+        `;
+    },
+
     renderWorldTab() {
         const trends = typeof World !== 'undefined' ? (World.trends || []) : [];
 
@@ -336,13 +470,15 @@ const DevMode = {
     // --- Components ---
 
     renderSlider(label, key, val, min, max, step = 1, isFloat = false) {
-        // Validation for values to avoid NaN errors
         const safeVal = (val === undefined || val === null || isNaN(val)) ? min : val;
 
-        const fn = key.startsWith('career_') ? `DevMode.setCareerXP('${key.split('_')[1]}', this.value)` :
-            (key === 'inflation' ? `DevMode.setInflation(this.value)` :
-                (key === 'performance' || key === 'boss' || key === 'colleagues' ? `DevMode.setJobStat('${key}', this.value)` :
-                    `DevMode.setStat('${key}', this.value)`));
+        let fn = `DevMode.setStat('${key}', this.value)`;
+        if (key.startsWith('career_')) fn = `DevMode.setCareerXP('${key.split('_')[1]}', this.value)`;
+        else if (key === 'inflation') fn = `DevMode.setInflation(this.value)`;
+        else if (['performance', 'boss', 'colleagues', 'performanceStreak'].includes(key)) fn = `DevMode.setJobStat('${key}', this.value)`;
+        else if (key.startsWith('school_')) fn = `DevMode.setSchoolStat('${key.split('_')[1]}', this.value)`;
+        else if (key.startsWith('fame_')) fn = `DevMode.setFameStat('${key.split('_')[1]}', this.value)`;
+        else if (key === 'partner_relation' && state.partner) fn = `DevMode.setRelation('partner', this.value)`;
 
         return `
             <div class="stat-slider">
@@ -520,6 +656,78 @@ const DevMode = {
         });
         UI.log("[DEV] Trophies Unlocked", 'good');
         DB.saveGame();
+    },
+
+    toggleStat(key) {
+        state[key] = !state[key];
+        UI.log(`[DEV] ${key} set to ${state[key]}`, 'info');
+        UI.render();
+    },
+
+    setSchoolStat(key, val) {
+        if (!state.school) state.school = { grades: 70, popularity: 50 };
+        state.school[key] = (key === 'grades' || key === 'popularity') ? parseInt(val) : val;
+        const el = document.getElementById(`dev-val-school_${key}`);
+        if (el) el.innerText = val;
+        UI.render();
+    },
+
+    finishSchool() {
+        state.school.grades = 100;
+        state.age = 18;
+        state.totalMonths = 18 * 12;
+        state.isStudent = false;
+        UI.log("[DEV] Graduated & set to 18", 'good');
+        UI.render();
+    },
+
+    setRelation(type, val) {
+        if (type === 'partner' && state.partner) state.partner.relation = parseInt(val);
+        const el = document.getElementById(`dev-val-partner_relation`);
+        if (el) el.innerText = val;
+        UI.render();
+    },
+
+    spawnPartner() {
+        state.partner = { name: "Dev Partner", salary: 2000, relation: 100, status: 'dating', jobTitle: 'QA Engineer' };
+        UI.log("[DEV] Partner Spawned", 'good');
+        UI.render();
+        this.switchTab('fam');
+    },
+
+    removePartner() {
+        state.partner = null;
+        UI.log("[DEV] Partner Removed", 'info');
+        UI.render();
+        this.switchTab('fam');
+    },
+
+    addChild() {
+        if (!state.children) state.children = [];
+        state.children.push({ name: "Dev Kid", ageMonths: 0, gender: 'male' });
+        UI.log("[DEV] Child Added", 'good');
+        UI.render();
+        this.switchTab('fam');
+    },
+
+    setFameStat(key, val) {
+        if (!state.fame) state.fame = { followers: 0, status: 'active' };
+        state.fame[key] = (key === 'followers') ? parseInt(val) : val;
+        const el = document.getElementById(`dev-val-fame_${key}`);
+        if (el) el.innerText = val;
+        UI.render();
+    },
+
+    travel(countryId) {
+        state.currentCountry = countryId;
+        UI.log(`[DEV] Traveled to ${countryId}`, 'info');
+        UI.render();
+    },
+
+    setVisa(type) {
+        state.visaStatus = { countryId: state.currentCountry, type: type, expiryMonths: 12, allowWork: true };
+        UI.log("[DEV] Visa Granted", 'good');
+        UI.render();
     },
 
     makeDraggable(el) {
