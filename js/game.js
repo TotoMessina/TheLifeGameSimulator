@@ -61,8 +61,11 @@ const Game = {
             state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
         }
         if (!state.careerExperience) state.careerExperience = {};
+        if (!state.workHistory) state.workHistory = []; // Init Work History
         if (!state.companyBlacklist) state.companyBlacklist = {};
         if (!state.sectorReputation) state.sectorReputation = {};
+        if (!state.sectorReputation) state.sectorReputation = {};
+        if (!state.activeProject) state.activeProject = { active: false, month: 0, wins: 0, losses: 0 };
         if (!state.fame) {
             state.fame = {
                 followers: 0,
@@ -71,6 +74,17 @@ const Game = {
                 revenue: 0,
                 perks: []
             };
+        }
+
+        // Job Reference System Init
+        if (state.friends) {
+            state.friends.forEach(f => {
+                if (!f.companyId && !f.isColleague) {
+                    // Assign random company to existing friends
+                    const randomCompany = COMPANIES[Math.floor(Math.random() * COMPANIES.length)];
+                    f.companyId = randomCompany.id;
+                }
+            });
         }
 
         // Init Freelancer State
@@ -754,7 +768,7 @@ const Game = {
         UI.log(`🍺 After Office: +Colegas, -Estrés, +Red de Contactos (${Math.floor(netGain)}).`, "good");
 
         // Headhunting Chance
-        this.checkHeadhunting();
+        this.checkHeadhunterEvent();
 
         UI.render();
         UI.renderJobDashboard();
@@ -1249,9 +1263,22 @@ const Game = {
             UI.log(`Has sido vetado de ${currentJob.companyId} por 24 meses.`, "warning");
         }
 
+        // Save History
+        if (!state.workHistory) state.workHistory = [];
+        state.workHistory.push({
+            companyId: currentJob ? currentJob.companyId : 'unknown',
+            jobTitle: currentJob ? currentJob.title : state.currJobId,
+            duration: state.jobMonths || 0,
+            startDate: state.totalMonths - (state.jobMonths || 0),
+            endDate: state.totalMonths,
+            reason: 'quit',
+            recommender: state.jobRecommender
+        });
+
         state.currJobId = 'unemployed';
         state.jobXP = 0;
         state.jobMonths = 0;
+        state.jobRecommender = null; // Clear recommendation
         state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
         UI.renderJob();
         UI.showAlert("Renuncia", "Has renunciado a tu empleo.");
@@ -1260,7 +1287,26 @@ const Game = {
         UI.renderJobDashboard();
     },
 
-    applyJob(jobId, targetCompanyId = null) {
+    askForRecommendation(jobId, friendId) {
+        const friend = state.friends.find(f => f.name === friendId || f.id === friendId); // Assuming accessing by name or ID
+        // Note: Friends array usually doesn't have IDs in this codebase, using name or index might be safer, 
+        // but let's assume UI passes the correct identifier. If UI passes index, adapt.
+        // Let's assume passed helper passes the friend object or unique name.
+        if (!friend) return;
+
+        if (friend.relation < 80) {
+            return UI.showAlert("Relación Insuficiente", `Necesitas una relación de al menos 80 con ${friend.name} para pedir una recomendación.`);
+        }
+
+        // Cost
+        friend.relation -= 10;
+        UI.log(`Le pediste un favor a ${friend.name}. -10 Relación.`, "normal");
+
+        // Apply with recommendation
+        this.applyJob(jobId, null, friend.name);
+    },
+
+    applyJob(jobId, targetCompanyId = null, recommenderId = null) {
         const job = JOBS.find(j => j.id === jobId);
         if (!job) return;
 
@@ -1282,25 +1328,32 @@ const Game = {
             const company = COMPANIES.find(c => c.id === job.companyId);
 
             // 1. Blacklist Check
-            if (state.companyBlacklist[job.companyId] && state.companyBlacklist[job.companyId] > state.totalMonths) {
+            // RECOMENDATION PERK: Bypass Blacklist
+            if (!recommenderId && state.companyBlacklist[job.companyId] && state.companyBlacklist[job.companyId] > state.totalMonths) {
                 const remaining = state.companyBlacklist[job.companyId] - state.totalMonths;
                 return UI.showAlert("Lista Negra", `Esta empresa te ha vetado. Podrás volver a postularte en ${remaining} meses.`);
             }
 
             // 2. Reputation Check
-            // MODIFIED: Entry-level jobs (Salary < 3000 or Intern/Junior) don't require reputation
-            const isEntryLevel = job.salary < 3000 ||
-                /trainee|intern|junior|assist|jr|student/i.test(job.id) ||
-                /trainee|intern|junior|assist|jr|student/i.test(job.title);
+            // RECOMMENDATION PERK: Ignore Reputation Req
+            if (!recommenderId) {
+                // MODIFIED: Entry-level jobs (Salary < 4000, Intern/Junior, or No Experience required) don't require reputation
+                // Also, if the user has NO reputation in that sector yet, allow entry if salary is low enough.
+                const isEntryLevel = job.salary < 4000 ||
+                    !job.req.exp || job.req.exp === 0 ||
+                    /trainee|intern|junior|assist|jr|student|entry|aprendiz|becario/i.test(job.id) ||
+                    /trainee|intern|junior|assist|jr|student|entry|aprendiz|becario/i.test(job.title);
 
-            const requiredRep = isEntryLevel ? 0 : Math.floor(company.prestige / 2);
-            const currentRep = state.sectorReputation[company.sector] || 0;
+                const requiredRep = isEntryLevel ? 0 : Math.floor(company.prestige / 2);
+                const currentRep = state.sectorReputation[company.sector] || 0;
 
-            if (currentRep < requiredRep) {
-                return UI.showAlert("Reputación Insuficiente", `Necesitas ${requiredRep} de Reputación en el sector ${company.sector.toUpperCase()} (Tienes: ${currentRep}).`);
+                if (currentRep < requiredRep) {
+                    return UI.showAlert("Reputación Insuficiente", `Necesitas ${requiredRep} de Reputación en el sector ${company.sector.toUpperCase()} (Tienes: ${currentRep}).\n\nPrueba con puestos de menor nivel o pasantías.`);
+                }
             }
 
             // 3. Sector Blacklist (Espionage)
+            // Cannot bypass this even with contacts
             if (state.sectorBlacklist && state.sectorBlacklist[company.sector]) {
                 return UI.showAlert("VETADO DEL SECTOR", `Tu historial de espionaje te impide trabajar en el sector ${company.sector.toUpperCase()} de por vida.`);
             }
@@ -1317,11 +1370,24 @@ const Game = {
             }
         }
 
-        // Check reqs
-        if (state.intelligence < (job.req.int || 0) ||
-            state.physicalHealth < (job.req.health || 0) ||
+        // Check reqs (Boosted by recommendation)
+        let intReq = job.req.int || 0;
+        let healthReq = job.req.health || 0;
+
+        if (recommenderId) {
+            intReq *= 0.8; // 20% leniency
+            healthReq *= 0.8;
+        }
+
+        if (state.intelligence < intReq ||
+            state.physicalHealth < healthReq ||
             state.happiness < (job.req.happy || 0)) {
-            UI.showAlert("Requisitos no cumplidos", "No estás calificado para este trabajo.");
+
+            if (recommenderId) {
+                UI.showAlert("Requisitos no cumplidos", "Incluso con la recomendación, no estás calificado para este trabajo.");
+            } else {
+                UI.showAlert("Requisitos no cumplidos", "No estás calificado para este trabajo.");
+            }
             return;
         }
 
@@ -1352,8 +1418,11 @@ const Game = {
         if (job.req.careerExp) {
             for (const [career, requiredMonths] of Object.entries(job.req.careerExp)) {
                 const currentExp = state.careerExperience[career] || 0;
-                if (currentExp < requiredMonths) {
-                    const yearsNeeded = Math.ceil(requiredMonths / 12);
+                // Recommendation lowers exp requirement by 6 months
+                const modReq = recommenderId ? Math.max(0, requiredMonths - 6) : requiredMonths;
+
+                if (currentExp < modReq) {
+                    const yearsNeeded = Math.ceil(modReq / 12);
                     UI.showAlert("Falta Experiencia", `Necesitas al menos ${yearsNeeded} año(s) de experiencia en ${career}.`);
                     return;
                 }
@@ -1365,6 +1434,19 @@ const Game = {
         // RIVALRY & SWITCHING LOGIC
         if (state.currJobId !== 'unemployed') {
             const prevJob = JOBS.find(j => j.id === state.currJobId);
+
+            // Save History for previous job
+            if (!state.workHistory) state.workHistory = [];
+            state.workHistory.push({
+                companyId: prevJob ? prevJob.companyId : 'unknown',
+                jobTitle: prevJob ? prevJob.title : state.currJobId,
+                duration: state.jobMonths || 0,
+                startDate: state.totalMonths - (state.jobMonths || 0),
+                endDate: state.totalMonths,
+                reason: 'resigned', // Switched
+                recommender: state.jobRecommender
+            });
+
             if (prevJob && prevJob.companyId) {
                 const prevCompany = COMPANIES.find(c => c.id === prevJob.companyId);
 
@@ -1401,12 +1483,15 @@ const Game = {
         state.promotions = 0;
         state.consecutiveWork = 0;
         state.jobMonths = 0; // Reset job months for new job
+        state.jobRecommender = recommenderId; // Setup Recommender
 
         // Vacation Days Init
         const tier = job.salary > 5000 ? 30 : job.salary > 2000 ? 14 : 7;
         state.vacationDays = tier;
 
-        UI.log(`¡Contratado! Ahora eres ${job.title}.`, "good");
+        let msg = `¡Contratado! Ahora eres ${job.title}.`;
+        if (recommenderId) msg += ` (Gracias a ${recommenderId})`;
+        UI.log(msg, "good");
         UI.showAlert("¡Felicidades!", `Has conseguido el puesto de ${job.title}.`);
 
         // Close modal
@@ -2101,6 +2186,31 @@ const Game = {
 
         if ((skippedWork || lowMental) && Math.random() < 0.15) {
             const reason = skippedWork ? "por ausentismo" : "por inestabilidad mental";
+
+            // Recommender Penalty
+            let recommenderName = state.jobRecommender;
+            if (recommenderName) {
+                const friend = state.friends.find(f => f.name === recommenderName);
+                if (friend) {
+                    friend.relation = Math.max(0, friend.relation - 30);
+                    UI.log(`Fallas a ${friend.name} al ser despedido. -30 Relación.`, "bad");
+                }
+                state.jobRecommender = null;
+            }
+
+            // Save History
+            const currentJob = JOBS.find(j => j.id === state.currJobId);
+            if (!state.workHistory) state.workHistory = [];
+            state.workHistory.push({
+                companyId: currentJob ? currentJob.companyId : 'unknown',
+                jobTitle: currentJob ? currentJob.title : state.currJobId,
+                duration: state.jobMonths || 0,
+                startDate: state.totalMonths - (state.jobMonths || 0),
+                endDate: state.totalMonths,
+                reason: 'fired',
+                recommender: recommenderName
+            });
+
             UI.showAlert("¡DESPEDIDO!", `Te han despedido ${reason}.`);
             UI.log(`Has perdido tu empleo ${reason}.`, "bad");
             state.currJobId = 'unemployed';
@@ -2137,6 +2247,38 @@ const Game = {
         // Auto promotion check
         if (state.jobXP >= 100) {
             this.applyPerformanceReview();
+        }
+
+        // BIG PROJECT OF THE YEAR (Annual, 3-month chain)
+        if (!state.activeProject) state.activeProject = { active: false, month: 0, wins: 0, losses: 0 };
+
+        if (state.activeProject.active) {
+            state.activeProject.month++;
+            if (state.activeProject.month <= 3) {
+                if (typeof SkillChallenges !== 'undefined') {
+                    SkillChallenges.startProjectRound(state.activeProject.month);
+                }
+                return; // Focus on project, skip other random events
+            } else {
+                // Should have been resolved, but just in case
+                state.activeProject.active = false;
+            }
+        } else if (state.totalMonths > 12 && state.totalMonths % 12 === 0) {
+            // Start New Project
+            state.activeProject = { active: true, month: 1, wins: 0, losses: 0 };
+            UI.showAlert("¡GRAN PROYECTO ANUAL!", "La empresa ha asignado un proyecto crítico. Tu desempeño en los próximos 3 meses definirá tu futuro (Ascenso o Despido).");
+            if (typeof SkillChallenges !== 'undefined') {
+                SkillChallenges.startProjectRound(1);
+            }
+            return;
+        }
+
+        // SKILL CHALLENGE TRIGGER (Approx every 3-6 months)
+        // 30% chance every 4 months (Only if not in a project)
+        if (state.totalMonths % 4 === 0 && Math.random() < 0.3) {
+            if (typeof SkillChallenges !== 'undefined') {
+                SkillChallenges.trigger();
+            }
         }
 
         // Work events (sabotage, promotion opportunities)

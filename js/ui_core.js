@@ -848,6 +848,32 @@ const UI = {
         // Find company info
         const comp = j.companyId ? COMPANIES.find(c => c.id === j.companyId) : null;
 
+        // Check for internal contacts (Recommenders)
+        let recommender = null;
+        if (state.friends && comp) {
+            recommender = state.friends.find(f => f.companyId === comp.id && f.relation >= 80);
+        }
+
+        let actionBtn = '';
+        if (isCurr) {
+            actionBtn = `<button class="job-action-btn" disabled>Actual</button>`;
+        } else if (recommender) {
+            actionBtn = `
+                <button class="job-action-btn" style="background:#4dffea; color:#000; font-weight:bold;" onclick="Game.askForRecommendation('${j.id}', '${recommender.name}')">
+                    🤝 Pedir Recomendación
+                </button>
+                <div style="font-size:0.7rem; color:#aaa; text-align:center; margin-top:2px;">
+                    ${recommender.name} (Rel: ${recommender.relation})
+                </div>
+            `;
+        } else {
+            actionBtn = `
+                <button class="job-action-btn" onclick="Game.applyJob('${j.id}', '${comp ? comp.id : ''}'); UI.renderNewJobMarket()" ${isFullyQual ? '' : 'disabled'}>
+                    ${isLocked ? 'Vetado/Bloqueado' : 'Aplicar'}
+                </button>
+            `;
+        }
+
         return `
             <div class="job-card-new ${isCurr ? 'current' : ''} ${isLocked ? 'locked' : ''}">
                 <div class="job-details">
@@ -860,9 +886,7 @@ const UI = {
                     ${isLocked ? `<div style="color:#ff5555; font-size:0.8rem; margin-top:4px;">🔒 ${lockReason}</div>` : ''}
                 </div>
                 <div>
-                    <button class="job-action-btn" onclick="Game.applyJob('${j.id}', '${comp ? comp.id : ''}'); UI.renderNewJobMarket()" ${isFullyQual && !isCurr ? '' : 'disabled'}>
-                        ${isCurr ? 'Actual' : (isLocked ? 'Vetado' : 'Aplicar')}
-                    </button>
+                    ${actionBtn}
                 </div>
             </div>
         `;
@@ -912,7 +936,14 @@ const UI = {
             relevantJobs.forEach(j => {
                 // Check blacklist for this specific company
                 const isBlacklisted = state.companyBlacklist && state.companyBlacklist[comp.id] > state.totalMonths;
-                const requiredRep = Math.floor(comp.prestige / 2);
+
+                // MODIFIED: Entry-level jobs (Salary < 4000, Intern/Junior, or No Experience required) don't require reputation
+                const isEntryLevel = j.salary < 4000 ||
+                    !j.req.exp || j.req.exp === 0 ||
+                    /trainee|intern|junior|assist|jr|student|entry|aprendiz|becario/i.test(j.id) ||
+                    /trainee|intern|junior|assist|jr|student|entry|aprendiz|becario/i.test(j.title);
+
+                const requiredRep = isEntryLevel ? 0 : Math.floor(comp.prestige / 2);
                 const currentRep = state.sectorReputation[comp.sector] || 0;
                 const isLowRep = currentRep < requiredRep;
 

@@ -68,11 +68,13 @@ const ProfileView = {
             const logo = company ? company.logo : '💼';
             const name = company ? company.name : (entry.companyId === 'indep' ? 'Independiente' : entry.companyId);
 
+            const recIcon = entry.recommender ? `<span title="Recomendado por ${entry.recommender}" style="cursor:help">🤝</span> ` : '';
+
             html += `
                 <div class="history-item">
                     <div class="hi-logo">${logo}</div>
                     <div class="hi-details">
-                        <h4>${entry.jobTitle} <span style="font-weight:normal; color:#888;">en ${name}</span></h4>
+                        <h4>${recIcon}${entry.jobTitle} <span style="font-weight:normal; color:#888;">en ${name}</span></h4>
                         <p>${Math.floor(entry.duration)} meses | ${entry.reason === 'fired' ? '<span style="color:#ff4d4d">Despedido</span>' : '<span style="color:#4dffea">Renuncia</span>'}</p>
                     </div>
                     <div class="hi-date">Edad: ${Math.floor((entry.endDate - 1) / 12)}</div>
