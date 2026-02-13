@@ -51,7 +51,7 @@ const PerformanceManager = {
         // Job Modal
         this.lazyModals['job-modal'].renderFn = () => {
             if (!this.lazyModals['job-modal'].loaded) {
-                UI.renderJobMarket();
+                UI.renderNewJobMarket();
                 this.lazyModals['job-modal'].loaded = true;
             }
         };

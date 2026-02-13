@@ -333,7 +333,12 @@ const Game = {
             if (job) {
                 // Apply Level Multiplier
                 const level = JOB_LEVELS[state.jobLevel || 0];
-                activeIncome += Math.floor(job.salary * level.salaryMult);
+                let salary = job.salary * level.salaryMult;
+
+                // Apply Custom Modifier (Headhunting/Negotiation)
+                if (state.jobCustomModifier) salary *= state.jobCustomModifier;
+
+                activeIncome += Math.floor(salary);
             }
         }
 
@@ -1248,14 +1253,19 @@ const Game = {
         state.jobXP = 0;
         state.jobMonths = 0;
         state.work_relations = { boss: 50, colleagues: 50, performance: 50 };
+        UI.renderJob();
+        UI.showAlert("Renuncia", "Has renunciado a tu empleo.");
 
         UI.render();
         UI.renderJobDashboard();
     },
 
-    applyJob(jobId) {
+    applyJob(jobId, targetCompanyId = null) {
         const job = JOBS.find(j => j.id === jobId);
         if (!job) return;
+
+        // Save Company ID (explicit or target)
+        state.currentCompanyId = targetCompanyId || job.companyId || null;
 
         // AGE RESTRICTION: Must be 18+ to work (except unemployed)
         if (state.age < 18 && jobId !== 'unemployed') {
@@ -1278,10 +1288,21 @@ const Game = {
             }
 
             // 2. Reputation Check
-            const requiredRep = Math.floor(company.prestige / 2);
+            // MODIFIED: Entry-level jobs (Salary < 3000 or Intern/Junior) don't require reputation
+            const isEntryLevel = job.salary < 3000 ||
+                /trainee|intern|junior|assist|jr|student/i.test(job.id) ||
+                /trainee|intern|junior|assist|jr|student/i.test(job.title);
+
+            const requiredRep = isEntryLevel ? 0 : Math.floor(company.prestige / 2);
             const currentRep = state.sectorReputation[company.sector] || 0;
+
             if (currentRep < requiredRep) {
                 return UI.showAlert("Reputación Insuficiente", `Necesitas ${requiredRep} de Reputación en el sector ${company.sector.toUpperCase()} (Tienes: ${currentRep}).`);
+            }
+
+            // 3. Sector Blacklist (Espionage)
+            if (state.sectorBlacklist && state.sectorBlacklist[company.sector]) {
+                return UI.showAlert("VETADO DEL SECTOR", `Tu historial de espionaje te impide trabajar en el sector ${company.sector.toUpperCase()} de por vida.`);
             }
         }
 
@@ -2031,6 +2052,10 @@ const Game = {
 
         // 2. Process employment
         this.processEmployment();
+
+        // Headhunting check
+        if (typeof Headhunting !== 'undefined') Headhunting.update();
+        if (typeof MarketCompetition !== 'undefined') MarketCompetition.update();
 
         // 3. Process health
         this.processHealthAndSickness();

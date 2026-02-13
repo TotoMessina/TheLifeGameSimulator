@@ -56,6 +56,7 @@ const state = {
 
     // Collections: 0,
     currJobId: 'unemployed', // Current job ID
+    currentCompanyId: null, // Current company ID (for generic jobs)
     isStudent: false, // Flag for university phase
     graduationHandled: false, // Flag for 18yo event
     loans: 0,
@@ -80,6 +81,8 @@ const state = {
         sport: 0,
         education: 0
     },
+    workHistory: [], // { companyId, jobTitle, startDate, endDate, duration, reason }
+    contacts: [], // { name, companyId, role, relationship, influence }
 
     work_relations: {
         boss: 50,       // 0-100 Relationship

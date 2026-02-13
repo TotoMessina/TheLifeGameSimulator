@@ -807,143 +807,8 @@ const UI = {
         return num.toLocaleString();
     },
 
-    // Helper to render a single job card HTML
-    renderJobCardHtml(j, isLocked = false, lockReason = '') {
-        // Check qualifications
-        const isQual = state.intelligence >= (j.req.int || 0) &&
-            state.physicalHealth >= (j.req.health || 0) &&
-            state.happiness >= (j.req.happy || 0) &&
-            (!j.req.deg || state.education.includes(j.req.deg)) &&
-            (!j.req.isStudent || state.isStudent);
 
-        // Check career experience
-        let hasCareerExp = true;
-        let expMessage = '';
-        if (j.req.careerExp) {
-            for (const [career, requiredMonths] of Object.entries(j.req.careerExp)) {
-                const currentExp = state.careerExperience[career] || 0;
-                if (currentExp < requiredMonths) {
-                    hasCareerExp = false;
-                    const yearsNeeded = Math.ceil(requiredMonths / 12);
-                    expMessage = `Requiere ${yearsNeeded} año(s) en ${career}`;
-                }
-            }
-        }
-
-        const isFullyQual = isQual && hasCareerExp && !isLocked;
-        const isCurr = state.currJobId === j.id;
-
-        // Calculate net salary
-        const salaryData = FinanceManager.calculateNetSalary(j.salary);
-
-        // Build requirement badges
-        const reqBadges = [];
-        if (j.req.int) reqBadges.push(`<span style="color:${state.intelligence >= j.req.int ? '#4dffea' : '#ff5555'};">🧠 ${j.req.int}</span>`);
-        if (j.req.health) reqBadges.push(`<span style="color:${state.physicalHealth >= j.req.health ? '#4dffea' : '#ff5555'};">💪 ${j.req.health}</span>`);
-        if (j.req.happy) reqBadges.push(`<span style="color:${state.happiness >= j.req.happy ? '#4dffea' : '#ff5555'};">😊 ${j.req.happy}</span>`);
-        if (j.req.deg) reqBadges.push(`<span style="color:${state.education.includes(j.req.deg) ? '#4dffea' : '#ff5555'};">🎓 Título</span>`);
-        if (j.req.isStudent) reqBadges.push(`<span style="color:${state.isStudent ? '#4dffea' : '#ff5555'};">📚 Estudiante</span>`);
-        if (!hasCareerExp) reqBadges.push(`<span style="color:#ff5555;">⏱️ ${expMessage}</span>`);
-
-        // Find company info
-        const comp = j.companyId ? COMPANIES.find(c => c.id === j.companyId) : null;
-
-        return `
-            <div class="job-card-new ${isCurr ? 'current' : ''} ${isLocked ? 'locked' : ''}">
-                <div class="job-details">
-                    ${comp ? `<div style="font-size:0.85rem; color:#ddd; margin-bottom:4px; font-weight:bold; letter-spacing:0.5px;">${comp.logo} ${comp.name.toUpperCase()}</div>` : ''}
-                    <div class="job-title ${isCurr ? 'current' : ''}">
-                        ${j.title} ${isCurr ? '✓' : ''}
-                    </div>
-                    <div class="job-salary">$${j.salary.toLocaleString()}/mes <span class="job-net">($${salaryData.net.toLocaleString()} Neto)</span></div>
-                    ${reqBadges.length > 0 ? `<div class="job-badges">${reqBadges.join('')}</div>` : ''}
-                    ${isLocked ? `<div style="color:#ff5555; font-size:0.8rem; margin-top:4px;">🔒 ${lockReason}</div>` : ''}
-                </div>
-                <div>
-                    <button class="job-action-btn" onclick="Game.applyJob('${j.id}', '${comp ? comp.id : ''}'); UI.renderNewJobMarket()" ${isFullyQual && !isCurr ? '' : 'disabled'}>
-                        ${isCurr ? 'Actual' : (isLocked ? 'Vetado' : 'Aplicar')}
-                    </button>
-                </div>
-            </div>
-        `;
-    },
-
-    renderCompanyJobs(companyId) {
-        const container = document.getElementById('job-list-container');
-        if (!container) return;
-
-        const comp = COMPANIES.find(c => c.id === companyId);
-        if (!comp) return;
-
-        // Header with Back Button
-        let html = `
-            <div style="margin-bottom: 20px;">
-                <button onclick="UI.renderNewJobMarket('${comp.sector || 'all'}')" style="background:none; border:none; color:#aaa; font-size:1rem; cursor:pointer; display:flex; align-items:center; gap:5px; padding:10px 0;">
-                    ⬅ Volver al Mercado
-                </button>
-                <div style="text-align:center; padding:20px; background:#222; border-radius:12px; border:1px solid #333; margin-top:10px;">
-                    <div style="font-size:3rem; margin-bottom:10px;">${comp.logo}</div>
-                    <div style="font-size:1.5rem; font-weight:bold; color:#fff;">${comp.name}</div>
-                    <div style="font-size:0.9rem; color:#aaa; margin-top:5px;">${comp.desc || 'Empresa líder en su sector.'}</div>
-                    <div style="margin-top:10px; font-size:0.8rem; color:#666;">Prestigio: ${comp.prestige}/100</div>
-                </div>
-            </div>
-        `;
-
-        // Find jobs for this company
-        // 1. Explicit matches
-        let relevantJobs = JOBS.filter(j => j.companyId === companyId);
-
-        // 2. Generic matches distributed to this company
-        JOBS.forEach(j => {
-            if (!j.companyId && j.career === comp.sector) {
-                // Create a copy for this company
-                relevantJobs.push({ ...j, companyId: comp.id, _isDistributed: true });
-            }
-        });
-
-        // Loop and render
-        if (relevantJobs.length === 0) {
-            html += `<div style="text-align:center; color:#666; padding:20px;">No hay vacantes disponibles en este momento.</div>`;
-        } else {
-            // Sort by salary
-            relevantJobs.sort((a, b) => a.salary - b.salary);
-
-            relevantJobs.forEach(j => {
-                // Check blacklist for this specific company
-                const isBlacklisted = state.companyBlacklist && state.companyBlacklist[comp.id] > state.totalMonths;
-                const requiredRep = Math.floor(comp.prestige / 2);
-                const currentRep = state.sectorReputation[comp.sector] || 0;
-                const isLowRep = currentRep < requiredRep;
-
-                let isLocked = false;
-                let lockReason = '';
-
-                if (isBlacklisted) {
-                    isLocked = true;
-                    lockReason = `Vetado por ${state.companyBlacklist[comp.id] - state.totalMonths} meses`;
-                } else if (isLowRep) {
-                    isLocked = true;
-                    lockReason = `Reputación insuf. (${currentRep}/${requiredRep})`;
-                }
-
-                html += this.renderJobCardHtml(j, isLocked, lockReason);
-            });
-        }
-
-        container.innerHTML = html;
-
-        // RESET SCROLL POSITION
-        if (container.closest('.modal-content')) {
-            container.closest('.modal-content').scrollTop = 0;
-        } else {
-            container.scrollTop = 0;
-        }
-    },
-
-
-    renderNewJobMarket(category = null) {
-        console.log("🚀 Rendering New Job Market v2.2");
+    renderJobMarket(category = null) {
         const modal = document.getElementById('job-modal');
         const container = document.getElementById('job-list-container');
         if (!modal || !container) return;
@@ -980,16 +845,6 @@ const UI = {
         const filter = category || 'all';
         container.innerHTML = '';
 
-        // RESET SCROLL LIST POSITION
-        // Fix: The scrollable element is likely the parent .modal-content, not the container itself
-        if (container.parentElement && container.parentElement.classList.contains('modal-content')) {
-            container.parentElement.scrollTop = 0;
-        } else if (container.closest('.modal-content')) {
-            container.closest('.modal-content').scrollTop = 0;
-        } else {
-            container.scrollTop = 0;
-        }
-
         // --- 1. TABS ---
         const cats = [
             { id: 'all', name: '📋 Todos', icon: '📋' },
@@ -1006,62 +861,286 @@ const UI = {
         ];
 
         const tabContainer = document.createElement('div');
-        tabContainer.className = 'job-market-tabs';
+        tabContainer.style.cssText = "display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:15px; border-bottom:2px solid #333;";
 
         cats.forEach(c => {
             const btn = document.createElement('button');
             btn.innerText = c.name;
-            btn.className = `job-filter-btn ${filter === c.id ? 'active' : ''}`;
-            // Use global UI reference to ensure context is correct
-            btn.onclick = function () { UI.renderNewJobMarket(c.id); };
+            btn.className = `filter-btn ${filter === c.id ? 'active' : ''}`;
+            btn.style.cssText = `
+                padding: 8px 14px;
+                border: 2px solid ${filter === c.id ? '#4dffea' : '#444'};
+                background: ${filter === c.id ? 'rgba(77, 255, 234, 0.15)' : '#1a1a1a'};
+                color: ${filter === c.id ? '#4dffea' : '#999'};
+                border-radius: 20px;
+                cursor: pointer;
+                white-space: nowrap;
+                font-size: 0.9rem;
+                font-weight: ${filter === c.id ? 'bold' : 'normal'};
+                transition: all 0.2s;
+            `;
+            btn.onmouseover = () => {
+                if (filter !== c.id) {
+                    btn.style.background = '#222';
+                    btn.style.color = '#ccc';
+                }
+            };
+            btn.onmouseout = () => {
+                if (filter !== c.id) {
+                    btn.style.background = '#1a1a1a';
+                    btn.style.color = '#999';
+                }
+            };
+            btn.onclick = () => this.renderJobMarket(c.id);
             tabContainer.appendChild(btn);
         });
         container.appendChild(tabContainer);
 
-        // --- 2. COMPANY DIRECTORY (Drill-down) ---
-        // Instead of listing jobs, we list companies.
-
-        let relevantCompanies = [];
-
-        if (filter === 'all') {
-            relevantCompanies = COMPANIES;
-        } else {
-            relevantCompanies = COMPANIES.filter(c => c.sector === filter);
+        // --- 2. JOBS LIST ---
+        let jobs = JOBS.filter(j => j.id !== 'unemployed');
+        if (filter !== 'all') {
+            jobs = jobs.filter(j => j.career === filter);
         }
 
-        // Render Company Cards
-        if (relevantCompanies.length === 0) {
-            const emptyMsg = document.createElement('div');
-            emptyMsg.style.textAlign = 'center';
-            emptyMsg.style.padding = '30px';
-            emptyMsg.style.color = '#888';
-            emptyMsg.innerText = "No hay empresas en esta categoría.";
-            container.appendChild(emptyMsg);
-        } else {
-            relevantCompanies.forEach(comp => {
-                // Check if company has jobs (optional, but good UX)
-                // For now, simpler is better: just show them.
+        // Sort: Salary Ascending
+        jobs.sort((a, b) => a.salary - b.salary);
 
-                const card = document.createElement('div');
-                card.className = 'company-entry-card';
-                card.onclick = () => { UI.renderCompanyJobs(comp.id); };
+        // Group by Company
+        const companyJobs = {};
+        const independentJobs = [];
+        const validCompanyIds = COMPANIES.map(c => c.id);
 
-                card.innerHTML = `
-                    <div class="company-entry-logo">${comp.logo}</div>
-                    <div class="company-entry-info">
-                        <div class="company-entry-name">${comp.name}</div>
-                        <div class="company-entry-desc">${comp.desc || 'Empresa destacada del sector.'}</div>
+        jobs.forEach(j => {
+            // Failsafe: If companyId is missing but ID contains a company suffix, restore it
+            if (!j.companyId) {
+                const foundCompId = validCompanyIds.find(cid => j.id.endsWith('_' + cid));
+                if (foundCompId) j.companyId = foundCompId;
+            }
+
+            // DISTRIBUTION LOGIC: 
+            // If job has companyId, add to that company.
+            // If job is generic (no companyId) but has a career key, add it to ALL companies in that sector.
+
+            if (j.companyId) {
+                // Explicit
+                if (!companyJobs[j.companyId]) companyJobs[j.companyId] = [];
+                companyJobs[j.companyId].push(j);
+            } else if (j.career && j.career !== 'none') {
+                // Distributed Generic to Sector Companies
+                const sectorCompanies = COMPANIES.filter(c => c.sector === j.career);
+                if (sectorCompanies.length > 0) {
+                    sectorCompanies.forEach(comp => {
+                        if (!companyJobs[comp.id]) companyJobs[comp.id] = [];
+                        // Create a visual copy attached to this company
+                        const jobCopy = { ...j, companyId: comp.id, _isDistributed: true };
+                        companyJobs[comp.id].push(jobCopy);
+                    });
+                } else {
+                    // No companies for this sector? Add to independent
+                    independentJobs.push(j);
+                }
+            } else {
+                // Truly independent (unemployed, etc)
+                independentJobs.push(j);
+            }
+        });
+
+        // Helper to render a single job card
+        const renderJobCard = (j, isLocked = false, lockReason = '') => {
+            // Check qualifications
+            const isQual = state.intelligence >= (j.req.int || 0) &&
+                state.physicalHealth >= (j.req.health || 0) &&
+                state.happiness >= (j.req.happy || 0) &&
+                (!j.req.deg || state.education.includes(j.req.deg)) &&
+                (!j.req.isStudent || state.isStudent);
+
+            // Check career experience
+            let hasCareerExp = true;
+            let expMessage = '';
+            if (j.req.careerExp) {
+                for (const [career, requiredMonths] of Object.entries(j.req.careerExp)) {
+                    const currentExp = state.careerExperience[career] || 0;
+                    if (currentExp < requiredMonths) {
+                        hasCareerExp = false;
+                        const yearsNeeded = Math.ceil(requiredMonths / 12);
+                        expMessage = `Requiere ${yearsNeeded} año(s) en ${career}`;
+                    }
+                }
+            }
+
+            const isFullyQual = isQual && hasCareerExp && !isLocked;
+            const isCurr = state.currJobId === j.id;
+
+            card.style.cssText = `
+                background: ${isCurr ? 'linear-gradient(135deg, rgba(0, 255, 204, 0.1), rgba(77, 255, 234, 0.05))' : '#1a1a1a'};
+                border: 2px solid ${isCurr ? '#00ffcc' : (isFullyQual ? '#333' : '#222')};
+                padding: 16px;
+                margin-bottom: 12px;
+                border-radius: 12px;
+                opacity: ${isFullyQual ? 1 : 0.5};
+                transition: all 0.3s;
+            `;
+
+            if (isFullyQual && !isCurr) {
+                card.onmouseover = () => {
+                    card.style.borderColor = '#4dffea';
+                    card.style.background = 'rgba(77, 255, 234, 0.05)';
+                };
+                card.onmouseout = () => {
+                    card.style.borderColor = '#333';
+                    card.style.background = '#1a1a1a';
+                };
+            }
+
+            // Calculate net salary
+            const salaryData = FinanceManager.calculateNetSalary(j.salary);
+
+            // Build requirement badges
+            const reqBadges = [];
+            if (j.req.int) {
+                const hasInt = state.intelligence >= j.req.int;
+                reqBadges.push(`<span style="color:${hasInt ? '#4dffea' : '#ff5555'};">🧠 ${j.req.int}</span>`);
+            }
+            if (j.req.health) {
+                const hasHealth = state.physicalHealth >= j.req.health;
+                reqBadges.push(`<span style="color:${hasHealth ? '#4dffea' : '#ff5555'};">💪 ${j.req.health}</span>`);
+            }
+            if (j.req.deg) {
+                const hasDeg = state.education.includes(j.req.deg);
+                reqBadges.push(`<span style="color:${hasDeg ? '#4dffea' : '#ff5555'};">🎓 Título</span>`);
+            }
+            if (j.req.isStudent) {
+                reqBadges.push(`<span style="color:${state.isStudent ? '#4dffea' : '#ff5555'};">📚 Estudiante</span>`);
+            }
+            if (!hasCareerExp) {
+                reqBadges.push(`<span style="color:#ff5555;">⏱️ ${expMessage}</span>`);
+            }
+
+            // Build benefits/warnings
+            const benefits = [];
+            if (j.bonusChance) {
+                benefits.push(`💰 ${Math.floor(j.bonusChance * 100)}% bono ($${j.bonusAmount})`);
+            }
+            if (j.xpGain === 0) {
+                benefits.push(`<span style="color:#ff5555;">⚠️ Sin progresión</span>`);
+            }
+            if (j.deadEnd) {
+                benefits.push(`<span style="color:#ff5555;">🚫 Callejón sin salida</span>`);
+            }
+            if (j.boredom >= 8) {
+                benefits.push(`<span style="color:#ff9955;">😴 Muy aburrido (${j.boredom}/10)</span>`);
+            }
+            if (j.type === 'part_time') {
+                benefits.push(`<span style="color:#4dffea;">⏰ Medio tiempo</span>`);
+            }
+
+            card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:12px;">
+                    <div style="flex:1;">
+                        <div style="font-weight:bold; color:${isCurr ? '#00ffcc' : '#fff'}; font-size:1.1rem; margin-bottom:4px;">
+                            ${j.title} ${isCurr ? '✓' : ''}
+                        </div>
+                        ${j.desc ? `<div style="color:#888; font-size:0.85rem; margin-bottom:8px; font-style:italic;">${j.desc}</div>` : ''}
+                        
+                        <div style="display:flex; gap:15px; margin-bottom:8px;">
+                            <div>
+                                <span style="color:#666; font-size:0.75rem;">BRUTO</span>
+                                <div style="color:#aaa; font-size:0.95rem; text-decoration:line-through;">$${j.salary.toLocaleString()}</div>
+                            </div>
+                            <div>
+                                <span style="color:#666; font-size:0.75rem;">NETO (${salaryData.taxRate}% imp.)</span>
+                                <div style="color:#4dffea; font-size:1.1rem; font-weight:bold;">$${salaryData.net.toLocaleString()}/mes</div>
+                            </div>
+                        </div>
+
+                        ${reqBadges.length > 0 ? `
+                            <div style="margin-bottom:6px;">
+                                <span style="color:#666; font-size:0.75rem;">REQUISITOS:</span>
+                                <div style="font-size:0.85rem; margin-top:2px;">${reqBadges.join(' • ')}</div>
+                            </div>
+                        ` : ''}
+
+                        ${benefits.length > 0 ? `
+                            <div>
+                                <span style="color:#666; font-size:0.75rem;">DETALLES:</span>
+                                <div style="font-size:0.85rem; margin-top:2px;">${benefits.join(' • ')}</div>
+                            </div>
+                        ` : ''}
                     </div>
-                    <div class="company-entry-arrow">⮕</div>
-                `;
+                </div>
 
-                container.appendChild(card);
-            });
+                <div style="display:flex; gap:10px; align-items:center;">
+                    <div style="flex:1; display:flex; gap:8px; font-size:0.8rem;">
+                        <div style="background:#222; padding:4px 8px; border-radius:4px;">
+                            <span style="color:#666;">Estrés:</span> 
+                            <span style="color:${(j.stressPerMonth || j.stress || 0) > 15 ? '#ff5555' : '#4dffea'};">${j.stressPerMonth || j.stress || 0}/mes</span>
+                        </div>
+                        <div style="background:#222; padding:4px 8px; border-radius:4px;">
+                            <span style="color:#666;">Energía:</span> 
+                            <span style="color:${(j.energyCost || 0) > 30 ? '#ff5555' : '#4dffea'};">-${j.energyCost || 0}/mes</span>
+                        </div>
+                        <div style="background:#222; padding:4px 8px; border-radius:4px;">
+                            <span style="color:#666;">XP:</span> 
+                            <span style="color:${(j.xpGain || 1) === 0 ? '#ff5555' : '#4dffea'};">${(j.xpGain || 1)}x</span>
+                        </div>
+                    </div>
+                    <button id="apply-btn-${j.id}" style="
+                        background: ${isCurr ? '#222' : (isFullyQual ? 'linear-gradient(135deg, #007bff, #0056b3)' : '#333')};
+                        color: ${isFullyQual || isCurr ? '#fff' : '#666'};
+                        border:none;
+                        padding: 10px 20px;
+                        border-radius:6px;
+                        cursor: ${isFullyQual && !isCurr ? 'pointer' : 'not-allowed'};
+                        font-weight:bold;
+                        font-size:0.9rem;
+                        min-width:120px;
+                        transition: all 0.2s;
+                    ">${isCurr ? '✓ Trabajando' : (isFullyQual ? 'Aplicar' : '🔒 Bloqueado')}</button>
+                </div>
+            `;
 
-            // Add "Independent/Freelance" section at the bottom of "All" or relevant sectors?
-            // For now, let's keep it simple. If they want freelance, maybe a separate tab or a "Freelance" entry.
+            const applyBtn = card.querySelector(`#apply-btn-${j.id}`);
+            if (isFullyQual && !isCurr) {
+                applyBtn.onmouseover = () => {
+                    applyBtn.style.background = 'linear-gradient(135deg, #0056b3, #003d82)';
+                    applyBtn.style.transform = 'scale(1.05)';
+                };
+                applyBtn.onmouseout = () => {
+                    applyBtn.style.background = 'linear-gradient(135deg, #007bff, #0056b3)';
+                    applyBtn.style.transform = 'scale(1)';
+                };
+                applyBtn.onclick = () => {
+                    // TRAVEL CHECK: Visa Requirements
+                    if (typeof Travel !== 'undefined' && state.currentCountry !== 'home') {
+                        const visa = state.visaStatus;
+                        // 1. Check if we HAVE a visa (should be true if we are here, but safety check)
+                        if (!visa) {
+                            UI.showAlert('Sin Visa', 'No tienes permiso para trabajar aquí.');
+                            return;
+                        }
+                        // 2. Check if visa allows work
+                        if (!visa.allowWork) {
+                            UI.showAlert('Visa Restrictiva', `Tu ${VISA_TYPES[visa.type].name} no permite trabajar.`);
+                            return;
+                        }
+                    }
+
+                    Game.applyJob(j.id);
+                    this.renderJobMarket(filter);
+                };
+            }
+
+            container.appendChild(card);
+        });
+        ```
+        if (jobs.length === 0) {
+            container.innerHTML += `
+            < div style = "text-align:center; color:#666; padding:40px;" >
+                    <div style="font-size:3rem; margin-bottom:10px;">📭</div>
+                    <p>No hay trabajos disponibles en esta categoría.</p>
+                </div >
+    `;
         }
-
     },
 
     renderJobDashboard() {
@@ -1079,37 +1158,37 @@ const UI = {
         const netSalary = Math.floor(job.salary * 0.85);
         const boredomVal = job.boredom || 0;
 
-        document.getElementById('jd-salary').innerHTML = `$${job.salary} /mes <span style="font-size:0.8rem; color:#aaa;">(Neto: ~$${netSalary})</span ><br>
-            <span style="font-size:0.8rem; color:${boredomVal > 50 ? '#ff4d4d' : '#8BC34A'}">Aburrimiento: ${boredomVal}%</span>`;
+        document.getElementById('jd-salary').innerHTML = `$${ job.salary } /mes <span style="font-size:0.8rem; color:#aaa;">(Neto: ~$${netSalary})</span > <br>
+    <span style="font-size:0.8rem; color:${boredomVal > 50 ? '#ff4d4d' : '#8BC34A'}">Aburrimiento: ${boredomVal}%</span>`;
 
-        document.getElementById('jd-performance').innerText = isUnemployed ? '-' : `${state.work_relations?.performance || 50}%`;
-        document.getElementById('jd-stress').innerText = `${state.stress}%`;
+    document.getElementById('jd-performance').innerText = isUnemployed ? '-' : `${state.work_relations?.performance || 50}%`;
+    document.getElementById('jd-stress').innerText = `${state.stress}%`;
 
-        // 2. Procedural Benefits
-        const benefitsContainer = document.getElementById('jd-benefits-list');
-        benefitsContainer.innerHTML = '';
+    // 2. Procedural Benefits
+    const benefitsContainer = document.getElementById('jd-benefits-list');
+    benefitsContainer.innerHTML = '';
 
-        if (isUnemployed) {
-            benefitsContainer.innerHTML = '<div style="color:#888; grid-column:span 2; text-align:center;">Sin beneficios activos.</div>';
+    if (isUnemployed) {
+        benefitsContainer.innerHTML = '<div style="color:#888; grid-column:span 2; text-align:center;">Sin beneficios activos.</div>';
         } else {
             // Logic: Better jobs = better benefits
             const tier = job.salary > 5000 ? 3 : job.salary > 2000 ? 2 : 1;
 
-            const benefits = [
-                { name: 'Seguro Médico', tier: 1, val: 'Básico' },
-                { name: 'Seguro Médico', tier: 2, val: 'Completo' },
-                { name: 'Seguro Médico', tier: 3, val: 'Premium Familiar' },
-                { name: 'Vacaciones', tier: 1, val: '7 días' },
-                { name: 'Vacaciones', tier: 2, val: '14 días' },
-                { name: 'Vacaciones', tier: 3, val: '30 días' },
-                { name: 'Aguinaldo', tier: 1, val: 'Si' },
-                { name: 'Bono Anual', tier: 2, val: 'Hasta 10%' },
-                { name: 'Acciones (Stock)', tier: 3, val: 'Vesting 4 años' }
-            ];
+    const benefits = [
+    {name: 'Seguro Médico', tier: 1, val: 'Básico' },
+    {name: 'Seguro Médico', tier: 2, val: 'Completo' },
+    {name: 'Seguro Médico', tier: 3, val: 'Premium Familiar' },
+    {name: 'Vacaciones', tier: 1, val: '7 días' },
+    {name: 'Vacaciones', tier: 2, val: '14 días' },
+    {name: 'Vacaciones', tier: 3, val: '30 días' },
+    {name: 'Aguinaldo', tier: 1, val: 'Si' },
+    {name: 'Bono Anual', tier: 2, val: 'Hasta 10%' },
+    {name: 'Acciones (Stock)', tier: 3, val: 'Vesting 4 años' }
+    ];
 
-            // Filter benefits applicable to this job tier
-            // We just show one per category for simplicity, or just valid ones
-            const myBenefits = [
+    // Filter benefits applicable to this job tier
+    // We just show one per category for simplicity, or just valid ones
+    const myBenefits = [
                 benefits.find(b => b.name === 'Seguro Médico' && b.tier === tier),
                 benefits.find(b => b.name === 'Vacaciones' && b.tier === tier),
                 tier >= 1 ? benefits.find(b => b.name === 'Aguinaldo') : null,
@@ -1119,28 +1198,28 @@ const UI = {
 
             myBenefits.forEach(b => {
                 const el = document.createElement('div');
-                el.className = 'lifestyle-card';
-                el.style.padding = '10px';
+    el.className = 'lifestyle-card';
+    el.style.padding = '10px';
 
-                let extraHtml = '';
-                if (b.name === 'Vacaciones') {
+    let extraHtml = '';
+    if (b.name === 'Vacaciones') {
                     const daysLeft = state.vacationDays || 0;
-                    // Overwrite value to show days left / total
-                    b.val = `${daysLeft} / ${b.val} disponibles`;
+    // Overwrite value to show days left / total
+    b.val = `${daysLeft} / ${b.val} disponibles`;
                     if (daysLeft > 0) {
-                        extraHtml = `<div style="margin-top:5px; display:flex; gap:5px;">
+        extraHtml = `<div style="margin-top:5px; display:flex; gap:5px;">
                             <button style="font-size:0.7rem; background:#4CAF50; border:none; color:white; padding:3px 8px; border-radius:3px; cursor:pointer;" data-action="take-vacation" data-params='{"days":1}'>-1 Día</button>
                             ${daysLeft >= 7 ? '<button style="font-size:0.7rem; background:#2196F3; border:none; color:white; padding:3px 8px; border-radius:3px; cursor:pointer;" data-action="take-vacation" data-params=\'{"days":7}\'>-7 Días</button>' : ''}
                         </div>`;
                     }
                 }
 
-                el.innerHTML = `
-                    <div style="font-size:0.8rem; color:#aaa;">${b.name}</div>
-                    <div style="font-weight:bold; color:#fff;">${b.val}</div>
-                    ${extraHtml}
-                `;
-                benefitsContainer.appendChild(el);
+    el.innerHTML = `
+    <div style="font-size:0.8rem; color:#aaa;">${b.name}</div>
+    <div style="font-weight:bold; color:#fff;">${b.val}</div>
+    ${extraHtml}
+    `;
+    benefitsContainer.appendChild(el);
             });
         }
     },
@@ -1150,210 +1229,129 @@ const UI = {
         const tabs = ['courses', 'projects', 'crime', 'social'];
         tabs.forEach(t => {
             const el = document.getElementById('act-tab-' + t);
-            if (el) {
+    if (el) {
                 if (t === tabId) el.classList.remove('hidden');
-                else el.classList.add('hidden');
+    else el.classList.add('hidden');
             }
         });
 
-        // Update buttons state
-        // Assuming buttons have onclick="GameUI.switchActTab('x')"
-        // We can't easily query buttons by ID unless we gave them IDs.
-        // But visual toggle relies on 'active' class on .tab-btn
-        // Let's brute force valid buttons if we can select them.
-        const btns = document.querySelectorAll('.act-tabs .tab-btn');
+    // Update buttons state
+    // Assuming buttons have onclick="GameUI.switchActTab('x')"
+    // We can't easily query buttons by ID unless we gave them IDs.
+    // But visual toggle relies on 'active' class on .tab-btn
+    // Let's brute force valid buttons if we can select them.
+    const btns = document.querySelectorAll('.act-tabs .tab-btn');
         btns.forEach(btn => {
             if (btn.innerText.toLowerCase().includes(tabId === 'courses' ? 'educación' : tabId === 'projects' ? 'proyectos' : tabId === 'crime' ? 'crimen' : 'social')) {
-                btn.classList.add('active');
+        btn.classList.add('active');
             } else {
-                btn.classList.remove('active');
+        btn.classList.remove('active');
             }
         });
 
-        // Special render if needed
-        if (tabId === 'social') this.renderSocialTab();
-        if (tabId === 'projects') this.renderProjects();
+    // Special render if needed
+    if (tabId === 'social') this.renderSocialTab();
+    if (tabId === 'projects') this.renderProjects();
     },
 
     renderProjects() {
         const container = document.getElementById('act-tab-projects');
-        if (!container) return;
+    if (!container) return;
 
-        if (!state.projects) state.projects = [];
-
-        let html = '';
-
-        // 1. Active Projects
-        if (state.projects.length > 0) {
-            html += '<h3 style="color:var(--gold-color); border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:15px;">🚀 Mis Proyectos</h3>';
-
-            state.projects.forEach(p => {
-                if (p.status === 'sold') {
-                    html += `
-                    <div class="project-card" style="background:#222; padding:15px; border-radius:8px; margin-bottom:15px; opacity:0.7;">
-                        <h4 style="margin:0; color:#aaa;">${p.name} (Vendido)</h4>
-                        <div style="font-size:0.8rem; color:#666;">Este proyecto fue vendido y ya no te pertenece.</div>
-                    </div>`;
-                    return;
-                }
-
-                const type = PROJECT_TYPES.find(t => t.id === p.typeId);
-                const isLive = p.status === 'live';
-
-                html += `
-                <div class="project-card" style="background:var(--bg-card); padding:15px; border-radius:8px; margin-bottom:15px; border-left: 4px solid ${isLive ? '#00ff88' : '#00e5ff'};">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-                        <h4 style="margin:0; font-size:1.1rem;">${p.name}</h4>
-                        <span style="background:#333; padding:2px 8px; border-radius:4px; font-size:0.8rem; color:${isLive ? '#00ff88' : '#00e5ff'};">
-                            ${isLive ? 'EN VIVO 🟢' : 'DESARROLLO 👨‍💻'}
-                        </span>
-                    </div>`;
-
-                if (!isLive) {
-                    // DEV PHASE
-                    const progress = Math.min(100, (p.loc / p.targetLoc) * 100);
-                    html += `
-                    <div style="margin-bottom:10px;">
-                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#aaa; margin-bottom:3px;">
-                            <span>Progreso (Líneas de Código)</span>
-                            <span>${p.loc} / ${p.targetLoc} LOC</span>
-                        </div>
-                        <div style="background:#333; height:8px; border-radius:4px; overflow:hidden;">
-                            <div style="background:#00e5ff; width:${progress}%; height:100%;"></div>
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:10px;">
-                        <button class="act-btn small" onclick="Game.workOnProject('${p.id}')" style="flex:1;">
-                            <div class="act-info"><h4>⌨️ Escribir Código</h4><p>+LOC (Inteligencia)</p></div>
-                            <div class="act-cost">-25 E<br>+3 Estrés</div>
-                        </button>
-                        ${p.loc >= p.targetLoc ? `
-                        <button class="act-btn small" onclick="Game.launchProject('${p.id}')" style="flex:1; background:linear-gradient(45deg, #00C853, #64DD17); border:none;">
-                            <div class="act-info"><h4 style="color:#fff;">🚀 LANZAR</h4><p>Publicar v1.0</p></div>
-                        </button>` : ''}
-                    </div>`;
-                } else {
-                    // LIVE PHASE
-                    const monthsSinceWork = state.totalMonths - p.lastWorkedMonth;
-                    const needsWork = monthsSinceWork >= 1;
-
-                    html += `
-                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; margin-bottom:15px; text-align:center;">
-                        <div style="background:#222; padding:8px; border-radius:5px;">
-                            <div style="font-size:0.8rem; color:#aaa;">Usuarios</div>
-                            <div style="font-size:1rem; font-weight:bold; color:#fff;">${p.users.toLocaleString()}</div>
-                        </div>
-                        <div style="background:#222; padding:8px; border-radius:5px;">
-                            <div style="font-size:0.8rem; color:#aaa;">Ingreso Mensual</div>
-                            <div style="font-size:1rem; font-weight:bold; color:#4dffea;">$${p.income.toLocaleString()}</div>
-                        </div>
-                        <div style="background:#222; padding:8px; border-radius:5px;">
-                            <div style="font-size:0.8rem; color:#aaa;">Reseñas</div>
-                            <div style="font-size:1rem; font-weight:bold; color:${p.reviews >= 4 ? '#00ff88' : p.reviews >= 3 ? '#ffeb3b' : '#ff5555'};">
-                                ${p.reviews.toFixed(1)} ⭐
-                            </div>
-                        </div>
-                    </div>
-                    
-                    ${needsWork ? `<div style="color:#ff5555; font-size:0.85rem; margin-bottom:10px;">⚠️ El proyecto necesita mantenimiento o perderá usuarios.</div>` : ''}
-
-                    <button class="act-btn small" onclick="Game.workOnProject('${p.id}')">
-                        <div class="act-info"><h4>🛠️ Mantenimiento y Mejoras</h4><p>Mantiene reseñas y reduce bugs</p></div>
-                        <div class="act-cost">-25 E<br>+2 Estrés</div>
-                    </button>`;
-                }
-
-                html += '</div>';
-            });
+    if (!state.freelancer) {
+        container.innerHTML = '<div class="status-msg">Función no disponible aún.</div>';
+    return;
         }
 
-        // 2. Start New Project (If no dev project active)
-        const activeDev = state.projects.find(p => p.status === 'dev');
-        if (!activeDev) {
-            html += '<h3 style="color:var(--accent-color); border-bottom:1px solid #333; padding-bottom:5px; margin-top:20px; margin-bottom:15px;">✨ Nuevo Proyecto</h3>';
-            html += '<div class="lifestyle-grid" style="grid-template-columns: 1fr;">';
+    let html = '<div class="market-card" style="background:var(--bg-card); display:block; text-align:center;">';
+        html += '<h3 style="color:var(--gold-color); margin-bottom:5px;">💻 Freelancer Dashboard</h3>';
+        html += '<div style="display:flex; justify-content:space-around; font-size:0.9rem; color:#aaa;">';
+            html += `<div>Reputación: <span style="color:#fff; font-weight:bold;">${state.freelancer.reputation}</span></div>`;
+            html += `<div>Completados: <span style="color:#fff; font-weight:bold;">${state.freelancer.completed}</span></div>`;
+            html += `<div>Ganancias: <span style="color:#4dffea; font-weight:bold;">$${state.freelancer.earnings.toLocaleString()}</span></div>`;
+            html += '</div></div>';
 
-            PROJECT_TYPES.forEach(t => {
-                if (t.id !== 'blog' && t.id !== 'app' && t.id !== 'game' && t.id !== 'saas' && t.id !== 'delivery_app' && t.id !== 'crm_system') return; // Filter if needed, current list is clean. Use all.
-                // Actually we just replaced the list with 3 explicit types. Safe to iterate.
+    html += '<h4 style="margin-top:20px; border-bottom:1px solid #333; padding-bottom:5px;">Changuitas Disponibles</h4>';
 
-                html += `
-                <div class="lifestyle-card">
-                    <div class="lifestyle-card-title">${t.name}</div>
-                    <div class="lifestyle-card-desc" style="min-height:40px;">${t.desc}</div>
-                    <div class="lifestyle-card-stats">
-                        <div class="lifestyle-card-stat">
-                            <span class="lifestyle-card-stat-label">Meta:</span>
-                            <span class="lifestyle-card-stat-value">${t.targetLoc} LOC</span>
-                        </div>
-                        <div class="lifestyle-card-stat">
-                            <span class="lifestyle-card-stat-label">Potencial:</span>
-                            <span class="lifestyle-card-stat-value positive">Alta</span>
-                        </div>
-                    </div>
-                    <button class="lifestyle-card-btn" onclick="Game.startProject('${t.id}')">
-                        Comenzar Desarrollo
-                    </button>
-                </div>`;
+    if (state.freelancer.activeGigs.length === 0) {
+        html += '<div class="status-msg">No hay trabajos disponibles este mes. Vuelve luego.</div>';
+        } else {
+        html += '<div class="lifestyle-grid">'; // Reuse grid layout
+            state.freelancer.activeGigs.forEach(gig => {
+                const canAfford = state.energy >= gig.energy;
+    html += `
+    <div class="lifestyle-card">
+        <div class="lifestyle-card-title">${gig.title}</div>
+        <div class="lifestyle-card-desc" style="font-size:0.8rem; color:#aaa;">
+            <span style="background:#333; padding:2px 6px; border-radius:4px; margin-right:5px;">${gig.type.toUpperCase()}</span>
+        </div>
+        <div class="lifestyle-card-stats">
+            <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Pago:</span><span class="lifestyle-card-stat-value positive">$${gig.reward}</span></div>
+            <div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Energía:</span><span class="lifestyle-card-stat-value" style="color:#ff5555">-${gig.energy}</span></div>
+        </div>
+        <button class="lifestyle-card-btn" ${canAfford ? '' : 'disabled'} data-action="accept-gig" data-params='{"gigId":${gig.pk}}'>
+            ${canAfford ? 'Realizar Trabajo' : 'Muy Cansado'}
+        </button>
+    </div>`;
             });
-            html += '</div>';
+    html += '</div>';
         }
 
-        container.innerHTML = html;
+container.innerHTML = html;
     },
 
-    switchLifestyleTab(tab) {
-        const housingTab = document.getElementById('lifestyle-tab-housing');
-        const vehiclesTab = document.getElementById('lifestyle-tab-vehicles');
-        const housingBtn = document.getElementById('tab-housing');
-        const vehiclesBtn = document.getElementById('tab-vehicles');
+switchLifestyleTab(tab) {
+    const housingTab = document.getElementById('lifestyle-tab-housing');
+    const vehiclesTab = document.getElementById('lifestyle-tab-vehicles');
+    const housingBtn = document.getElementById('tab-housing');
+    const vehiclesBtn = document.getElementById('tab-vehicles');
 
-        // Hide all tabs
-        housingTab.classList.add('hidden');
-        vehiclesTab.classList.add('hidden');
+    // Hide all tabs
+    housingTab.classList.add('hidden');
+    vehiclesTab.classList.add('hidden');
 
-        // Remove active from all buttons
-        housingBtn.classList.remove('active');
-        vehiclesBtn.classList.remove('active');
+    // Remove active from all buttons
+    housingBtn.classList.remove('active');
+    vehiclesBtn.classList.remove('active');
 
-        // Show selected tab
-        if (tab === 'housing') {
-            housingTab.classList.remove('hidden');
-            housingBtn.classList.add('active');
-        } else if (tab === 'vehicles') {
-            vehiclesTab.classList.remove('hidden');
-            vehiclesBtn.classList.add('active');
-        } else if (tab === 'pets') {
-            document.getElementById('lifestyle-tab-pets').classList.remove('hidden');
-            document.getElementById('tab-pets').classList.add('active');
-            this.populatePetsCards();
-        }
-    },
+    // Show selected tab
+    if (tab === 'housing') {
+        housingTab.classList.remove('hidden');
+        housingBtn.classList.add('active');
+    } else if (tab === 'vehicles') {
+        vehiclesTab.classList.remove('hidden');
+        vehiclesBtn.classList.add('active');
+    } else if (tab === 'pets') {
+        document.getElementById('lifestyle-tab-pets').classList.remove('hidden');
+        document.getElementById('tab-pets').classList.add('active');
+        this.populatePetsCards();
+    }
+},
 
-    renderCoursesContent() {
-        const container = document.getElementById('act-tab-courses');
-        container.innerHTML = '';
+renderCoursesContent() {
+    const container = document.getElementById('act-tab-courses');
+    container.innerHTML = '';
 
-        COURSES.forEach(course => {
-            const hasDegree = state.education.includes(course.id);
-            const el = document.createElement('div');
-            el.className = 'job-item';
-            el.innerHTML = `
+    COURSES.forEach(course => {
+        const hasDegree = state.education.includes(course.id);
+        const el = document.createElement('div');
+        el.className = 'job-item';
+        el.innerHTML = `
                 <div class="job-details">
                     <h4>${course.title} ${hasDegree ? '✅' : ''}</h4>
                     <p>Costo: $${course.cost.toLocaleString()} | Duración: ${course.duration}m</p>
                     <div class="job-req">${course.degree}</div>
                 </div>
                 ${hasDegree ? '<span class="owned-tag">COMPLETADO</span>' :
-                    `<button class="btn-buy" data-action="enroll-course" data-params='{"courseId":"${course.id}"}'>Inscribirse</button>`}
+                `<button class="btn-buy" data-action="enroll-course" data-params='{"courseId":"${course.id}"}'>Inscribirse</button>`}
             `;
-            container.appendChild(el);
-        });
-    },
+        container.appendChild(el);
+    });
+},
 
-    renderSportsContent() {
-        if (!state.school.sport) {
-            return `
+renderSportsContent() {
+    if (!state.school.sport) {
+        return `
                 <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">Únete a un equipo para ganar becas y estatus.</div>
                 <div style="display:flex; gap:10px;">
                     <button class="act-btn" onclick="School.joinSport('football')">
@@ -1364,12 +1362,12 @@ const UI = {
                     </button>
                 </div>
             `;
-        }
+    }
 
-        const s = state.school.sport;
-        const sportName = s.type === 'football' ? 'Fútbol' : 'Atletismo';
+    const s = state.school.sport;
+    const sportName = s.type === 'football' ? 'Fútbol' : 'Atletismo';
 
-        return `
+    return `
             <div style="background:#222; padding:10px; border-radius:8px; border:1px solid ${s.scholarship ? '#FFD700' : '#444'};">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div style="font-weight:bold; color:#fff;">Equipo de ${sportName}</div>
@@ -1393,11 +1391,11 @@ const UI = {
                 </button>
             </div>
         `;
-    },
+},
 
-    renderClubsContent() {
-        if (!state.school.club) {
-            return `
+renderClubsContent() {
+    if (!state.school.club) {
+        return `
                 <div style="font-size:0.9rem; color:#aaa; margin-bottom:10px;">Acelera tu carrera uniéndote a un club. Requiere Energía.</div>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <button class="act-btn" onclick="School.joinClub('coding')">
@@ -1414,25 +1412,25 @@ const UI = {
                     </button>
                 </div>
             `;
-        }
+    }
 
-        const c = state.school.club;
-        let clubName = '';
-        let actName = '';
-        let actDesc = '';
+    const c = state.school.club;
+    let clubName = '';
+    let actName = '';
+    let actDesc = '';
 
-        switch (c) {
-            case 'coding':
-                clubName = 'Club de Programación'; actName = 'Participar en Hackathon'; actDesc = '+Exp Tech. Chance Cofundador.'; break;
-            case 'investment':
-                clubName = 'Sociedad de Inversión'; actName = 'Análisis de Mercado'; actDesc = '+Inteligencia. Tips de Inversión.'; break;
-            case 'consulting':
-                clubName = 'Consultora Estudiantil'; actName = 'Proyecto Real'; actDesc = '+Exp Gestión/Producto.'; break;
-            case 'networking':
-                clubName = 'Networking de Élite'; actName = 'Asistir a Gala ($100)'; actDesc = '++Red, ++Estatus. Contactos VIP.'; break;
-        }
+    switch (c) {
+        case 'coding':
+            clubName = 'Club de Programación'; actName = 'Participar en Hackathon'; actDesc = '+Exp Tech. Chance Cofundador.'; break;
+        case 'investment':
+            clubName = 'Sociedad de Inversión'; actName = 'Análisis de Mercado'; actDesc = '+Inteligencia. Tips de Inversión.'; break;
+        case 'consulting':
+            clubName = 'Consultora Estudiantil'; actName = 'Proyecto Real'; actDesc = '+Exp Gestión/Producto.'; break;
+        case 'networking':
+            clubName = 'Networking de Élite'; actName = 'Asistir a Gala ($100)'; actDesc = '++Red, ++Estatus. Contactos VIP.'; break;
+    }
 
-        return `
+    return `
             <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #9C27B0;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <div style="font-weight:bold; color:#E1BEE7;">${clubName}</div>
@@ -1448,17 +1446,17 @@ const UI = {
                 </button>
             </div>
         `;
-    },
+},
 
-    renderHousingContent() {
-        const h = state.school.housing || 'parents';
-        const housingName = {
-            'parents': "Casa de Padres (Gratis)",
-            'dorm': "Dormitorios ($500/m)",
-            'shared': "Depto Compartido ($800/m)"
-        };
+renderHousingContent() {
+    const h = state.school.housing || 'parents';
+    const housingName = {
+        'parents': "Casa de Padres (Gratis)",
+        'dorm': "Dormitorios ($500/m)",
+        'shared': "Depto Compartido ($800/m)"
+    };
 
-        return `
+    return `
             <div style="background:#222; padding:10px; border-radius:8px; border:1px solid #555;">
                 <div style="margin-bottom:10px; color:#ddd;">Actual: <b>${housingName[h]}</b></div>
                 
@@ -1475,61 +1473,61 @@ const UI = {
                 </div>
             </div>
         `;
-    },
+},
 
-    switchActTab(tab) {
-        const courses = document.getElementById('act-tab-courses');
-        const projects = document.getElementById('act-tab-projects');
-        const crime = document.getElementById('act-tab-crime');
-        const social = document.getElementById('act-tab-social');
-        const actBtns = document.getElementById('activity-modal').querySelectorAll('.tab-btn');
+switchActTab(tab) {
+    const courses = document.getElementById('act-tab-courses');
+    const projects = document.getElementById('act-tab-projects');
+    const crime = document.getElementById('act-tab-crime');
+    const social = document.getElementById('act-tab-social');
+    const actBtns = document.getElementById('activity-modal').querySelectorAll('.tab-btn');
 
-        courses.classList.add('hidden');
-        projects.classList.add('hidden');
-        crime.classList.add('hidden');
-        social.classList.add('hidden');
+    courses.classList.add('hidden');
+    projects.classList.add('hidden');
+    crime.classList.add('hidden');
+    social.classList.add('hidden');
+    const uni = document.getElementById('act-tab-university');
+    if (uni) uni.classList.add('hidden');
+    actBtns.forEach(b => b.classList.remove('active'));
+
+    if (tab === 'courses') {
+        courses.classList.remove('hidden');
+        actBtns[0].classList.add('active');
+        this.renderCoursesContent(); // Fixed: render content, don't call Game.renderCourses
+    } else if (tab === 'projects') {
+        projects.classList.remove('hidden');
+        actBtns[1].classList.add('active');
+        this.renderProjects();
+    } else if (tab === 'crime') {
+        crime.classList.remove('hidden');
+        actBtns[2].classList.add('active');
+        // No dynamic render needed for now, static buttons
+    } else if (tab === 'university') {
         const uni = document.getElementById('act-tab-university');
-        if (uni) uni.classList.add('hidden');
-        actBtns.forEach(b => b.classList.remove('active'));
+        if (uni) uni.classList.remove('hidden');
+        // Assuming button index 4 (last one added)
+        if (actBtns[4]) actBtns[4].classList.add('active');
+        this.renderUniversityTab();
+    } else {
+        social.classList.remove('hidden');
+        actBtns[3].classList.add('active');
+        this.renderSocialTab();
+    }
+},
 
-        if (tab === 'courses') {
-            courses.classList.remove('hidden');
-            actBtns[0].classList.add('active');
-            this.renderCoursesContent(); // Fixed: render content, don't call Game.renderCourses
-        } else if (tab === 'projects') {
-            projects.classList.remove('hidden');
-            actBtns[1].classList.add('active');
-            this.renderProjects();
-        } else if (tab === 'crime') {
-            crime.classList.remove('hidden');
-            actBtns[2].classList.add('active');
-            // No dynamic render needed for now, static buttons
-        } else if (tab === 'university') {
-            const uni = document.getElementById('act-tab-university');
-            if (uni) uni.classList.remove('hidden');
-            // Assuming button index 4 (last one added)
-            if (actBtns[4]) actBtns[4].classList.add('active');
-            this.renderUniversityTab();
-        } else {
-            social.classList.remove('hidden');
-            actBtns[3].classList.add('active');
-            this.renderSocialTab();
-        }
-    },
+renderUniversityTab() {
+    const container = document.getElementById('act-tab-university');
+    if (!container) return;
 
-    renderUniversityTab() {
-        const container = document.getElementById('act-tab-university');
-        if (!container) return;
+    const s = state.school;
 
-        const s = state.school;
+    let majorName = 'Carrera Universitaria';
+    const majors = {
+        'engineering': 'Ingeniería', 'business': 'Negocios', 'med_school': 'Medicina', 'arts': 'Artes', 'law_school': 'Derecho'
+    };
+    if (s.major && majors[s.major]) majorName = majors[s.major];
 
-        let majorName = 'Carrera Universitaria';
-        const majors = {
-            'engineering': 'Ingeniería', 'business': 'Negocios', 'med_school': 'Medicina', 'arts': 'Artes', 'law_school': 'Derecho'
-        };
-        if (s.major && majors[s.major]) majorName = majors[s.major];
-
-        container.innerHTML = `
+    container.innerHTML = `
             <div style="text-align:center; margin-bottom:20px; background:linear-gradient(45deg, #3f51b5, #673ab7); padding:15px; border-radius:10px;">
                 <div style="font-size:2rem;">🎓 ${majorName}</div>
                 <div style="color:#ddd;">Semestre ${(Math.floor((state.totalMonths - 216) / 6) + 1)} | ${s.universityPrestige ? s.universityPrestige.toUpperCase() : 'ESTÁNDAR'}</div>
@@ -1541,7 +1539,7 @@ const UI = {
                 </div>
             </div>
 
-            <!--EXAM MODE OVERRIDE-- >
+            <!-- EXAM MODE OVERRIDE -->
             <div id="exam-mode-ui" style="display: ${state.school.examMode ? 'block' : 'none'}; background:#222; padding:15px; border-radius:10px; border:2px solid #FFC107;">
                 <h3 style="color:#FFC107; text-align:center; margin-bottom:10px;">📚 SEMANA DE EXÁMENES</h3>
                 <div style="text-align:center; font-size:1.1rem; margin-bottom:15px;">
@@ -1600,7 +1598,7 @@ const UI = {
                     </div>
                     <div class="act-cost">-E ++Happy</div>
                 </button>
-                 <button class="act-btn" onclick="UI.openModal('job-market-modal'); UI.renderNewJobMarket();">
+                 <button class="act-btn" onclick="UI.openModal('job-market-modal'); UI.renderJobMarket();">
                         <div class="act-info">
                         <h4>📰 Bolsa de Trabajo</h4>
                         <p>Busca empleos de medio tiempo.</p>
@@ -1646,188 +1644,185 @@ const UI = {
                 ${this.renderHousingContent()}
             </div>
             
-            </div> <!--End Normal UI-- >
-    `;
-    },
+            </div> <!-- End Normal UI -->
+        `;
+},
 
-    switchShopTab(tab) {
-        const goods = document.getElementById('shop-tab-goods');
-        const invest = document.getElementById('shop-tab-invest');
-        const re = document.getElementById('shop-tab-realestate');
-        const tabs = document.getElementById('shop-modal').querySelectorAll('.tab-btn');
+switchShopTab(tab) {
+    const goods = document.getElementById('shop-tab-goods');
+    const invest = document.getElementById('shop-tab-invest');
+    const re = document.getElementById('shop-tab-realestate');
+    const tabs = document.getElementById('shop-modal').querySelectorAll('.tab-btn');
 
-        goods.classList.add('hidden');
-        invest.classList.add('hidden');
-        re.classList.add('hidden');
-        tabs.forEach(t => t.classList.remove('active'));
+    goods.classList.add('hidden');
+    invest.classList.add('hidden');
+    re.classList.add('hidden');
+    tabs.forEach(t => t.classList.remove('active'));
 
-        if (tab === 'goods') {
-            goods.classList.remove('hidden');
-            tabs[0].classList.add('active');
-            this.renderShop();
-        } else if (tab === 'invest') {
-            invest.classList.remove('hidden');
-            tabs[1].classList.add('active');
-            this.renderInvestments();
-        } else if (tab === 'realestate') {
-            re.classList.remove('hidden');
-            tabs[2].classList.add('active');
-            this.renderRealEstate();
-        }
-    },
+    if (tab === 'goods') {
+        goods.classList.remove('hidden');
+        tabs[0].classList.add('active');
+        this.renderShop();
+    } else if (tab === 'invest') {
+        invest.classList.remove('hidden');
+        tabs[1].classList.add('active');
+        this.renderInvestments();
+    } else if (tab === 'realestate') {
+        re.classList.remove('hidden');
+        tabs[2].classList.add('active');
+        this.renderRealEstate();
+    }
+},
 
-    renderProjects() {
-        const container = document.getElementById('act-tab-projects');
-        if (!container) return;
-        container.innerHTML = '';
+renderProjects() {
+    const container = document.getElementById('act-tab-projects');
+    if (!container) return;
+    container.innerHTML = '';
 
-        // --- SECTION 1: FREELANCER DASHBOARD ---
-        if (state.freelancer) {
-            // ... (Keep Freelancer if it exists, or maybe move it? Let's keep it minimal if it's there)
-            // Actually, to avoid complexity, I'll just append my new Personal Projects section below it.
-            // Or better, I'll rewrite the whole function to be clean.
-            // Let's assume Freelancer is a different thing.
-            // I'll re-add the Freelancer part if I deleted it, but the snippet showed it.
-            // I will preserve the Freelancer part if I can, but I'll overwrite the "Long Term" part.
-        }
+    // --- SECTION 1: FREELANCER DASHBOARD ---
+    if (state.freelancer) {
+        // ... (Keep Freelancer if it exists, or maybe move it? Let's keep it minimal if it's there)
+        // Actually, to avoid complexity, I'll just append my new Personal Projects section below it.
+        // Or better, I'll rewrite the whole function to be clean.
+        // Let's assume Freelancer is a different thing.
+        // I'll re-add the Freelancer part if I deleted it, but the snippet showed it.
+        // I will preserve the Freelancer part if I can, but I'll overwrite the "Long Term" part.
+    }
 
-        // RE-INSERT FREELANCER (Simplified Preservation)
-        if (typeof state.freelancer !== 'undefined' && state.freelancer) {
-            // I'll just assume the user wants the new system. 
-            // If Freelancer is active, I should keep it.
-            // But for this task, I'll focus on the requested "Personal Projects".
-        }
+    // RE-INSERT FREELANCER (Simplified Preservation)
+    if (typeof state.freelancer !== 'undefined' && state.freelancer) {
+        // I'll just assume the user wants the new system. 
+        // If Freelancer is active, I should keep it.
+        // But for this task, I'll focus on the requested "Personal Projects".
+    }
 
-        // Header
-        const header = document.createElement('h3');
-        header.innerHTML = "🚀 Propia Empresa / Side Projects";
-        header.style.cssText = "color:var(--gold-color); margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px;";
-        container.appendChild(header);
+    // Header
+    const header = document.createElement('h3');
+    header.innerHTML = "🚀 Propia Empresa / Side Projects";
+    header.style.cssText = "color:var(--gold-color); margin-bottom:15px; border-bottom:1px solid #444; padding-bottom:10px;";
+    container.appendChild(header);
 
-        // 1. ACTIVE DEVELOPMENT
-        const devProject = state.projects.find(p => p.status === 'dev');
+    // 1. ACTIVE DEVELOPMENT
+    const devProject = state.projects.find(p => p.status === 'dev');
 
-        if (devProject) {
-            const type = PROJECT_TYPES.find(t => t.id === devProject.typeId);
-            const progressPct = Math.min(100, (devProject.loc / type.targetLoc) * 100);
+    if (devProject) {
+        const type = PROJECT_TYPES.find(t => t.id === devProject.typeId);
+        const progressPct = Math.min(100, (devProject.progress / type.cost) * 100);
 
-            const card = document.createElement('div');
-            card.className = 'project-card active';
-            card.style.cssText = "background:rgba(255, 215, 0, 0.05); padding:15px; border-radius:8px; border:1px solid #FFD700; margin-bottom:20px;";
+        const card = document.createElement('div');
+        card.className = 'project-card active';
+        card.style.cssText = "background:rgba(255, 215, 0, 0.05); padding:15px; border-radius:8px; border:1px solid #FFD700; margin-bottom:20px;";
 
-            card.innerHTML = `
-    < div style = "display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;" >
+        card.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h4 style="margin:0; color:#FFD700;">🚧 En Desarrollo: ${devProject.name}</h4>
                     <span style="font-size:0.8rem; background:#333; padding:2px 6px; border-radius:4px;">${type.name}</span>
-                </div >
+                </div>
                 
-                <div style="font-size:0.9rem; color:#aaa; margin-bottom:5px;">Progreso: ${devProject.loc.toFixed(0)} / ${type.targetLoc} LOC</div>
+                <div style="font-size:0.9rem; color:#aaa; margin-bottom:5px;">Progreso: ${devProject.progress.toFixed(0)} / ${type.cost} Pts</div>
                 <div style="background:#222; height:12px; border-radius:6px; overflow:hidden; margin-bottom:10px;">
                     <div style="background:var(--primary-color); height:100%; width:${progressPct}%"></div>
                 </div>
                 
                 <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:#ccc; margin-bottom:15px;">
-                    <span>Calidad: ${devProject.quality ? devProject.quality.toFixed(0) : '0'}%</span>
+                    <span>Calidad: ${devProject.quality.toFixed(0)}%</span>
                     <span>Prob. Éxito: ${(type.potential / 100).toFixed(1)}x</span>
                 </div>
 
                 <div style="display:flex; gap:10px;">
-                    <button class="act-btn" onclick="Game.workOnProject('${devProject.id}'); UI.closeModal('activity-modal')" ${progressPct >= 100 ? 'disabled' : ''}>
+                    <button class="act-btn" onclick="Game.workOnProject('${devProject.id}')" ${progressPct >= 100 ? 'disabled' : ''}>
                         <div class="act-info"><h4>💻 Programar/Diseñar</h4><p>-20 Energía | +Avance</p></div>
                     </button>
                     ${progressPct >= 100 ?
-                    `<button class="act-btn" style="background:green; border-color:#fff;" onclick="Game.launchProject('${devProject.id}'); UI.closeModal('activity-modal')">
+                `<button class="act-btn" style="background:green; border-color:#fff;" onclick="Game.launchProject('${devProject.id}')">
                         <div class="act-info"><h4 style="color:#fff">🚀 LANZAR PROYECTO</h4><p>¡Al mercado!</p></div>
                     </button>` : ''}
                 </div>
-`;
-            container.appendChild(card);
-        } else {
-            // NEW PROJECT SELECTION
-            const newProjDiv = document.createElement('div');
-            newProjDiv.innerHTML = `< h4 style = "margin-bottom:10px; color:#fff;" > Iniciar Nuevo Proyecto</h4 > `;
+             `;
+        container.appendChild(card);
+    } else {
+        // NEW PROJECT SELECTION
+        const newProjDiv = document.createElement('div');
+        newProjDiv.innerHTML = `<h4 style="margin-bottom:10px; color:#fff;">Iniciar Nuevo Proyecto</h4>`;
 
-            PROJECT_TYPES.forEach(type => {
-                const btn = document.createElement('button');
-                btn.className = 'act-btn';
-                btn.style.marginBottom = '10px';
-                btn.onclick = () => {
-                    const name = prompt(`Nombre para tu ${type.name}: `, "Mi Proyecto");
-                    if (name) {
-                        Game.startProject(type.id, name);
-                        UI.closeModal('activity-modal');
-                    }
-                };
-                btn.innerHTML = `
-    < div class="act-info" >
+        PROJECT_TYPES.forEach(type => {
+            const btn = document.createElement('button');
+            btn.className = 'act-btn';
+            btn.style.marginBottom = '10px';
+            btn.onclick = () => {
+                const name = prompt(`Nombre para tu ${type.name}:`, "Mi Proyecto");
+                if (name) Game.startProject(type.id, name);
+            };
+            btn.innerHTML = `
+                    <div class="act-info">
                         <h4>${type.name}</h4>
                         <p>${type.desc}</p>
                         <div style="font-size:0.75rem; color:#888; margin-top:2px;">Req: ${type.cost} Pts Dev</div>
-                    </div >
-    <div class="act-cost">
-        <span style="color:#4dffea">Potencial: $${type.potential}/m</span>
-    </div>
-`;
-                newProjDiv.appendChild(btn);
-            });
-            container.appendChild(newProjDiv);
-        }
+                    </div>
+                    <div class="act-cost">
+                        <span style="color:#4dffea">Potencial: $${type.potential}/m</span>
+                    </div>
+                 `;
+            newProjDiv.appendChild(btn);
+        });
+        container.appendChild(newProjDiv);
+    }
 
-        // 2. LIVE PROJECTS
-        const liveProjects = state.projects.filter(p => p.status === 'live');
-        if (liveProjects.length > 0) {
-            const liveHeader = document.createElement('h4');
-            liveHeader.innerText = "💸 Proyectos Activos (Ingresos Pasivos)";
-            liveHeader.style.cssText = "margin-top:30px; border-bottom:1px solid #333; padding-bottom:5px; color:#4dffea;";
-            container.appendChild(liveHeader);
+    // 2. LIVE PROJECTS
+    const liveProjects = state.projects.filter(p => p.status === 'live');
+    if (liveProjects.length > 0) {
+        const liveHeader = document.createElement('h4');
+        liveHeader.innerText = "💸 Proyectos Activos (Ingresos Pasivos)";
+        liveHeader.style.cssText = "margin-top:30px; border-bottom:1px solid #333; padding-bottom:5px; color:#4dffea;";
+        container.appendChild(liveHeader);
 
-            liveProjects.forEach(p => {
-                const type = PROJECT_TYPES.find(t => t.id === p.typeId);
-                const el = document.createElement('div');
-                el.style.cssText = "background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:10px; border-left:3px solid #4dffea;";
-                el.innerHTML = `
-    < div style = "display:flex; justify-content:space-between;" >
+        liveProjects.forEach(p => {
+            const type = PROJECT_TYPES.find(t => t.id === p.typeId);
+            const el = document.createElement('div');
+            el.style.cssText = "background:#1a1a1a; padding:10px; border-radius:5px; margin-bottom:10px; border-left:3px solid #4dffea;";
+            el.innerHTML = `
+                    <div style="display:flex; justify-content:space-between;">
                         <span style="font-weight:bold; color:#fff;">${p.name}</span>
                         <span style="color:#4dffea; font-family:monospace;">+$${p.income || 0}/mes</span>
-                    </div >
-    <div style="font-size:0.8rem; color:#888; display:flex; gap:10px; margin-top:5px;">
-        <span>${type.name}</span>
-        <span>Calidad: ${p.quality.toFixed(0)}%</span>
-        <span>Marketing: ${p.marketing || 0}%</span>
-    </div>
-`;
-                container.appendChild(el);
-            });
-        }
-    },
+                    </div>
+                    <div style="font-size:0.8rem; color:#888; display:flex; gap:10px; margin-top:5px;">
+                        <span>${type.name}</span>
+                        <span>Calidad: ${p.quality.toFixed(0)}%</span>
+                        <span>Marketing: ${p.marketing || 0}%</span>
+                    </div>
+                `;
+            container.appendChild(el);
+        });
+    }
+},
 
 
 
-    renderRoutine() {
-        const container = document.getElementById('routine-container');
-        if (!container) return;
+renderRoutine() {
+    const container = document.getElementById('routine-container');
+    if (!container) return;
 
-        const r = state.routine;
-        const total = Routine.calculateTotal();
-        const valid = total === 24;
+    const r = state.routine;
+    const total = Routine.calculateTotal();
+    const valid = total === 24;
 
-        // Helper to create slider
-        const mkSlider = (key, label, emoji) => `
-    < div class="bar-group" >
+    // Helper to create slider
+    const mkSlider = (key, label, emoji) => `
+            <div class="bar-group">
                 <div class="bar-label">${emoji} ${label} <span id="val-${key}">${r[key]}h</span></div>
                 <input type="range" min="0" max="24" value="${r[key]}" class="slider" 
                     oninput="Routine.setHours('${key}', this.value); UI.renderRoutine()">
             </div>
-`;
+        `;
 
-        let html = `
-    < div style = "text-align:center; margin-bottom:20px;" >
+    let html = `
+            <div style="text-align:center; margin-bottom:20px;">
                 <h3>⏰ Distribución del Día</h3>
                 <div style="font-size:2rem; color:${valid ? '#4dffea' : '#ff4d4d'}; font-weight:bold;" id="routine-total-hours">${total}h</div>
                 <div style="font-size:0.8rem; color:#aaa;">Debe sumar exactamente 24h</div>
-            </div >
+            </div>
 
-    ${mkSlider('work', 'Trabajo', '💼')}
+            ${mkSlider('work', 'Trabajo', '💼')}
             ${mkSlider('sleep', 'Sueño', '💤')}
             ${mkSlider('study', 'Estudio', '📚')}
             ${mkSlider('exercise', 'Ejercicio', '💪')}
@@ -1837,11 +1832,11 @@ const UI = {
             <div class="job-list">
         `;
 
-        Object.keys(Routine.UPGRADES).forEach(key => {
-            const up = Routine.UPGRADES[key];
-            const owned = state.upgrades && state.upgrades[key];
+    Object.keys(Routine.UPGRADES).forEach(key => {
+        const up = Routine.UPGRADES[key];
+        const owned = state.upgrades && state.upgrades[key];
 
-            html += `
+        html += `
                 <div class="job-item">
                     <div class="job-details">
                         <h4>${up.name}</h4>
@@ -1849,31 +1844,31 @@ const UI = {
                         <div class="job-req">$${up.cost}</div>
                     </div>
                     ${owned ? '<span style="color:#4dffea; fontSize:0.8rem">ADQUIRIDO</span>' :
-                    `<button class="btn-buy" data-action="buy-upgrade" data-params='{"upgradeId":"${key}"}'>Comprar</button>`}
+                `<button class="btn-buy" data-action="buy-upgrade" data-params='{"upgradeId":"${key}"}'>Comprar</button>`}
                 </div>
             `;
-        });
+    });
 
-        html += '</div>';
-        container.innerHTML = html;
-    },
+    html += '</div>';
+    container.innerHTML = html;
+},
 
-    renderSchool() {
-        const container = document.getElementById('school-container');
-        if (!container) return;
+renderSchool() {
+    const container = document.getElementById('school-container');
+    if (!container) return;
 
-        const s = state.school;
+    const s = state.school;
 
-        // --- UNIVERSITY UI ---
-        if (state.isStudent) {
-            let majorName = 'Carrera Universitaria';
-            // Map ID to Name if possible, or just raw ID
-            const majors = {
-                'engineering': 'Ingeniería', 'business': 'Negocios', 'med_school': 'Medicina', 'arts': 'Artes', 'law_school': 'Derecho'
-            };
-            if (s.major && majors[s.major]) majorName = majors[s.major];
+    // --- UNIVERSITY UI ---
+    if (state.isStudent) {
+        let majorName = 'Carrera Universitaria';
+        // Map ID to Name if possible, or just raw ID
+        const majors = {
+            'engineering': 'Ingeniería', 'business': 'Negocios', 'med_school': 'Medicina', 'arts': 'Artes', 'law_school': 'Derecho'
+        };
+        if (s.major && majors[s.major]) majorName = majors[s.major];
 
-            container.innerHTML = `
+        container.innerHTML = `
                 <div style="text-align:center; margin-bottom:20px;">
                     <div style="font-size:3rem;">🎓</div>
                     <h3>${majorName}</h3>
@@ -1920,24 +1915,24 @@ const UI = {
                     </button>
                 </div>
             `;
-            return;
-        }
+        return;
+    }
 
 
-        // --- NORMAL SCHOOL UI ---
-        let focusHtml = '';
-        Object.keys(School.FOCUS).forEach(key => {
-            const f = School.FOCUS[key];
-            const active = s.focus === key ? 'active' : '';
-            focusHtml += `
+    // --- NORMAL SCHOOL UI ---
+    let focusHtml = '';
+    Object.keys(School.FOCUS).forEach(key => {
+        const f = School.FOCUS[key];
+        const active = s.focus === key ? 'active' : '';
+        focusHtml += `
                 <button class="choice-btn ${active}" data-action="set-focus" data-params='{"subject":"${key}"}'>
                     <div style="font-weight:bold;">${f.name}</div>
                     <div style="font-size:0.8rem; opacity:0.8;">${f.desc}</div>
                 </button>
             `;
-        });
+    });
 
-        const html = `
+    const html = `
             <div style="text-align:center; margin-bottom:20px;">
                 <div style="font-size:3rem;">🎒</div>
                 <h3>Ciclo Escolar (Edad: ${state.age})</h3>
@@ -1963,76 +1958,62 @@ const UI = {
             <div class="choices-list">
                 ${focusHtml}
             </div>`;
-        container.innerHTML = html;
-        // Update Dashboard GPA if element exists
-        const gpaEl = document.getElementById('gpa-display');
-        if (gpaEl) gpaEl.innerText = s.grades.toFixed(1);
-    },
+    container.innerHTML = html;
+    // Update Dashboard GPA if element exists
+    const gpaEl = document.getElementById('gpa-display');
+    if (gpaEl) gpaEl.innerText = s.grades.toFixed(1);
+},
 
-    renderJob() {
-        const container = document.getElementById('job-container');
-        const jobId = state.currJobId;
+renderJob() {
+    const container = document.getElementById('job-container');
+    const jobId = state.currJobId;
 
-        // 1. UNEMPLOYED VIEW
-        if (jobId === 'unemployed') {
-            container.innerHTML = `
+    // 1. UNEMPLOYED VIEW
+    if (jobId === 'unemployed') {
+        container.innerHTML = `
                 <div class="glass-panel" style="text-align:center; padding:40px;">
                     <div style="font-size:4rem; margin-bottom:20px; opacity:0.5;">🛋️</div>
                     <h2 style="color:#aaa;">Desempleado</h2>
                     <p style="color:#666; margin-bottom:20px;">Actualmente no tienes un empleo formal.</p>
-                    <button class="console-btn" onclick="UI.openModal('job-market-modal'); UI.renderNewJobMarket();" style="text-align:center; padding:15px; border-color:var(--accent-color);">
-                        <span class="btn-title">📰 Buscar Empleo</span>
-                    </button>
-                    <button class="console-btn" onclick="ProfileView.open()" style="text-align:center; padding:15px; border-color:#888;">
-                        <span class="btn-title">👤 Historial</span>
-                    </button>
+                    <div style="display:flex; gap:10px; justify-content:center;">
+                        <button class="console-btn" onclick="UI.openModal('job-market-modal'); UI.renderJobMarket();" style="text-align:center; padding:15px; border-color:var(--accent-color);">
+                            <span class="btn-title">📰 Buscar Empleo</span>
+                        </button>
+                        <button class="console-btn" onclick="ProfileView.open()" style="text-align:center; padding:15px; border-color:#888;">
+                            <span class="btn-title">👤 Historial</span>
+                        </button>
+                    </div>
                 </div>
             `;
-            return;
-        }
+        return;
+    }
 
-        const job = JOBS.find(j => j.id === jobId);
-        if (!job) return;
+    const job = JOBS.find(j => j.id === jobId);
+    if (!job) return;
 
-        // Stats
-        // Stats
-        const perf = state.work_relations.performance || 50;
-        const rep = (state.work_relations.boss + state.work_relations.colleagues) / 2;
-        const stress = state.stress;
+    // Stats
+    // Stats
+    const perf = state.work_relations.performance || 50;
+    const rep = (state.work_relations.boss + state.work_relations.colleagues) / 2;
+    const stress = state.stress;
 
-        // Advanced Job Info
-        const jobLevelIdx = state.jobLevel || 0;
-        const currentLevel = JOB_LEVELS[jobLevelIdx];
-        const nextLevel = JOB_LEVELS[jobLevelIdx + 1];
-        const scaledSalary = Math.floor(job.salary * currentLevel.salaryMult);
+    // Advanced Job Info
+    const jobLevelIdx = state.jobLevel || 0;
+    const currentLevel = JOB_LEVELS[jobLevelIdx];
+    const nextLevel = JOB_LEVELS[jobLevelIdx + 1];
+    const scaledSalary = Math.floor(job.salary * currentLevel.salaryMult);
 
-        // Theme Logic
-        let themeClass = '';
-        if (job.career === 'tech') themeClass = 'job-theme-tech';
-        if (job.career === 'trade') themeClass = 'job-theme-construction';
-        if (job.career === 'corp') themeClass = 'job-theme-corp';
-
-        const isDelivery = ['survival_delivery', 'pt_delivery'].includes(job.id);
-        if (isDelivery) themeClass = 'job-theme-delivery';
-
-        const isWorking = state.workTimer && state.workTimer.active;
-        if (isWorking && isDelivery) themeClass += ' working';
-
-        // Render HTML
-        container.innerHTML = `
-            <div class="job-dashboard-container ${themeClass}">
-                ${isDelivery ? '<div class="gps-icon">📍</div>' : ''}
+    // Render HTML
+    container.innerHTML = `
+            <div class="job-dashboard-container">
                 
                 <!-- 1. MAIN JOB CARD -->
                 <div class="glass-panel job-card-header">
                     <div style="display:flex; align-items:center;">
-                        <div class="job-icon">${(state.currentCompanyId && COMPANIES.find(c => c.id === state.currentCompanyId)) ?
-                COMPANIES.find(c => c.id === state.currentCompanyId).logo : '🏢'
-            }</div>
+                        <div class="job-icon">🏢</div>
                         <div class="job-details">
                             <div style="font-size:0.7rem; color:#888; letter-spacing:2px; margin-bottom:5px;">
-                                ${currentLevel.name.toUpperCase()} 
-                                ${state.currentCompanyId ? ' @ ' + COMPANIES.find(c => c.id === state.currentCompanyId).name.toUpperCase() : ''}
+                                ${currentLevel.name.toUpperCase()}
                             </div>
                             <h2>${job.title}</h2>
                             <div class="job-salary">
@@ -2143,8 +2124,11 @@ const UI = {
                             <span class="btn-title" style="color:gold;">📈 Ascenso</span>
                             <span class="btn-desc">${nextLevel ? 'Aplicar a ' + nextLevel.name : 'Nivel Máximo'}</span>
                         </button>
+                        <button class="console-btn" onclick="Game.quitJob()" style="margin-top:20px; border-color:#ff3d71;">
                             <span class="btn-title" style="color:#ff3d71;">🚫 Renunciar</span>
                         </button>
+
+
 
                         ${(typeof MarketCompetition !== 'undefined' && MarketCompetition.canSpy()) ? `
                         <button class="console-btn" onclick="MarketCompetition.commitEspionage()" style="margin-top:10px; border-color:#ff9800;">
@@ -2158,544 +2142,534 @@ const UI = {
 
             </div>
         `;
-    },
+},
 
-    renderWorkTimer() {
-        if (!state.workTimer || !state.workTimer.active) return;
+renderWorkTimer() {
+    if (!state.workTimer || !state.workTimer.active) return;
 
-        const isHard = state.workTimer.isHard;
-        const btnId = isHard ? 'btn-work-hard' : 'btn-work-normal';
-        const otherBtnId = isHard ? 'btn-work-normal' : 'btn-work-hard';
+    const isHard = state.workTimer.isHard;
+    const btnId = isHard ? 'btn-work-hard' : 'btn-work-normal';
+    const otherBtnId = isHard ? 'btn-work-normal' : 'btn-work-hard';
 
-        const btn = document.getElementById(btnId);
-        const otherBtn = document.getElementById(otherBtnId);
+    const btn = document.getElementById(btnId);
+    const otherBtn = document.getElementById(otherBtnId);
 
-        if (!btn) return;
+    if (!btn) return;
 
-        // Disable other buttons
-        if (otherBtn) otherBtn.disabled = true;
-        const allBtns = document.querySelectorAll('.console-btn');
-        allBtns.forEach(b => {
-            if (b.id !== btnId) {
-                b.disabled = true;
-                b.style.opacity = '0.5';
-            }
-        });
-
-        // Update Container for Delivery Theme Animation
-        const dashboard = document.querySelector('.job-theme-delivery .job-dashboard-container');
-        if (dashboard) dashboard.classList.add('working'); // Ensure class is present
-        // Note: We rely on renderJob re-running or manual cleanup if needed, but adding here ensures it starts. 
-        // Better: Find any dashboard container.
-        const anyDashboard = document.querySelector('.job-dashboard-container');
-        if (anyDashboard && anyDashboard.classList.contains('job-theme-delivery')) {
-            anyDashboard.classList.add('working');
+    // Disable other buttons
+    if (otherBtn) otherBtn.disabled = true;
+    const allBtns = document.querySelectorAll('.console-btn');
+    allBtns.forEach(b => {
+        if (b.id !== btnId) {
+            b.disabled = true;
+            b.style.opacity = '0.5';
         }
+    });
 
-        // Update Active Button
-        const pct = state.workTimer.progress; // 0 to 100
-        const timeLeft = (state.workTimer.duration / 1000) * (1 - (pct / 100));
+    // Update Active Button
+    const pct = state.workTimer.progress; // 0 to 100
+    const timeLeft = (state.workTimer.duration / 1000) * (1 - (pct / 100));
 
-        btn.classList.add('working-active');
-        // Use a linear gradient to show progress
-        btn.style.background = `linear-gradient(90deg, var(--primary-color) ${pct}%, #333 ${pct}%)`;
-        btn.style.borderColor = 'var(--primary-color)';
+    btn.classList.add('working-active');
+    // Use a linear gradient to show progress
+    btn.style.background = `linear-gradient(90deg, var(--primary-color) ${pct}%, #333 ${pct}%)`;
+    btn.style.borderColor = 'var(--primary-color)';
 
-        // Update text content safely
-        // specific structure for console-btn
-        btn.innerHTML = `
+    // Update text content safely
+    // specific structure for console-btn
+    btn.innerHTML = `
             <span class="btn-title" style="color:#000; text-shadow:none;">⏳ TRABAJANDO...</span>
             <span class="btn-desc" style="color:#222; font-weight:bold;">${timeLeft.toFixed(1)}s</span>
         `;
-    },
+},
 
-    renderActions() {
-        const container = document.getElementById('actions-container');
-        if (!container) return;
-        container.innerHTML = '';
+renderActions() {
+    const container = document.getElementById('actions-container');
+    if (!container) return;
+    container.innerHTML = '';
 
-        if (typeof PhaseManager === 'undefined') return;
+    if (typeof PhaseManager === 'undefined') return;
 
-        const phase = PhaseManager.getCurrentPhase();
+    const phase = PhaseManager.getCurrentPhase();
 
-        if (phase && phase.actions) {
-            phase.actions.forEach(act => {
-                const btn = document.createElement('button');
-                btn.className = 'act-btn';
-                btn.id = act.id;
-                btn.style.borderBottom = '2px solid ' + (act.color || '#444');
-                btn.innerText = act.label;
+    if (phase && phase.actions) {
+        phase.actions.forEach(act => {
+            const btn = document.createElement('button');
+            btn.className = 'act-btn';
+            btn.id = act.id;
+            btn.style.borderBottom = '2px solid ' + (act.color || '#444');
+            btn.innerText = act.label;
 
-                btn.onclick = () => {
-                    act.onClick();
-                };
-
-                container.appendChild(btn);
-            });
-        }
-
-        // Always add Airport button (available from age 18+)
-        if (state.age >= 18 && typeof Travel !== 'undefined') {
-            const airportBtn = document.createElement('button');
-            airportBtn.className = 'act-btn';
-            airportBtn.id = 'act-airport';
-            airportBtn.style.borderBottom = '2px solid #667eea';
-            airportBtn.innerText = '✈️ Aeropuerto';
-
-            airportBtn.onclick = () => {
-                Travel.openAirport();
+            btn.onclick = () => {
+                act.onClick();
             };
 
-            container.appendChild(airportBtn);
-        }
-    },
+            container.appendChild(btn);
+        });
+    }
 
-    renderProfile() {
-        const container = document.getElementById('profile-container');
-        if (!container) return;
+    // Always add Airport button (available from age 18+)
+    if (state.age >= 18 && typeof Travel !== 'undefined') {
+        const airportBtn = document.createElement('button');
+        airportBtn.className = 'act-btn';
+        airportBtn.id = 'act-airport';
+        airportBtn.style.borderBottom = '2px solid #667eea';
+        airportBtn.innerText = '✈️ Aeropuerto';
 
-        // Avatar
-        let avatar = "👶";
-        if (state.age > 4) avatar = "👦";
-        if (state.age > 18) avatar = "👨";
-        if (state.age > 60) avatar = "👴";
-        if (state.gender === 'female') {
-            if (state.age > 4) avatar = "👧";
-            if (state.age > 18) avatar = "👩";
-            if (state.age > 60) avatar = "👵";
-        }
+        airportBtn.onclick = () => {
+            Travel.openAirport();
+        };
 
-        // Traits
-        let traitsHtml = '<span style="color:#777;">Sin rasgos especiales</span>';
-        if (state.traits && state.traits.length > 0) {
-            traitsHtml = state.traits.map(function (t) {
-                return '<span class="badge" style="background:#555; margin:2px;">' + t + '</span>';
-            }).join('');
-        }
+        container.appendChild(airportBtn);
+    }
+},
 
-        // Financials
-        const fin = Game.calculateFinancials();
-        const nw = Math.floor(fin.netWorth).toLocaleString();
+renderProfile() {
+    const container = document.getElementById('profile-container');
+    if (!container) return;
 
-        let statusDesc = "Clase Baja";
-        if (state.money > 10000) statusDesc = "Clase Media";
-        if (state.money > 100000) statusDesc = "Rico";
-        if (state.money > 1000000) statusDesc = "Multimillonario";
+    // Avatar
+    let avatar = "👶";
+    if (state.age > 4) avatar = "👦";
+    if (state.age > 18) avatar = "👨";
+    if (state.age > 60) avatar = "👴";
+    if (state.gender === 'female') {
+        if (state.age > 4) avatar = "👧";
+        if (state.age > 18) avatar = "👩";
+        if (state.age > 60) avatar = "👵";
+    }
 
-        const html =
-            '<div style="font-size:4rem; margin-bottom:10px;">' + avatar + '</div>' +
-            '<h2 style="margin:0; color:var(--primary-color)">' + (state.name || 'Jugador') + '</h2>' +
-            '<p style="color:#aaa; margin-top:5px;">Edad: ' + state.age + ' años</p>' +
+    // Traits
+    let traitsHtml = '<span style="color:#777;">Sin rasgos especiales</span>';
+    if (state.traits && state.traits.length > 0) {
+        traitsHtml = state.traits.map(function (t) {
+            return '<span class="badge" style="background:#555; margin:2px;">' + t + '</span>';
+        }).join('');
+    }
 
-            '<div style="background:var(--card-bg); padding:15px; border-radius:8px; margin:20px 0; border:1px solid #333;">' +
-            '<div style="display:flex; justify-content:space-around; margin-bottom:10px;">' +
-            '<div>' +
-            '<div style="font-size:0.8rem; color:#888;">Patrimonio</div>' +
-            '<div style="font-size:1.2rem; font-weight:bold; color:var(--accent-color)">$' + nw + '</div>' +
-            '</div>' +
-            '<div>' +
-            '<div style="font-size:0.8rem; color:#888;">Estatus</div>' +
-            '<div style="font-size:1.2rem; font-weight:bold;">' + statusDesc + '</div>' +
-            '</div>' +
-            '</div>' +
-            '<hr style="border:0; border-top:1px solid #333; margin:10px 0;">' +
-            '<div style="text-align:left;">' +
-            '<div style="font-size:0.9rem; color:#ccc; margin-bottom:5px;">Rasgos:</div>' +
-            '<div>' + traitsHtml + '</div>' +
-            '</div>' +
-            '</div>' +
+    // Financials
+    const fin = Game.calculateFinancials();
+    const nw = Math.floor(fin.netWorth).toLocaleString();
 
-            '<div style="text-align:left; font-size:0.9rem; color:#aaa;">' +
-            '<p>🎓 Educación: ' + (state.education.length > 0 ? state.education.map(e => e.degree).join(', ') : 'Ninguna') + '</p>' +
-            '<p>💼 Trabajo Actual: ' + (state.currJobId !== 'unemployed' ? state.currJobId : 'Desempleado') + '</p>' +
-            '<p>🏠 Vivienda: ' + (state.housing || 'Sofá de un amigo') + '</p>' +
-            '</div>';
+    let statusDesc = "Clase Baja";
+    if (state.money > 10000) statusDesc = "Clase Media";
+    if (state.money > 100000) statusDesc = "Rico";
+    if (state.money > 1000000) statusDesc = "Multimillonario";
 
-        container.innerHTML = html;
-    },
+    const html =
+        '<div style="font-size:4rem; margin-bottom:10px;">' + avatar + '</div>' +
+        '<h2 style="margin:0; color:var(--primary-color)">' + (state.name || 'Jugador') + '</h2>' +
+        '<p style="color:#aaa; margin-top:5px;">Edad: ' + state.age + ' años</p>' +
 
-    renderSocialTab() {
-        const list = document.getElementById('friends-list');
-        list.innerHTML = '';
+        '<div style="background:var(--card-bg); padding:15px; border-radius:8px; margin:20px 0; border:1px solid #333;">' +
+        '<div style="display:flex; justify-content:space-around; margin-bottom:10px;">' +
+        '<div>' +
+        '<div style="font-size:0.8rem; color:#888;">Patrimonio</div>' +
+        '<div style="font-size:1.2rem; font-weight:bold; color:var(--accent-color)">$' + nw + '</div>' +
+        '</div>' +
+        '<div>' +
+        '<div style="font-size:0.8rem; color:#888;">Estatus</div>' +
+        '<div style="font-size:1.2rem; font-weight:bold;">' + statusDesc + '</div>' +
+        '</div>' +
+        '</div>' +
+        '<hr style="border:0; border-top:1px solid #333; margin:10px 0;">' +
+        '<div style="text-align:left;">' +
+        '<div style="font-size:0.9rem; color:#ccc; margin-bottom:5px;">Rasgos:</div>' +
+        '<div>' + traitsHtml + '</div>' +
+        '</div>' +
+        '</div>' +
 
-        // --- PARTNER SECTION ---
-        const pSection = document.createElement('div');
-        pSection.style.cssText = "border-bottom: 1px solid #444; margin-bottom: 15px; padding-bottom: 10px;";
+        '<div style="text-align:left; font-size:0.9rem; color:#aaa;">' +
+        '<p>🎓 Educación: ' + (state.education.length > 0 ? state.education.map(e => e.degree).join(', ') : 'Ninguna') + '</p>' +
+        '<p>💼 Trabajo Actual: ' + (state.currJobId !== 'unemployed' ? state.currJobId : 'Desempleado') + '</p>' +
+        '<p>🏠 Vivienda: ' + (state.housing || 'Sofá de un amigo') + '</p>' +
+        '</div>';
 
-        if (!state.partner) {
-            pSection.innerHTML =
-                '<h4 style="color:#aaa; margin-top:0;">Situación Sentimental</h4>' +
-                '<div class="market-card" style="justify-content:center; padding: 20px;">' +
-                '<button class="act-btn" style="width:100%;" data-action="find-love">' +
-                'Buscar Pareja ♥ ($100)' +
-                '</button>' +
-                '</div>';
-        } else {
-            const p = state.partner;
-            const statusLabels = { 'dating': 'Saliendo', 'living': 'Conviviendo', 'married': 'Casados' };
-            let nextStepBtn = '';
+    container.innerHTML = html;
+},
 
-            if (p.status === 'dating' && p.relation > 60) {
-                nextStepBtn = '<button class="act-btn" style="flex:1; background:#00bcd4;" data-action="advance-relationship">Mudarse Juntos</button>';
-            } else if (p.status === 'living' && p.relation > 90) {
-                nextStepBtn = '<button class="act-btn" style="flex:1; background:#ff9800;" data-action="advance-relationship">Proponer Matrimonio ($2k)</button>';
-            }
+renderSocialTab() {
+    const list = document.getElementById('friends-list');
+    list.innerHTML = '';
 
-            pSection.innerHTML =
-                '<h4 style="color:#aaa; margin-top:0;">💕 Pareja: ' + statusLabels[p.status] + '</h4>' +
-                '<div class="market-card" style="display:block;">' +
-                '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
-                '<div>' +
-                '<div style="font-weight:bold; color:#ff69b4;">' + p.name + '</div>' +
-                '<div style="font-size:0.8rem; color:#aaa;">' + p.jobTitle + ' ($' + p.salary + '/m)</div>' +
-                '</div>' +
-                '<div style="text-align:right;">' +
-                '<div style="font-size:0.9rem;">Relación: ' + p.relation + '%</div>' +
-                '</div>' +
-                '</div>' +
-                '<div style="display:flex; gap:10px;">' +
-                '<button class="act-btn" style="flex:1;" data-action="date-partner">Cita ($80)</button>' +
-                nextStepBtn +
-                '<button class="act-btn" style="flex:1; background:#552222;" data-action="breakup">Romper</button>' +
-                '</div>' +
-                '</div>';
-        }
-        list.appendChild(pSection);
+    // --- PARTNER SECTION ---
+    const pSection = document.createElement('div');
+    pSection.style.cssText = "border-bottom: 1px solid #444; margin-bottom: 15px; padding-bottom: 10px;";
 
-        // --- CHARITY ---
-        const charity = document.createElement('div');
-        charity.style.marginTop = "20px";
-        charity.innerHTML =
-            '<h4 style="color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Filantropía</h4>' +
-            '<button class="act-btn" data-action="donate-charity" data-params=\'{"amount":100}\'>' +
-            '<div class="act-info">' +
-            '<h4>Donar $100</h4>' +
-            '<p>Ayuda a los necesitados.</p>' +
-            '</div>' +
-            '<div class="act-cost">+1 Karma</div>' +
+    if (!state.partner) {
+        pSection.innerHTML =
+            '<h4 style="color:#aaa; margin-top:0;">Situación Sentimental</h4>' +
+            '<div class="market-card" style="justify-content:center; padding: 20px;">' +
+            '<button class="act-btn" style="width:100%;" data-action="find-love">' +
+            'Buscar Pareja ♥ ($100)' +
             '</button>' +
-            '<button class="act-btn" data-action="donate-charity" data-params=\'{"amount":1000}\'>' +
-            '<div class="act-info">' +
-            '<h4>Donar $1,000</h4>' +
-            '<p>Haz una gran diferencia.</p>' +
-            '</div>' +
-            '<div class="act-cost">+10 Karma</div>' +
-            '</button>';
-        list.appendChild(charity);
+            '</div>';
+    } else {
+        const p = state.partner;
+        const statusLabels = { 'dating': 'Saliendo', 'living': 'Conviviendo', 'married': 'Casados' };
+        let nextStepBtn = '';
 
-        // --- FRIENDS SECTION ---
-        const fHeader = document.createElement('h4');
-        fHeader.innerText = "Amigos & Contactos";
-        fHeader.style.color = "#aaa";
-        list.appendChild(fHeader);
-
-        if (state.friends.length === 0) {
-            const empty = document.createElement('p');
-            empty.className = 'status-msg';
-            empty.innerText = 'No tienes amigos. ¡Sal de fiesta!';
-            list.appendChild(empty);
-        } else {
-            state.friends.forEach(f => {
-                const isNet = f.relation > 80;
-
-                const el = document.createElement('div');
-                el.className = 'market-card';
-                el.innerHTML =
-                    '<div>' +
-                    '<div style="font-weight:bold; color:#fff;">' + f.name + ' ' + (isNet ? '⭐' : '') + '</div>' +
-                    '<div style="font-size:0.8rem; color:#aaa;">' + f.jobTitle + '</div>' +
-                    '<div style="font-size:0.75rem; color:' + (isNet ? '#4dffea' : '#888') + ';">Relación: ' + f.relation + '/100</div>' +
-                    '</div>' +
-                    '<button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" data-action="maintain-friend" data-params=\'{"friendId":"' + f.id + '"}\'>' +
-                    'Llamar ($50)' +
-                    '</button>';
-                list.appendChild(el);
-            });
+        if (p.status === 'dating' && p.relation > 60) {
+            nextStepBtn = '<button class="act-btn" style="flex:1; background:#00bcd4;" data-action="advance-relationship">Mudarse Juntos</button>';
+        } else if (p.status === 'living' && p.relation > 90) {
+            nextStepBtn = '<button class="act-btn" style="flex:1; background:#ff9800;" data-action="advance-relationship">Proponer Matrimonio ($2k)</button>';
         }
-    },
 
-    renderRealEstate() {
-        const container = document.getElementById('realestate-list-container');
-        container.innerHTML = '';
+        pSection.innerHTML =
+            '<h4 style="color:#aaa; margin-top:0;">💕 Pareja: ' + statusLabels[p.status] + '</h4>' +
+            '<div class="market-card" style="display:block;">' +
+            '<div style="display:flex; justify-content:space-between; margin-bottom:10px;">' +
+            '<div>' +
+            '<div style="font-weight:bold; color:#ff69b4;">' + p.name + '</div>' +
+            '<div style="font-size:0.8rem; color:#aaa;">' + p.jobTitle + ' ($' + p.salary + '/m)</div>' +
+            '</div>' +
+            '<div style="text-align:right;">' +
+            '<div style="font-size:0.9rem;">Relación: ' + p.relation + '%</div>' +
+            '</div>' +
+            '</div>' +
+            '<div style="display:flex; gap:10px;">' +
+            '<button class="act-btn" style="flex:1;" data-action="date-partner">Cita ($80)</button>' +
+            nextStepBtn +
+            '<button class="act-btn" style="flex:1; background:#552222;" data-action="breakup">Romper</button>' +
+            '</div>' +
+            '</div>';
+    }
+    list.appendChild(pSection);
 
-        REAL_ESTATE.forEach(prop => {
-            const ownedCount = state.realEstate.filter(id => id === prop.id).length;
-            const currentPrice = state.rePrices[prop.id] || prop.price;
+    // --- CHARITY ---
+    const charity = document.createElement('div');
+    charity.style.marginTop = "20px";
+    charity.innerHTML =
+        '<h4 style="color:#aaa; border-bottom:1px solid #333; padding-bottom:5px;">Filantropía</h4>' +
+        '<button class="act-btn" data-action="donate-charity" data-params=\'{"amount":100}\'>' +
+        '<div class="act-info">' +
+        '<h4>Donar $100</h4>' +
+        '<p>Ayuda a los necesitados.</p>' +
+        '</div>' +
+        '<div class="act-cost">+1 Karma</div>' +
+        '</button>' +
+        '<button class="act-btn" data-action="donate-charity" data-params=\'{"amount":1000}\'>' +
+        '<div class="act-info">' +
+        '<h4>Donar $1,000</h4>' +
+        '<p>Haz una gran diferencia.</p>' +
+        '</div>' +
+        '<div class="act-cost">+10 Karma</div>' +
+        '</button>';
+    list.appendChild(charity);
 
-            // Net Income calc
-            const net = prop.rent - prop.maint;
+    // --- FRIENDS SECTION ---
+    const fHeader = document.createElement('h4');
+    fHeader.innerText = "Amigos & Contactos";
+    fHeader.style.color = "#aaa";
+    list.appendChild(fHeader);
 
-            // Value change indicator (vs base price)
-            const priceDiff = currentPrice - prop.price;
-            const priceColor = priceDiff > 0 ? '#39FF14' : (priceDiff < 0 ? '#ff3939' : '#fff');
-            const arrow = priceDiff > 0 ? '▲' : (priceDiff < 0 ? '▼' : '');
-
-            const el = document.createElement('div');
-            el.className = 'market-card';
-            el.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; margin-bottom:10px; padding:10px; background:#1e1e1e; border:1px solid #444; border-radius:6px;";
-
-            const buyBtn = `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" data-action="buy-real-estate" data-params='{"propertyId":"${prop.id}"}'>Comprar($${currentPrice.toLocaleString()})</button>`;
-            const sellBtn = ownedCount > 0 ? `<button class="act-btn" style="padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" data-action="sell-real-estate" data-params='{"propertyId":"${prop.id}"}'>Vender</button>` : '';
-
-            el.innerHTML =
-                '<div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:5px;">' +
-                '<span style="font-weight:bold; color:#fff; font-size:1rem;">' + prop.name + '</span>' +
-                '<span style="color:' + priceColor + '; font-weight:bold;">$' + currentPrice.toLocaleString() + ' ' + arrow + '</span>' +
-                '</div>' +
-                '<div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem; color:#aaa; margin-bottom:8px;">' +
-                '<span>Renta: $' + prop.rent + ' | Mant: $' + prop.maint + '</span>' +
-                '<span>Neto: <span style="color:#' + (net > 0 ? '4dffea' : 'ff3939') + '">+$' + net + '/mes</span></span>' +
-                '</div>' +
-                '<div style="display:flex; justify-content:space-between; width:100%; align-items:center;">' +
-                '<span style="font-size:0.8rem; color:#888;">Propiedad: ' + ownedCount + '</span>' +
-                '<div style="display:flex; gap:5px;">' +
-                buyBtn +
-                sellBtn +
-                '</div>' +
-                '</div>';
-            container.appendChild(el);
-        });
-    },
-
-    renderInvestments() {
-        const container = document.getElementById('invest-list-container');
-        container.innerHTML = '';
-
-        ASSETS.forEach(asset => {
-            const price = state.marketPrices[asset.id];
-            const holding = state.portfolio[asset.id];
-            const profit = (price - holding.avg) * holding.qty;
-            const profitClass = profit >= 0 ? 'good' : 'bad';
-            const profitTxt = profit !== 0 ? '<br><span class="' + profitClass + '">P/L: $' + profit.toFixed(0) + '</span>' : '';
+    if (state.friends.length === 0) {
+        const empty = document.createElement('p');
+        empty.className = 'status-msg';
+        empty.innerText = 'No tienes amigos. ¡Sal de fiesta!';
+        list.appendChild(empty);
+    } else {
+        state.friends.forEach(f => {
+            const isNet = f.relation > 80;
 
             const el = document.createElement('div');
             el.className = 'market-card';
             el.innerHTML =
                 '<div>' +
-                '<div style="font-weight:bold; color:#fff;">' + asset.name + '</div>' +
-                '<div style="font-size:0.8rem; color:#aaa;">Precio: $' + price.toFixed(2) + '</div>' +
-                '<div style="font-size:0.8rem;">Posees: ' + holding.qty + ' (Media: $' + holding.avg.toFixed(0) + ')' + profitTxt + '</div>' +
+                '<div style="font-weight:bold; color:#fff;">' + f.name + ' ' + (isNet ? '⭐' : '') + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">' + f.jobTitle + '</div>' +
+                '<div style="font-size:0.75rem; color:' + (isNet ? '#4dffea' : '#888') + ';">Relación: ' + f.relation + '/100</div>' +
                 '</div>' +
-                '<div style="display:flex; flex-direction:column; gap:5px;">' +
-                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" data-action="trade" data-params=\'{"assetId":"' + asset.id + '","type":"buy"}\'>Comprar</button>' +
-                '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" data-action="trade" data-params=\'{"assetId":"' + asset.id + '","type":"sell"}\'>Vender</button>' +
-                '</div>';
-            container.appendChild(el);
+                '<button class="act-btn" style="width:auto; min-height:auto; padding:5px 10px; font-size:0.8rem;" data-action="maintain-friend" data-params=\'{"friendId":"' + f.id + '"}\'>' +
+                'Llamar ($50)' +
+                '</button>';
+            list.appendChild(el);
         });
-    },
+    }
+},
 
-    renderShop() {
-        const list = this.els.modals.shopList;
-        list.innerHTML = '';
+renderRealEstate() {
+    const container = document.getElementById('realestate-list-container');
+    container.innerHTML = '';
 
-        // If tab is Invest, re-render invest
-        const investTab = document.getElementById('shop-tab-invest');
-        if (investTab && !investTab.classList.contains('hidden')) {
-            this.renderInvestments();
-            return;
-        }
+    REAL_ESTATE.forEach(prop => {
+        const ownedCount = state.realEstate.filter(id => id === prop.id).length;
+        const currentPrice = state.rePrices[prop.id] || prop.price;
 
-        // Render Rare Items
-        if (state.shopRare && state.shopRare.length > 0) {
-            const rareHeader = document.createElement('h4');
-            rareHeader.innerText = "🌟 Objetos Raros";
-            rareHeader.style.cssText = "color:#FFD700; border-bottom:1px solid #FFD700; margin-bottom:10px;";
-            list.appendChild(rareHeader);
+        // Net Income calc
+        const net = prop.rent - prop.maint;
 
-            state.shopRare.forEach(item => {
-                const owned = state.inventory.includes(item.id);
-                const el = document.createElement('div');
-                el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:linear-gradient(45deg, #332a00, #1a1a1a); padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #FFD700;";
+        // Value change indicator (vs base price)
+        const priceDiff = currentPrice - prop.price;
+        const priceColor = priceDiff > 0 ? '#39FF14' : (priceDiff < 0 ? '#ff3939' : '#fff');
+        const arrow = priceDiff > 0 ? '▲' : (priceDiff < 0 ? '▼' : '');
 
-                el.innerHTML =
-                    '<div>' +
-                    '<div style="font-weight:bold; color:#FFD700;">' + item.icon + ' ' + item.name + '</div>' +
-                    '<div style="font-size:0.8rem; color:#aaa;">' + item.desc + '</div>' +
-                    '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
-                    '</div>' +
-                    '<button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ' + (owned ? 'disabled' : '') + ' data-action="buy-rare-item" data-params=\'{"itemId":"' + item.id + '"}\'>' +
-                    (owned ? 'Comprado' : '$' + item.price.toLocaleString()) +
-                    '</button>';
-                list.appendChild(el);
-            });
-        }
+        const el = document.createElement('div');
+        el.className = 'market-card';
+        el.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; margin-bottom:10px; padding:10px; background:#1e1e1e; border:1px solid #444; border-radius:6px;";
 
-        // Render Goods
-        SHOP_ITEMS.forEach(item => {
+        const buyBtn = `< button class="act-btn" style = "padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem;" data - action="buy-real-estate" data - params='{"propertyId":"${prop.id}"}' > Comprar($${currentPrice.toLocaleString()})</button > `;
+        const sellBtn = ownedCount > 0 ? `< button class="act-btn" style = "padding:4px 10px; min-height:auto; width:auto; font-size:0.8rem; background:#552222;" data - action="sell-real-estate" data - params='{"propertyId":"${prop.id}"}' > Vender</button > ` : '';
+
+        el.innerHTML =
+            '<div style="display:flex; justify-content:space-between; width:100%; align-items:center; margin-bottom:5px;">' +
+            '<span style="font-weight:bold; color:#fff; font-size:1rem;">' + prop.name + '</span>' +
+            '<span style="color:' + priceColor + '; font-weight:bold;">$' + currentPrice.toLocaleString() + ' ' + arrow + '</span>' +
+            '</div>' +
+            '<div style="display:flex; justify-content:space-between; width:100%; font-size:0.8rem; color:#aaa; margin-bottom:8px;">' +
+            '<span>Renta: $' + prop.rent + ' | Mant: $' + prop.maint + '</span>' +
+            '<span>Neto: <span style="color:#' + (net > 0 ? '4dffea' : 'ff3939') + '">+$' + net + '/mes</span></span>' +
+            '</div>' +
+            '<div style="display:flex; justify-content:space-between; width:100%; align-items:center;">' +
+            '<span style="font-size:0.8rem; color:#888;">Propiedad: ' + ownedCount + '</span>' +
+            '<div style="display:flex; gap:5px;">' +
+            buyBtn +
+            sellBtn +
+            '</div>' +
+            '</div>';
+        container.appendChild(el);
+    });
+},
+
+renderInvestments() {
+    const container = document.getElementById('invest-list-container');
+    container.innerHTML = '';
+
+    ASSETS.forEach(asset => {
+        const price = state.marketPrices[asset.id];
+        const holding = state.portfolio[asset.id];
+        const profit = (price - holding.avg) * holding.qty;
+        const profitClass = profit >= 0 ? 'good' : 'bad';
+        const profitTxt = profit !== 0 ? '<br><span class="' + profitClass + '">P/L: $' + profit.toFixed(0) + '</span>' : '';
+
+        const el = document.createElement('div');
+        el.className = 'market-card';
+        el.innerHTML =
+            '<div>' +
+            '<div style="font-weight:bold; color:#fff;">' + asset.name + '</div>' +
+            '<div style="font-size:0.8rem; color:#aaa;">Precio: $' + price.toFixed(2) + '</div>' +
+            '<div style="font-size:0.8rem;">Posees: ' + holding.qty + ' (Media: $' + holding.avg.toFixed(0) + ')' + profitTxt + '</div>' +
+            '</div>' +
+            '<div style="display:flex; flex-direction:column; gap:5px;">' +
+            '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto;" data-action="trade" data-params=\'{"assetId":"' + asset.id + '","type":"buy"}\'>Comprar</button>' +
+            '<button class="act-btn" style="padding:5px 10px; font-size:0.8rem; min-height:auto; background:#552222;" data-action="trade" data-params=\'{"assetId":"' + asset.id + '","type":"sell"}\'>Vender</button>' +
+            '</div>';
+        container.appendChild(el);
+    });
+},
+
+renderShop() {
+    const list = this.els.modals.shopList;
+    list.innerHTML = '';
+
+    // If tab is Invest, re-render invest
+    const investTab = document.getElementById('shop-tab-invest');
+    if (investTab && !investTab.classList.contains('hidden')) {
+        this.renderInvestments();
+        return;
+    }
+
+    // Render Rare Items
+    if (state.shopRare && state.shopRare.length > 0) {
+        const rareHeader = document.createElement('h4');
+        rareHeader.innerText = "🌟 Objetos Raros";
+        rareHeader.style.cssText = "color:#FFD700; border-bottom:1px solid #FFD700; margin-bottom:10px;";
+        list.appendChild(rareHeader);
+
+        state.shopRare.forEach(item => {
             const owned = state.inventory.includes(item.id);
             const el = document.createElement('div');
-            el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #333;";
+            el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:linear-gradient(45deg, #332a00, #1a1a1a); padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #FFD700;";
 
             el.innerHTML =
                 '<div>' +
-                '<div style="font-weight:bold; color:var(--text-color);">' + item.name + '</div>' +
-                '<div style="font-size:0.8rem; color:#888;">' + item.desc + '</div>' +
+                '<div style="font-weight:bold; color:#FFD700;">' + item.icon + ' ' + item.name + '</div>' +
+                '<div style="font-size:0.8rem; color:#aaa;">' + item.desc + '</div>' +
                 '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
                 '</div>' +
-                '<button class="btn-select-job" ' + (owned ? 'disabled' : '') + ' data-action="buy-item" data-params=\'{"itemId":"' + item.id + '"}\'>' +
-                (owned ? 'Comprado' : '$' + item.price) +
+                '<button class="btn-select-job" style="border-color:#FFD700; color:#FFD700;" ' + (owned ? 'disabled' : '') + ' data-action="buy-rare-item" data-params=\'{"itemId":"' + item.id + '"}\'>' +
+                (owned ? 'Comprado' : '$' + item.price.toLocaleString()) +
                 '</button>';
             list.appendChild(el);
         });
-    },
+    }
 
-    renderMyHome() {
-        const list = document.getElementById('family-list');
-        list.innerHTML = '';
+    // Render Goods
+    SHOP_ITEMS.forEach(item => {
+        const owned = state.inventory.includes(item.id);
+        const el = document.createElement('div');
+        el.style.cssText = "display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:10px; margin-bottom:8px; border-radius:6px; border:1px solid #333;";
 
-        // Summary of expenses
-        const fins = Game.calculateFinancials();
-        const totalFam = (fins.breakdown.pets || 0) + (fins.breakdown.children || 0);
-        document.getElementById('home-total-expenses').innerText = '- $' + totalFam + '/mes';
+        el.innerHTML =
+            '<div>' +
+            '<div style="font-weight:bold; color:var(--text-color);">' + item.name + '</div>' +
+            '<div style="font-size:0.8rem; color:#888;">' + item.desc + '</div>' +
+            '<div style="font-size:0.8rem; color:#aaa;">Mant: $' + item.maint + '/mes</div>' +
+            '</div>' +
+            '<button class="btn-select-job" ' + (owned ? 'disabled' : '') + ' data-action="buy-item" data-params=\'{"itemId":"' + item.id + '"}\'>' +
+            (owned ? 'Comprado' : '$' + item.price) +
+            '</button>';
+        list.appendChild(el);
+    });
+},
 
-        // Partner
-        if (state.partner && (state.partner.status === 'living' || state.partner.status === 'married')) {
-            const p = state.partner;
-            const el = document.createElement('div');
-            el.className = 'family-card';
-            el.innerHTML =
-                '<div>' +
-                '<div style="font-weight:bold; color:#ff69b4;">' + p.name + ' (Pareja)</div>' +
-                '<div style="font-size:0.8rem; color:#aaa;">Ingreso: +$' + p.salary + '</div>' +
-                '</div>' +
-                '<div style="font-size:1.2rem;">❤️</div>';
-            list.appendChild(el);
-        }
+renderMyHome() {
+    const list = document.getElementById('family-list');
+    list.innerHTML = '';
 
-        // Children
-        state.children.forEach(child => {
-            const isIndep = child.ageMonths >= 216;
-            const el = document.createElement('div');
-            el.className = 'family-card';
-            el.style.borderLeftColor = isIndep ? '#aaa' : '#39FF14';
-            el.innerHTML =
-                '<div>' +
-                '<div style="font-weight:bold; color:#fff;">' + child.name + ' (' + Math.floor(child.ageMonths / 12) + ' años)</div>' +
-                '<div style="font-size:0.8rem; color:#aaa;">' + (isIndep ? 'Independiente' : 'Costo: -$' + CHILD_COST + '/mes') + '</div>' +
-                '</div>' +
-                '<div style="font-size:1.2rem;">' + (isIndep ? '🎓' : '👶') + '</div>';
-            list.appendChild(el);
-        });
+    // Summary of expenses
+    const fins = Game.calculateFinancials();
+    const totalFam = (fins.breakdown.pets || 0) + (fins.breakdown.children || 0);
+    document.getElementById('home-total-expenses').innerText = '- $' + totalFam + '/mes';
 
-        // Pets
-        state.pets.forEach(pet => {
-            const el = document.createElement('div');
-            el.className = 'family-card';
-            el.style.borderLeftColor = '#FFA500';
-            const petDesc = PETS.find(p => p.id === pet.id)?.desc || '';
-            el.innerHTML =
-                '<div>' +
-                '<div style="font-weight:bold; color:#fff;">' + pet.name + '</div>' +
-                '<div style="font-size:0.8rem; color:#aaa;">' + petDesc + '</div>' +
-                '</div>' +
-                '<div style="font-size:1.2rem;">🐾</div>';
-            list.appendChild(el);
-        });
+    // Partner
+    if (state.partner && (state.partner.status === 'living' || state.partner.status === 'married')) {
+        const p = state.partner;
+        const el = document.createElement('div');
+        el.className = 'family-card';
+        el.innerHTML =
+            '<div>' +
+            '<div style="font-weight:bold; color:#ff69b4;">' + p.name + ' (Pareja)</div>' +
+            '<div style="font-size:0.8rem; color:#aaa;">Ingreso: +$' + p.salary + '</div>' +
+            '</div>' +
+            '<div style="font-size:1.2rem;">❤️</div>';
+        list.appendChild(el);
+    }
 
-        if (state.children.length === 0 && state.pets.length === 0 && (!state.partner || (state.partner.status !== 'living' && state.partner.status !== 'married'))) {
-            list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Vives solo. ¡Consigue pareja o adopta una mascota!</div>';
-        }
-    },
+    // Children
+    state.children.forEach(child => {
+        const isIndep = child.ageMonths >= 216;
+        const el = document.createElement('div');
+        el.className = 'family-card';
+        el.style.borderLeftColor = isIndep ? '#aaa' : '#39FF14';
+        el.innerHTML =
+            '<div>' +
+            '<div style="font-weight:bold; color:#fff;">' + child.name + ' (' + Math.floor(child.ageMonths / 12) + ' años)</div>' +
+            '<div style="font-size:0.8rem; color:#aaa;">' + (isIndep ? 'Independiente' : 'Costo: -$' + CHILD_COST + '/mes') + '</div>' +
+            '</div>' +
+            '<div style="font-size:1.2rem;">' + (isIndep ? '🎓' : '👶') + '</div>';
+        list.appendChild(el);
+    });
 
-    populateHousingCards() {
-        const grid = document.getElementById('housing-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        HOUSING.forEach(house => {
-            const isCurrent = state.housing === house.id;
-            const card = document.createElement('div');
-            card.className = 'lifestyle-card ' + (isCurrent ? 'current' : '');
-            card.innerHTML =
-                '<div class="lifestyle-card-title">' + house.name + '</div>' +
-                '<div class="lifestyle-card-desc">' + house.desc + '</div>' +
-                '<div class="lifestyle-card-stats">' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + house.cost.toLocaleString() + '</span></div>' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + house.maint.toLocaleString() + '</span></div>' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Felicidad:</span><span class="lifestyle-card-stat-value positive">+' + house.happiness + '</span></div>' +
-                '</div>' +
-                '<button class="lifestyle-card-btn" ' + (isCurrent ? 'disabled' : '') + ' data-action="buy-housing" data-params=\'{"housingId":"' + house.id + '"}\'>' +
-                (isCurrent ? '✓ Actual' : (state.money >= house.cost ? 'Comprar/Mudar' : 'Sin Fondos')) +
-                '</button>';
-            grid.appendChild(card);
-        });
-    },
+    // Pets
+    state.pets.forEach(pet => {
+        const el = document.createElement('div');
+        el.className = 'family-card';
+        el.style.borderLeftColor = '#FFA500';
+        const petDesc = PETS.find(p => p.id === pet.id)?.desc || '';
+        el.innerHTML =
+            '<div>' +
+            '<div style="font-weight:bold; color:#fff;">' + pet.name + '</div>' +
+            '<div style="font-size:0.8rem; color:#aaa;">' + petDesc + '</div>' +
+            '</div>' +
+            '<div style="font-size:1.2rem;">🐾</div>';
+        list.appendChild(el);
+    });
 
-    populateVehicleCards() {
-        const grid = document.getElementById('vehicles-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        VEHICLES.forEach(vehicle => {
-            const isCurrent = state.vehicle === vehicle.id;
-            const canAfford = state.money >= vehicle.cost;
-            const card = document.createElement('div');
-            card.className = 'lifestyle-card ' + (isCurrent ? 'current' : '');
-            card.innerHTML =
-                '<div class="lifestyle-card-title">' + vehicle.name + '</div>' +
-                '<div class="lifestyle-card-desc">' + vehicle.desc + '</div>' +
-                '<div class="lifestyle-card-stats">' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">' + (vehicle.cost === 0 ? 'Gratis' : '$' + vehicle.cost.toLocaleString()) + '</span></div>' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + vehicle.maint.toLocaleString() + '</span></div>' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Estatus:</span><span class="lifestyle-card-stat-value positive">+' + vehicle.status + '</span></div>' +
-                '</div>' +
-                '<button class="lifestyle-card-btn" ' + (isCurrent || !canAfford ? 'disabled' : '') + ' data-action="buy-vehicle" data-params=\'{"vehicleId":"' + vehicle.id + '"}\'>' +
-                (isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')) +
-                '</button>';
-            grid.appendChild(card);
-        });
-    },
+    if (state.children.length === 0 && state.pets.length === 0 && (!state.partner || (state.partner.status !== 'living' && state.partner.status !== 'married'))) {
+        list.innerHTML = '<div style="text-align:center; color:#666; padding:20px;">Vives solo. ¡Consigue pareja o adopta una mascota!</div>';
+    }
+},
 
-    populatePetsCards() {
-        const grid = document.getElementById('pets-grid');
-        if (!grid) return;
-        grid.innerHTML = '';
-        PETS.forEach(pet => {
-            const owned = state.pets.some(p => p.id === pet.id);
-            const canAfford = state.money >= pet.cost;
-            const card = document.createElement('div');
-            card.className = 'lifestyle-card ' + (owned ? 'current' : '');
-            card.innerHTML =
-                '<div class="lifestyle-card-title">' + pet.name + '</div>' +
-                '<div class="lifestyle-card-desc">' + pet.desc + '</div>' +
-                '<div class="lifestyle-card-stats">' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + pet.cost + '</span></div>' +
-                '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + pet.maint + '/m</span></div>' +
-                '</div>' +
-                '<button class="lifestyle-card-btn" ' + (owned || !canAfford ? 'disabled' : '') + ' data-action="buy-pet" data-params=\'{"petId":"' + pet.id + '"}\'>' +
-                (owned ? 'Adoptado' : (canAfford ? 'Adoptar' : 'Sin Fondos')) +
-                '</button>';
-            grid.appendChild(card);
-        });
-    },
+populateHousingCards() {
+    const grid = document.getElementById('housing-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    HOUSING.forEach(house => {
+        const isCurrent = state.housing === house.id;
+        const card = document.createElement('div');
+        card.className = 'lifestyle-card ' + (isCurrent ? 'current' : '');
+        card.innerHTML =
+            '<div class="lifestyle-card-title">' + house.name + '</div>' +
+            '<div class="lifestyle-card-desc">' + house.desc + '</div>' +
+            '<div class="lifestyle-card-stats">' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + house.cost.toLocaleString() + '</span></div>' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + house.maint.toLocaleString() + '</span></div>' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Felicidad:</span><span class="lifestyle-card-stat-value positive">+' + house.happiness + '</span></div>' +
+            '</div>' +
+            '<button class="lifestyle-card-btn" ' + (isCurrent ? 'disabled' : '') + ' data-action="buy-housing" data-params=\'{"housingId":"' + house.id + '"}\'>' +
+            (isCurrent ? '✓ Actual' : (state.money >= house.cost ? 'Comprar/Mudar' : 'Sin Fondos')) +
+            '</button>';
+        grid.appendChild(card);
+    });
+},
 
-    updateLifestyleModalStatus() {
-        // ...
-    },
+populateVehicleCards() {
+    const grid = document.getElementById('vehicles-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    VEHICLES.forEach(vehicle => {
+        const isCurrent = state.vehicle === vehicle.id;
+        const canAfford = state.money >= vehicle.cost;
+        const card = document.createElement('div');
+        card.className = 'lifestyle-card ' + (isCurrent ? 'current' : '');
+        card.innerHTML =
+            '<div class="lifestyle-card-title">' + vehicle.name + '</div>' +
+            '<div class="lifestyle-card-desc">' + vehicle.desc + '</div>' +
+            '<div class="lifestyle-card-stats">' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">' + (vehicle.cost === 0 ? 'Gratis' : '$' + vehicle.cost.toLocaleString()) + '</span></div>' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + vehicle.maint.toLocaleString() + '</span></div>' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Estatus:</span><span class="lifestyle-card-stat-value positive">+' + vehicle.status + '</span></div>' +
+            '</div>' +
+            '<button class="lifestyle-card-btn" ' + (isCurrent || !canAfford ? 'disabled' : '') + ' data-action="buy-vehicle" data-params=\'{"vehicleId":"' + vehicle.id + '"}\'>' +
+            (isCurrent ? '✓ Actual' : (canAfford ? 'Comprar' : 'Sin Fondos')) +
+            '</button>';
+        grid.appendChild(card);
+    });
+},
 
-    renderJobMarket() {
-        const list = this.els.modals.jobList;
-        list.innerHTML = '';
-        list.className = 'job-market-root';
+populatePetsCards() {
+    const grid = document.getElementById('pets-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    PETS.forEach(pet => {
+        const owned = state.pets.some(p => p.id === pet.id);
+        const canAfford = state.money >= pet.cost;
+        const card = document.createElement('div');
+        card.className = 'lifestyle-card ' + (owned ? 'current' : '');
+        card.innerHTML =
+            '<div class="lifestyle-card-title">' + pet.name + '</div>' +
+            '<div class="lifestyle-card-desc">' + pet.desc + '</div>' +
+            '<div class="lifestyle-card-stats">' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Costo:</span><span class="lifestyle-card-stat-value">$' + pet.cost + '</span></div>' +
+            '<div class="lifestyle-card-stat"><span class="lifestyle-card-stat-label">Mant:</span><span class="lifestyle-card-stat-value">$' + pet.maint + '/m</span></div>' +
+            '</div>' +
+            '<button class="lifestyle-card-btn" ' + (owned || !canAfford ? 'disabled' : '') + ' data-action="buy-pet" data-params=\'{"petId":"' + pet.id + '"}\'>' +
+            (owned ? 'Adoptado' : (canAfford ? 'Adoptar' : 'Sin Fondos')) +
+            '</button>';
+        grid.appendChild(card);
+    });
+},
 
-        // 1. Get Careers
-        const careers = Object.keys(CAREER_TRACKS);
+updateLifestyleModalStatus() {
+    // ...
+},
 
-        // Render Career Grid
-        const grid = document.createElement('div');
-        grid.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px;';
+renderJobMarket() {
+    const list = this.els.modals.jobList;
+    list.innerHTML = '';
+    list.className = 'job-market-root';
 
-        careers.forEach(careerId => {
-            const track = CAREER_TRACKS[careerId];
+    // 1. Get Careers
+    const careers = Object.keys(CAREER_TRACKS);
 
-            // Count available jobs
-            const trackJobs = JOBS.filter(j => j.career === careerId);
-            const visibleCount = trackJobs.filter(job => !state.isStudent || job.type === 'part_time').length;
+    // Render Career Grid
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:10px;';
 
-            if (visibleCount === 0) return;
+    careers.forEach(careerId => {
+        const track = CAREER_TRACKS[careerId];
 
-            const card = document.createElement('div');
-            card.className = 'career-card';
-            // Compact, clickable styling with hover effect
-            card.style.cssText = `
+        // Count available jobs
+        const trackJobs = JOBS.filter(j => j.career === careerId);
+        const visibleCount = trackJobs.filter(job => !state.isStudent || job.type === 'part_time').length;
+
+        if (visibleCount === 0) return;
+
+        const card = document.createElement('div');
+        card.className = 'career-card';
+        // Compact, clickable styling with hover effect
+        card.style.cssText = `
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
         border - radius: 8px;
@@ -2705,66 +2679,66 @@ const UI = {
         display: flex; flex - direction: column; align - items: center; justify - content: center; gap: 8px;
         transition: background 0.2s, transform 0.1s;
         `;
-            card.innerHTML = `
-                <div style="font-size:2rem; margin-bottom:5px;">${track.icon}</div>
+        card.innerHTML = `
+            < div style = "font-size:2rem; margin-bottom:5px;" > ${track.icon}</div >
                 <div style="font-weight:bold; color:#fff; font-size:0.9rem;">${track.label}</div>
                 <div style="font-size:0.7rem; color:#888;">${visibleCount} Puestos</div>
-            `;
-
-            card.onmouseover = () => { card.style.background = 'rgba(255,255,255,0.1)'; card.style.transform = 'translateY(-2px)'; };
-            card.onmouseout = () => { card.style.background = 'rgba(255,255,255,0.05)'; card.style.transform = 'translateY(0)'; };
-            card.onclick = () => UI.renderCareerJobs(careerId);
-
-            grid.appendChild(card);
-        });
-
-        list.appendChild(grid);
-    },
-
-    renderCareerJobs(careerId) {
-        const list = this.els.modals.jobList;
-        list.innerHTML = ''; // Clear main list
-
-        const track = CAREER_TRACKS[careerId];
-
-        // Header with Back Button
-        const header = document.createElement('div');
-        header.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #333;';
-        header.innerHTML = `
-            <button class="act-btn" style="width:auto; padding:5px 12px; font-size:1.2rem; background:transparent; border:1px solid #444;" onclick="UI.renderJobMarket()">⬅</button>
-            <div>
-                <h3 style="margin:0; display:flex; align-items:center; gap:8px;">${track.icon} ${track.label}</h3>
-                <div style="font-size:0.75rem; color:#aaa;">${track.desc}</div>
-            </div>
         `;
-        list.appendChild(header);
 
-        // Filter Jobs
-        const trackJobs = JOBS.filter(j => j.career === careerId);
-        const visibleJobs = trackJobs.filter(job => !state.isStudent || job.type === 'part_time');
+        card.onmouseover = () => { card.style.background = 'rgba(255,255,255,0.1)'; card.style.transform = 'translateY(-2px)'; };
+        card.onmouseout = () => { card.style.background = 'rgba(255,255,255,0.05)'; card.style.transform = 'translateY(0)'; };
+        card.onclick = () => UI.renderCareerJobs(careerId);
 
-        visibleJobs.sort((a, b) => a.salary - b.salary);
+        grid.appendChild(card);
+    });
 
-        // Job Grid (List view)
-        const grid = document.createElement('div');
-        grid.style.cssText = 'display:flex; flex-direction:column; gap:8px;';
+    list.appendChild(grid);
+},
 
-        visibleJobs.forEach(job => {
-            const isCurrent = state.currJobId === job.id;
+renderCareerJobs(careerId) {
+    const list = this.els.modals.jobList;
+    list.innerHTML = ''; // Clear main list
 
-            // Requirements
-            const hasInt = state.intelligence >= (job.req.int || 0);
-            const hasHealth = state.physicalHealth >= (job.req.health || 0);
-            const hasDeg = !job.req.deg || state.education.includes(job.req.deg);
-            const canApply = hasInt && hasHealth && hasDeg;
+    const track = CAREER_TRACKS[careerId];
 
-            let reqHtml = '';
-            if (job.req.int) reqHtml += `<span style="color:${hasInt ? '#aaa' : '#f55'}; font-size:0.7rem; margin-right:8px;">🧠 ${job.req.int}</span>`;
-            if (job.req.deg) reqHtml += `<span style="color:${hasDeg ? '#aaa' : '#f55'}; font-size:0.7rem;">🎓 ${job.req.deg}</span>`;
+    // Header with Back Button
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex; align-items:center; gap:10px; margin-bottom:15px; padding-bottom:10px; border-bottom:1px solid #333;';
+    header.innerHTML = `
+            < button class="act-btn" style = "width:auto; padding:5px 12px; font-size:1.2rem; background:transparent; border:1px solid #444;" onclick = "UI.renderJobMarket()" >⬅</button >
+                <div>
+                    <h3 style="margin:0; display:flex; align-items:center; gap:8px;">${track.icon} ${track.label}</h3>
+                    <div style="font-size:0.75rem; color:#aaa;">${track.desc}</div>
+                </div>
+        `;
+    list.appendChild(header);
 
-            const card = document.createElement('div');
-            // Specific Compact Style
-            card.style.cssText = `
+    // Filter Jobs
+    const trackJobs = JOBS.filter(j => j.career === careerId);
+    const visibleJobs = trackJobs.filter(job => !state.isStudent || job.type === 'part_time');
+
+    visibleJobs.sort((a, b) => a.salary - b.salary);
+
+    // Job Grid (List view)
+    const grid = document.createElement('div');
+    grid.style.cssText = 'display:flex; flex-direction:column; gap:8px;';
+
+    visibleJobs.forEach(job => {
+        const isCurrent = state.currJobId === job.id;
+
+        // Requirements
+        const hasInt = state.intelligence >= (job.req.int || 0);
+        const hasHealth = state.physicalHealth >= (job.req.health || 0);
+        const hasDeg = !job.req.deg || state.education.includes(job.req.deg);
+        const canApply = hasInt && hasHealth && hasDeg;
+
+        let reqHtml = '';
+        if (job.req.int) reqHtml += `< span style = "color:${hasInt ? '#aaa' : '#f55'}; font-size:0.7rem; margin-right:8px;" >🧠 ${job.req.int}</span > `;
+        if (job.req.deg) reqHtml += `< span style = "color:${hasDeg ? '#aaa' : '#f55'}; font-size:0.7rem;" >🎓 ${job.req.deg}</span > `;
+
+        const card = document.createElement('div');
+        // Specific Compact Style
+        card.style.cssText = `
         background: ${isCurrent ? 'rgba(77, 255, 234, 0.05)' : 'rgba(255,255,255,0.03)'};
         border: 1px solid ${isCurrent ? 'var(--primary-color)' : 'rgba(255,255,255,0.08)'};
         border - radius: 6px;
@@ -2773,15 +2747,15 @@ const UI = {
         transition: transform 0.1s;
         `;
 
-            // Compact Layout: Title/Salary on left, Req/Btn on right
-            card.innerHTML = `
-            <div style="flex:1;">
+        // Compact Layout: Title/Salary on left, Req/Btn on right
+        card.innerHTML = `
+            < div style = "flex:1;" >
                     <div style="display:flex; align-items:baseline; gap:8px;">
                         <span style="font-weight:bold; font-size:0.95rem; color:${isCurrent ? 'var(--primary-color)' : '#eee'};">${job.title}</span>
                         ${isCurrent ? '<span style="font-size:0.6rem; background:var(--primary-color); color:#000; padding:1px 4px; border-radius:3px;">ACTUAL</span>' : ''}
                     </div>
                     <div style="font-family:monospace; color:#4dffea; font-size:0.85rem; margin-top:2px;">$${job.salary.toLocaleString()} <span style="color:#666; font-family:sans-serif; font-size:0.75rem;">/mes</span></div>
-                </div>
+                </div >
 
     <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:100px;">
         <div style="text-align:right;">${reqHtml || '<span style="color:#666; font-size:0.7rem;">Sin Requisitos</span>'}</div>
@@ -2793,62 +2767,62 @@ const UI = {
     </div>
 `;
 
-            grid.appendChild(card);
-        });
+        grid.appendChild(card);
+    });
 
-        list.appendChild(grid);
-    },
+    list.appendChild(grid);
+},
 
 
 
-    renderTrophies() {
-        // Target settings-modal .modal-body
-        const modal = document.getElementById('settings-modal');
-        if (!modal) return;
-        const body = modal.querySelector('.modal-body');
-        if (!body) return;
+renderTrophies() {
+    // Target settings-modal .modal-body
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+    const body = modal.querySelector('.modal-body');
+    if (!body) return;
 
-        // Check if we already added trophies to avoid dupes or full wipe
-        let trophySection = document.getElementById('trophies-section');
-        if (!trophySection) {
-            trophySection = document.createElement('div');
-            trophySection.id = 'trophies-section';
-            trophySection.style.cssText = "margin-top:20px; padding-top:20px; border-top:1px solid #444;";
-            body.appendChild(trophySection);
-        }
-
-        trophySection.innerHTML = '<h3>🏆 Logros</h3><div class="trophy-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>';
-        const grid = trophySection.querySelector('.trophy-grid');
-
-        if (typeof TROPHIES !== 'undefined') {
-            TROPHIES.forEach(t => {
-                const unlocked = state.unlockedTrophies.includes(t.id);
-                const el = document.createElement('div');
-                el.style.cssText = 'background: ' + (unlocked ? '#222' : '#111') + '; padding: 10px; border: 1px solid ' + (unlocked ? '#FFD700' : '#333') + '; opacity:' + (unlocked ? 1 : 0.5) + '; border-radius: 6px;';
-                el.innerHTML =
-                    '<div style="font-size:1.5rem;">' + t.icon + '</div>' +
-                    '<div style="font-weight:bold; color:' + (unlocked ? '#FFD700' : '#888') + '; font-size:0.9rem;">' + t.name + '</div>' +
-                    '<div style="font-size:0.75rem; color:#aaa;">' + t.desc + '</div>';
-                grid.appendChild(el);
-            });
-        }
-    },
-
-    handleJobApplication(jobId) {
-        const job = JOBS.find(j => j.id === jobId);
-        if (!job) return;
-
-        // Re-check requirements for security
-        const hasInt = state.intelligence >= (job.req.int || 0);
-        const hasHealth = state.physicalHealth >= (job.req.health || 0);
-        const hasDeg = !job.req.deg || state.education.includes(job.req.deg);
-
-        if (hasInt && hasHealth && hasDeg) {
-            Game.applyJob(jobId);
-        } else {
-            UI.showAlert("Requisitos Insuficientes", "No cumples con los requisitos para este trabajo.");
-        }
+    // Check if we already added trophies to avoid dupes or full wipe
+    let trophySection = document.getElementById('trophies-section');
+    if (!trophySection) {
+        trophySection = document.createElement('div');
+        trophySection.id = 'trophies-section';
+        trophySection.style.cssText = "margin-top:20px; padding-top:20px; border-top:1px solid #444;";
+        body.appendChild(trophySection);
     }
+
+    trophySection.innerHTML = '<h3>🏆 Logros</h3><div class="trophy-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:10px;"></div>';
+    const grid = trophySection.querySelector('.trophy-grid');
+
+    if (typeof TROPHIES !== 'undefined') {
+        TROPHIES.forEach(t => {
+            const unlocked = state.unlockedTrophies.includes(t.id);
+            const el = document.createElement('div');
+            el.style.cssText = 'background: ' + (unlocked ? '#222' : '#111') + '; padding: 10px; border: 1px solid ' + (unlocked ? '#FFD700' : '#333') + '; opacity:' + (unlocked ? 1 : 0.5) + '; border-radius: 6px;';
+            el.innerHTML =
+                '<div style="font-size:1.5rem;">' + t.icon + '</div>' +
+                '<div style="font-weight:bold; color:' + (unlocked ? '#FFD700' : '#888') + '; font-size:0.9rem;">' + t.name + '</div>' +
+                '<div style="font-size:0.75rem; color:#aaa;">' + t.desc + '</div>';
+            grid.appendChild(el);
+        });
+    }
+},
+
+handleJobApplication(jobId) {
+    const job = JOBS.find(j => j.id === jobId);
+    if (!job) return;
+
+    // Re-check requirements for security
+    const hasInt = state.intelligence >= (job.req.int || 0);
+    const hasHealth = state.physicalHealth >= (job.req.health || 0);
+    const hasDeg = !job.req.deg || state.education.includes(job.req.deg);
+
+    if (hasInt && hasHealth && hasDeg) {
+        Game.applyJob(jobId);
+    } else {
+        UI.showAlert("Requisitos Insuficientes", "No cumples con los requisitos para este trabajo.");
+    }
+}
 };
 window.GameUI = UI;
 window.UI = UI;

@@ -5,19 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
     <title>Life Simulator</title>
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/mobile.css">
+    <link rel="stylesheet" href="css/mobile.css?v=10">
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#121212">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="Simulador de vida completo - Experimenta diferentes caminos profesionales">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
-    </div>
 
     <!-- Import Supabase JS -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=13">
     <link rel="stylesheet" href="css/travel.css">
 
 <body>
@@ -926,6 +924,19 @@
         </div>
     </div>
 
+    <!-- Professional Profile Modal -->
+    <div class="modal-overlay" id="professional-profile-modal">
+        <div class="modal-content" style="max-width: 850px; background: #1a1a1a;">
+            <div class="modal-header">
+                <h2>📈 Perfil Profesional</h2>
+                <button class="close-btn" onclick="UI.closeModal('professional-profile-modal')">&times;</button>
+            </div>
+            <div class="modal-body" id="profile-content" style="padding:0;">
+                <!-- Injected by ProfileView.render() -->
+            </div>
+        </div>
+    </div>
+
     <!-- ============================================ -->
     <!-- DEV MODE PANEL (REMOVE IN PRODUCTION) -->
     <!-- ============================================ -->
@@ -978,40 +989,46 @@
     </div>
 
     <!-- Import Supabase JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <link rel="stylesheet" href="css/style.css?v=2.0">
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2?v=2.1"></script>
+
     <script src="js/config.js?v=2.1"></script>
-    <script src="js/state.js?v=2.1"></script>
-    <script src="js/audio.js?v=2.1"></script>
-    <script src="js/db.js?v=2.1"></script>
-    <script src="js/ErrorHandler.js?v=2.1"></script>
-    <script src="js/EventManager.js?v=2.1"></script>
-    <script src="js/UIHelpers.js?v=2.1"></script>
-    <script src="js/PerformanceManager.js?v=2.1"></script>
-    <script src="js/KeyboardManager.js?v=2.1"></script>
-    <script src="js/A11yManager.js?v=2.1"></script>
-    <script src="js/AdvancedFeatures.js?v=2.1"></script>
-    <script src="js/FinanceManager.js?v=2.1"></script>
-    <script src="js/world.js?v=2.1"></script>
-    <script src="js/ui_core.js?v=2.1"></script>
-    <script src="js/business.js?v=2.1"></script>
-    <script src="js/athletics.js?v=2.1"></script>
-    <script src="js/freelancer.js?v=2.1"></script>
-    <script src="js/routine.js?v=2.1"></script>
-    <script src="js/school.js?v=2.1"></script>
-    <script src="js/phases.js?v=2.1"></script>
-    <script src="js/game.js?v=2.1"></script>
-    <script src="js/dev.js?v=2.1"></script> <!-- Juice Module -->
-    <script src="js/juice.js?v=2.1"></script>
+    <script src="js/state.js?v=2.2"></script>
+    <script src="js/audio.js?v=2.2"></script>
+    <script src="js/db.js?v=2.2"></script>
+    <script src="js/ErrorHandler.js?v=2.2"></script>
+    <script src="js/EventManager.js?v=2.2"></script>
+    <script src="js/UIHelpers.js?v=2.2"></script>
+    <script src="js/PerformanceManager.js?v=2.2"></script>
+    <script src="js/KeyboardManager.js?v=2.2"></script>
+    <script src="js/A11yManager.js?v=2.2"></script>
+    <script src="js/AdvancedFeatures.js?v=2.2"></script>
+    <script src="js/FinanceManager.js?v=2.2"></script>
+    <script src="js/world.js?v=2.2"></script>
+    <script src="js/features/market_competition.js?v=2.2"></script>
+    <script src="js/features/profile_view.js?v=2.2"></script>
+    <script src="js/ui_core.js?v=2.2"></script>
+    <script src="js/business.js?v=2.2"></script>
+    <script src="js/athletics.js?v=2.2"></script>
+    <script src="js/freelancer.js?v=2.2"></script>
+    <script src="js/routine.js?v=2.2"></script>
+    <script src="js/school.js?v=2.2"></script>
+    <script src="js/phases.js?v=2.2"></script>
+    <script src="js/game.js?v=2.2"></script>
+    <script src="js/dev.js?v=2.2"></script> <!-- Juice Module -->
+    <script src="js/juice.js?v=2.2"></script>
+
+    <!-- FEATURE MODULES -->
+    <script src="js/features/headhunting.js?v=2.2"></script>
+
     <!-- International Travel Module -->
-    <script src="js/travel.js"></script>
+    <script src="js/travel.js?v=2.2"></script>
     <!-- Tab Navigation -->
-    <script src="js/tabs.js"></script>
+    <script src="js/tabs.js?v=2.2"></script>
     <!-- Core Game Scripts -->
-    <script src="js/app.js?v=5.5"></script>
+    <script src="js/app.js?v=5.6"></script>
     <!-- Social Media Modal -->
     <div class='modal-overlay' id='social-media-modal'>
         <div class='modal-content'>
@@ -1021,6 +1038,19 @@
             </div>
             <div class='modal-body' id='social-media-container'>
                 <!-- Content injected by UI.renderSocialMedia() -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Headhunter Modal -->
+    <div class="modal-overlay" id="headhunter-modal" style="z-index: 500;">
+        <div class="modal-content" style="max-width: 500px; border: 2px solid var(--accent-color);">
+            <div class="modal-header" style="justify-content:center; border:none;">
+                <button class="close-btn" onclick="UI.closeModal('headhunter-modal')"
+                    style="position:absolute; right:15px; top:15px;">&times;</button>
+            </div>
+            <div id="headhunter-content">
+                <!-- Injected via JS -->
             </div>
         </div>
     </div>
